@@ -1,4 +1,10 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>Repair Order Log</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -175,6 +181,8 @@ main{padding-block:16px 120px}
 @media (prefers-reduced-motion:no-preference){.toast{animation:up .2s ease-out}@keyframes up{from{transform:translate(-50%,8px);opacity:0}}}
 </style>
 
+</head>
+<body>
 <header>
   <div class="wrap hbar">
     <div class="brand"><h1>RO Log</h1><span class="sync" id="sync">Connecting…</span></div>
@@ -300,6 +308,7 @@ const DAYN=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 const LS={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 
 let records=LS.get("ro-cache")||[];
+const inClaude=!!(window.claude&&window.claude.use);
 let col=null, mode="local", editingId=null, weekOffset=0, downloads=null;
 
 /* ---------- dates ---------- */
@@ -317,7 +326,10 @@ async function boot(){
   setSync("",records.length?"Loading…":"Connecting…");
   let db=null;
   try{ if(window.claude&&window.claude.use) db=await window.claude.use("db") }catch(e){}
-  try{ if(window.claude&&window.claude.use){downloads=await window.claude.use("downloads"); $("export").hidden=!downloads;$("pdf").hidden=!downloads} }catch(e){}
+  try{ if(window.claude&&window.claude.use)downloads=await window.claude.use("downloads") }catch(e){}
+  if(!downloads&&!inClaude)downloads={save:async({filename,data})=>{const blob=new Blob([data],{type:/\.pdf$/.test(filename)?"application/pdf":"text/csv"});
+    const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}};
+  $("export").hidden=!downloads;$("pdf").hidden=!downloads;
   if(!db){mode="local";records=LS.get("ro-local")||[];setSync("local","Saved on this device only");render();return}
   mode="cloud";col=db.collection("ros");
   col.onSnapshot(snap=>{
@@ -722,4 +734,5 @@ render();boot();
 })();
 </script>
 
-</body></html>
+</body>
+</html>
