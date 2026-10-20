@@ -227,7 +227,7 @@ main{padding-block:16px 120px}
       <button class="btn" id="export" hidden>Export CSV</button>
       <button class="btn" id="backup" hidden>Back up</button>
       <button class="btn" id="restore">Restore</button>
-      <input type="file" id="restore-file" accept=".json,application/json" hidden>
+      <input type="file" id="restore-file" accept=".json,.csv,application/json,text/csv,text/comma-separated-values" hidden>
     </div>
     <div class="backupnote" id="backup-note" hidden></div>
     <div id="list" class="view"></div>
@@ -588,12 +588,21 @@ $("backup").onclick=async()=>{
 $("restore").onclick=()=>$("restore-file").click();
 $("restore-file").addEventListener("change",async e=>{
   const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
-  let incoming;
-  try{const j=JSON.parse(await f.text());incoming=(Array.isArray(j)?j:j.records||[]).filter(r=>r&&typeof r==="object"&&r.id&&r.ro)}
-  catch(err){toast("That file isn't an RO Log backup");return}
+  let incoming,text;
+  try{text=await f.text()}catch(err){toast("Couldn't open that file");return}
+  const t=text.replace(/^\uFEFF/,"").trim();
+  if(/^[\[{]/.test(t)){
+    try{const j=JSON.parse(t);incoming=(Array.isArray(j)?j:j.records||[]).filter(r=>r&&typeof r==="object"&&r.id&&r.ro)}
+    catch(err){toast("That file isn't an RO Log backup");return}
+  }else{
+    incoming=csvToRecords(t);
+    if(incoming===null){toast("That CSV doesn't have an RO column. Use a file from Export CSV.");return}
+  }
   if(!incoming.length){toast("No repair orders found in that file");return}
   const have=new Map(records.map(r=>[r.id,r]));
-  const todo=incoming.filter(r=>{const h=have.get(r.id);return !h||(r.updatedAt||0)>(h.updatedAt||0)});
+  const roDate=new Set(records.map(r=>r.ro+"|"+r.date));
+  const todo=incoming.filter(r=>{const h=have.get(r.id);if(h)return!r._csv&&(r.updatedAt||0)>(h.updatedAt||0);return!roDate.has(r.ro+"|"+r.date)})
+    .map(r=>{const c=Object.assign({},r);delete c._csv;return c});
   if(!todo.length){toast("Everything in that backup is already here");return}
   try{
     if(mode==="cloud"){for(const r of todo)await col.doc(String(r.id)).set(r)}
@@ -601,6 +610,54 @@ $("restore-file").addEventListener("change",async e=>{
     toast(`Restored ${todo.length} RO${todo.length>1?"s":""}`);
   }catch(err){toast("Restore stopped partway. Try again; finished ROs are kept.")}
 });
+
+/* ---------- CSV import ---------- */
+function parseCSV(t){const rows=[];let row=[],f="",q=false;
+  for(let i=0;i<t.length;i++){const c=t[i];
+    if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++}else q=false}else f+=c}
+    else if(c==='"')q=true;
+    else if(c===","){row.push(f);f=""}
+    else if(c==="\n"||c==="\r"){if(c==="\r"&&t[i+1]==="\n")i++;row.push(f);rows.push(row);row=[];f=""}
+    else f+=c}
+  if(f!==""||row.length){row.push(f);rows.push(row)}
+  return rows.filter(r=>r.some(x=>x.trim()))}
+function normDate(s){s=String(s||"").trim();let m;
+  if(m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))return`${m[1]}-${pad(m[2])}-${pad(m[3])}`;
+  if(m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/)){let y=+m[3];if(y<100)y+=2000;return`${y}-${pad(m[1])}-${pad(m[2])}`}
+  return""}
+const safeId=s=>String(s).replace(/[^A-Za-z0-9_-]/g,"").slice(0,80);
+function csvToRecords(text){
+  const rows=parseCSV(text);if(rows.length<2)return[];
+  const H=rows[0].map(h=>h.trim().toLowerCase()),ix=n=>H.indexOf(n.toLowerCase());
+  if(ix("ro")<0)return null;
+  const now=Date.now();
+  return rows.slice(1).map((c,rowN)=>{
+    const g=n=>{const i=ix(n);return i<0?"":String(c[i]||"").trim()};
+    const raw=g("RO Log data");
+    if(raw){try{const r=JSON.parse(raw);if(r&&r.ro&&r.id)return r}catch(e){}}
+    const ro=g("RO");if(!ro)return null;
+    const date=normDate(g("Date"))||today();
+    const rec={id:"c"+safeId(ro)+"-"+date,ro,tag:g("Tag").toUpperCase(),date,hours:+g("Flagged hrs")||0,
+      vin:g("VIN").toUpperCase(),miles:g("Miles")?(+g("Miles").replace(/,/g,"")||""):"",tech:g("Tech"),work:g("Work performed"),
+      maintReset:/^y/i.test(g("Maint reset")),inspection:{},tires:{},recs:[],jobs:[],
+      ymm:g("Year/Make/Model"),engine:g("Engine/drive"),advisor:g("Advisor"),color:g("Color"),stock:g("Stock"),
+      timein:g("Time in"),promised:g("Promised"),createdAt:now,updatedAt:now+rowN,_csv:true};
+    ITEMS.forEach(([k,n,b])=>{const v=g(n);const o={s:/^pass/i.test(v)?"pass":/^fail/i.test(v)?"fail":"",note:(v.match(/^fail:\s*([\s\S]*)$/i)||[])[1]||""};
+      if(b)o.mm=g(n+" mm");rec.inspection[k]=o});
+    TIRES.forEach(([k,n])=>rec.tires[k]={mid:g(n+" mid"),edge:g(n+" edge")});
+    g("Recommendations").split(" | ").filter(x=>x.trim()).forEach(line=>{
+      let w=line.trim().split(/\s+/),r={desc:"",qt:"",part:"",price:"",hrs:"",stk:false,pdc:false};
+      if(/^\d+x$/i.test(w[0]))r.qt=w.shift().slice(0,-1);
+      if(w.length&&/^[\d.]+h$/i.test(w[w.length-1]))r.hrs=w.pop().slice(0,-1);
+      w=w.filter(t=>{if(/^\$[\d.,]+$/.test(t)){r.price=t.slice(1).replace(/,/g,"");return false}return true});
+      r.desc=w.join(" ");rec.recs.push(r)});
+    g("Job lines").split(" | ").filter(x=>x.trim()).forEach(line=>{
+      let w=line.trim().split(/\s+/),j={type:"C",op:"",desc:"",hrs:""};
+      if(/^[CWI]$/.test(w[0]))j.type=w.shift();
+      if(w.length&&/^[\d.]+h$/i.test(w[w.length-1]))j.hrs=w.pop().slice(0,-1);
+      if(w.length&&/^[A-Z0-9]{3,}$/.test(w[0]))j.op=w.shift();
+      j.desc=w.join(" ");rec.jobs.push(j)});
+    return rec}).filter(Boolean)}
 
 /* ---------- VIN check digit + scan ---------- */
 const VMAP={A:1,B:2,C:3,D:4,E:5,F:6,G:7,H:8,J:1,K:2,L:3,M:4,N:5,P:7,R:9,S:2,T:3,U:4,V:5,W:6,X:7,Y:8,Z:9};
@@ -828,7 +885,7 @@ $("pdf").onclick=async()=>{
 
 /* ---------- CSV export ---------- */
 $("export").onclick=async()=>{
-  const cols=["Date","RO","Tag","VIN","Miles","Tech","Flagged hrs","Work performed","Maint reset",...ITEMS.map(i=>i[1]),"Front brakes mm","Rear brakes mm",...TIRES.flatMap(([,n])=>[n+" mid",n+" edge"]),"Recommendations","Job lines","Year/Make/Model","Engine/drive","Advisor"];
+  const cols=["Date","RO","Tag","VIN","Miles","Tech","Flagged hrs","Work performed","Maint reset",...ITEMS.map(i=>i[1]),"Front brakes mm","Rear brakes mm",...TIRES.flatMap(([,n])=>[n+" mid",n+" edge"]),"Recommendations","Job lines","Year/Make/Model","Engine/drive","Advisor","Color","Stock","Time in","Promised","RO Log data"];
   const q=v=>`"${String(v==null?"":v).replace(/"/g,'""')}"`;
   const rows=records.slice().sort((a,b)=>(a.date||"").localeCompare(b.date||"")).map(r=>{const i=r.inspection||{},t=r.tires||{};
     return[r.date,r.ro,r.tag,r.vin,r.miles,r.tech,h1(r.hours),r.work,r.maintReset?"Yes":"",
@@ -836,7 +893,7 @@ $("export").onclick=async()=>{
       (i.frontBrakes||{}).mm,(i.rearBrakes||{}).mm,...TIRES.flatMap(([k])=>[(t[k]||{}).mid,(t[k]||{}).edge]),
       (r.recs||[]).map(x=>[x.qt&&x.qt+"x",x.desc,x.part,x.price&&"$"+x.price,x.hrs&&x.hrs+"h"].filter(Boolean).join(" ")).join(" | "),
       (r.jobs||[]).map(j=>[j.type,j.op,j.desc,j.hrs&&j.hrs+"h"].filter(Boolean).join(" ")).join(" | "),
-      r.ymm,r.engine,r.advisor].map(q).join(",")});
+      r.ymm,r.engine,r.advisor,r.color,r.stock,r.timein,r.promised,JSON.stringify(r)].map(q).join(",")});
   try{await downloads.save({filename:`ro-log-${today()}.csv`,data:[cols.map(q).join(","),...rows].join("\n")});}catch(e){}
 };
 
