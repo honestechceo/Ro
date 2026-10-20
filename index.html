@@ -272,6 +272,17 @@ body.has-photo{background-size:cover;background-position:center;background-attac
 .hero .bar em{color:var(--hero-ink)}
 .hero .days span.today{color:var(--hero-accent)}
 .hero .wkhint{justify-content:center;margin-top:0}
+.herolink{justify-self:center;order:99;border:0;background:none;color:var(--hero-muted);font-size:.75rem;text-decoration:underline;text-underline-offset:3px;padding:2px 6px}
+.hero{display:grid}
+.h-accent{background:radial-gradient(120% 95% at 50% 0%,color-mix(in srgb,var(--hero-accent) 42%,#0A1018),#06090D 85%)!important}
+.h-carbon{background-color:#111316!important;background-image:linear-gradient(27deg,rgba(0,0,0,.45) 5px,transparent 5px),linear-gradient(207deg,rgba(0,0,0,.45) 5px,transparent 5px),linear-gradient(27deg,rgba(255,255,255,.045) 5px,transparent 5px),linear-gradient(207deg,rgba(255,255,255,.045) 5px,transparent 5px),linear-gradient(90deg,#16191D 10px,transparent 10px),linear-gradient(#17191C 25%,#131518 25%,#131518 50%,transparent 50%,transparent 75%,#1A1D21 75%,#1A1D21)!important;background-size:20px 20px!important}
+.h-steel{background:repeating-linear-gradient(90deg,rgba(255,255,255,.035) 0 1px,transparent 1px 3px),linear-gradient(160deg,#3B4452 0%,#1C222B 55%,#0E1217 100%)!important}
+.h-glass{background:rgba(10,15,21,.52)!important;-webkit-backdrop-filter:blur(18px) saturate(1.3);backdrop-filter:blur(18px) saturate(1.3);border-color:rgba(255,255,255,.16)!important}
+.h-photo{background-color:#0A0F14!important;background-size:cover!important;background-position:center!important}
+.bgtiles b.h-midnight,.bgtiles b.h-accent,.bgtiles b.h-carbon,.bgtiles b.h-steel,.bgtiles b.h-glass{border-color:transparent}
+.bgtiles b.h-midnight{background:radial-gradient(120% 90% at 50% 0%,var(--hero1),var(--hero2))}
+.bgtiles b.h-glass{background:linear-gradient(rgba(10,15,21,.55),rgba(10,15,21,.55)),linear-gradient(135deg,var(--accent),var(--bg))!important}
+#hbp-photo{background-size:cover;background-position:center;color:var(--muted)}
 @media (prefers-reduced-motion:no-preference){
   .g-fill{transition:stroke-dasharray .9s cubic-bezier(.2,.8,.2,1)}
   .chart.anim .bar i{animation:grow .7s cubic-bezier(.2,.8,.2,1) both;transform-origin:bottom}
@@ -393,6 +404,7 @@ body.has-photo{background-size:cover;background-position:center;background-attac
       </div>
       <div class="chart" id="chart"></div>
       <div class="days" id="days"></div>
+      <button type="button" class="herolink" id="hero-customize">Customize card</button>
       <label class="wkstart wkhint" for="wk-start">Pay week starts on
         <select id="wk-start">
           <option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option>
@@ -481,6 +493,15 @@ body.has-photo{background-size:cover;background-position:center;background-attac
           <input type="range" id="bg-dim" min="30" max="90" step="5">
           <div class="dimrow"><button type="button" class="linkbtn" id="bg-change">Choose another photo</button><button type="button" class="linkbtn" id="bg-remove">Remove photo</button></div>
           <span class="hint">Your photo stays on this device only.</span>
+        </div>
+        <div class="flabel">Dashboard card</div>
+        <div class="bgtiles" id="herotiles" role="radiogroup" aria-label="Dashboard card background"></div>
+        <input type="file" id="hero-file" accept="image/*" hidden>
+        <div class="f" id="hdim-f" hidden>
+          <label for="hero-dim">Card photo dimming <span id="hdim-val"></span></label>
+          <input type="range" id="hero-dim" min="20" max="85" step="5">
+          <div class="dimrow"><button type="button" class="linkbtn" id="hero-change">Choose another photo</button><button type="button" class="linkbtn" id="hero-remove">Remove photo</button></div>
+          <span class="hint">The card stays dark so the gauge is easy to read. Your photo stays on this device only.</span>
         </div>
         <button type="button" class="btn" id="look-reset">Reset to default look</button>
       </div>
@@ -941,7 +962,8 @@ const DARK={bg:"#101316",surface:"#191D21",sunk:"#14181B",ink:"#E7EAEC",muted:"#
   pass:"#5BC98D","pass-bg":"#15301F",warn:"#E5B456","warn-bg":"#33280F",fail:"#F2786A","fail-bg":"#3A1916",pat:"rgba(231,234,236,.06)",sheen:"rgba(255,255,255,.035)",hero1:"#1C2735",hero2:"#10161E","hero-accent":"#78A6E8"};
 const ACCENTS={blue:["Lexus blue","#1D4F91","#78A6E8"],red:["Red","#B42318","#F2786A"],teal:["Teal","#0F6873","#5CC8D2"],orange:["Orange","#A8500B","#F0A35E"],purple:["Purple","#5B3FA8","#AE9BF0"],graphite:["Graphite","#3B4450","#B7C0CA"]};
 const BGS=[["plain","Plain"],["steel","Brushed steel"],["tread","Tread plate"],["carbon","Carbon fiber"],["grid","Blueprint grid"],["photo","Your photo"]];
-const LOOK0={theme:"system",accent:"blue",bg:"plain",dim:70};
+const LOOK0={theme:"system",accent:"blue",bg:"plain",dim:70,hero:"midnight",heroDim:55};
+const HEROS=[["midnight","Midnight"],["accent","Accent glow"],["carbon","Carbon fiber"],["steel","Brushed steel"],["glass","Glass"],["photo","Your photo"]];
 const mq=window.matchMedia?matchMedia("(prefers-color-scheme: dark)"):{matches:false};
 function look(){return Object.assign({},LOOK0,prefs.look||{})}
 function hexRgb(h){h=h.replace("#","");return[0,2,4].map(i=>parseInt(h.slice(i,i+2),16))}
@@ -961,12 +983,21 @@ function applyLook(){
   if(photo){const c=hexRgb(dark?DARK.bg:LIGHT.bg),v=`rgba(${c.join(",")},${(+L.dim||70)/100})`;
     b.classList.add("has-photo");b.style.backgroundImage=`linear-gradient(${v},${v}),url("${photo}")`}
   else if(L.bg!=="plain"&&L.bg!=="photo")b.classList.add("pat-"+L.bg);
+  const h=document.querySelector(".hero");
+  if(h){HEROS.forEach(([k])=>h.classList.remove("h-"+k));h.style.backgroundImage="";
+    const hp=L.hero==="photo"?LS.get("ro-herophoto"):null;
+    if(hp){const a=(+L.heroDim||55)/100;h.classList.add("h-photo");h.style.backgroundImage=`linear-gradient(rgba(6,10,14,${a}),rgba(6,10,14,${Math.min(.95,a+.15)})),url("${hp}")`}
+    else if(L.hero&&L.hero!=="midnight"&&L.hero!=="photo")h.classList.add("h-"+L.hero)}
 }
 mq.addEventListener&&mq.addEventListener("change",applyLook);
 try{new MutationObserver(applyLook).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]})}catch(e){}
 $("swatches").innerHTML=Object.entries(ACCENTS).map(([k,[n,l]])=>`<input type="radio" name="look-accent" id="la-${k}" value="${k}"><label for="la-${k}"><i style="background:${l}"></i>${n}</label>`).join("");
 $("bgtiles").innerHTML=BGS.map(([k,n])=>`<input type="radio" name="look-bg" id="lb-${k}" value="${k}"><label for="lb-${k}"${k==="photo"?' class="phototile"':""}><b class="${k==="photo"?"":"pat-"+k}" id="lbp-${k}">${k==="photo"?"+":""}</b>${n}</label>`).join("");
-function fillLookForm(){const L=look();$("look-where").textContent=mode==="cloud"?"Synced to your account":"Saved on this device";
+$("herotiles").innerHTML=HEROS.map(([k,n])=>`<input type="radio" name="look-hero" id="lh-${k}" value="${k}"><label for="lh-${k}"${k==="photo"?' class="phototile"':""}><b class="${k==="photo"?"":"h-"+k}" id="hbp-${k}">${k==="photo"?"+":""}</b>${n}</label>`).join("");
+function fillLookForm(){const L=look();
+  ($("lh-"+L.hero)||$("lh-midnight")).checked=true;const hp=LS.get("ro-herophoto"),ht=$("hbp-photo");
+  ht.style.backgroundImage=hp?`url("${hp}")`:"";ht.textContent=hp?"":"+";
+  $("hdim-f").hidden=!(L.hero==="photo"&&hp);$("hero-dim").value=L.heroDim;$("hdim-val").textContent=L.heroDim+"%";$("look-where").textContent=mode==="cloud"?"Synced to your account":"Saved on this device";
   ($("lt-"+L.theme)||$("lt-system")).checked=true;($("la-"+L.accent)||$("la-blue")).checked=true;
   const photo=LS.get("ro-bgphoto");($("lb-"+L.bg)||$("lb-plain")).checked=true;
   const pt=$("lbp-photo");pt.style.backgroundImage=photo?`url("${photo}")`:"";pt.textContent=photo?"":"+";
@@ -989,6 +1020,19 @@ $("bg-file").addEventListener("change",async e=>{const f=e.target.files&&e.targe
     if(LS.get("ro-bgphoto")!==url){toast("Couldn't keep that photo on this device. Try a smaller one.");fillLookForm();return}
     setLook({bg:"photo"},true);toast("Background photo set")}
   catch(err){toast("Couldn't open that photo. Try another.");fillLookForm()}});
+document.getElementsByName("look-hero").forEach(i=>i.addEventListener("change",()=>{
+  if(i.value==="photo"&&!LS.get("ro-herophoto")){fillLookForm();$("hero-file").click();return}
+  setLook({hero:i.value},true)}));
+$("hero-dim").addEventListener("input",()=>setLook({heroDim:+$("hero-dim").value}));
+$("hero-change").onclick=()=>$("hero-file").click();
+$("hero-remove").onclick=()=>{try{localStorage.removeItem("ro-herophoto")}catch(e){}setLook({hero:"midnight"},true);toast("Card photo removed")};
+$("hero-file").addEventListener("change",async e=>{const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
+  try{const c=await shrink(f,1000);let url=c.toDataURL("image/jpeg",.72);
+    LS.set("ro-herophoto",url);
+    if(LS.get("ro-herophoto")!==url){toast("Couldn't keep that photo on this device. Try a smaller one.");fillLookForm();return}
+    setLook({hero:"photo"},true);toast("Card photo set")}
+  catch(err){toast("Couldn't open that photo. Try another.");fillLookForm()}});
+$("hero-customize").onclick=()=>{show("set");fillLookForm();setTimeout(()=>{$("herotiles").scrollIntoView({block:"center",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"})},50)};
 $("look-reset").onclick=()=>{prefs=Object.assign({},prefs,{look:Object.assign({},LOOK0)});LS.set("ro-prefs",prefs);applyLook();fillLookForm();savePrefs({},true);toast("Default look restored")};
 applyLook();
 
