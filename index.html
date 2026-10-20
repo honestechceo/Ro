@@ -54,7 +54,7 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var
 .sync::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--muted);margin-right:6px;vertical-align:1px}
 .sync.ok::before{background:var(--pass)} .sync.local::before{background:var(--warn)}
 .tabs{display:flex;background:var(--sunk);border:1px solid var(--line);border-radius:999px;padding:3px;flex-shrink:0}
-.tabs button{border:0;background:none;padding:6px 14px;border-radius:999px;font:600 .95rem var(--f-display);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.tabs button{border:0;background:none;padding:6px 12px;border-radius:999px;font:600 .95rem var(--f-display);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
 
 main{padding-block:16px 120px}
@@ -68,6 +68,8 @@ main{padding-block:16px 120px}
 .nav{display:flex;gap:6px}
 .nav button{width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:var(--sunk);font-size:1.1rem;line-height:1}
 .nav button:disabled{opacity:.35;cursor:default}
+.wkstart{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--muted);margin-top:-6px}
+.wkstart select{height:32px;border:1px solid var(--line);border-radius:8px;background:var(--sunk);color:var(--ink);font:600 .85rem var(--f-body);padding:0 8px}
 .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .stat{min-width:0}
 .stat b{display:block;font:700 2rem/1 var(--f-display);font-variant-numeric:tabular-nums}
@@ -91,6 +93,26 @@ main{padding-block:16px 120px}
 .btn.danger.armed{background:var(--fail);color:var(--surface)}
 
 .daygroup{display:grid;gap:8px}
+.paylines{display:grid}
+.pl{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:8px 0;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+.pl:first-child{border-top:0}
+.pl span{color:var(--muted);min-width:0}
+.pl span i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:0}
+.pl b{font:700 1.15rem var(--f-display);white-space:nowrap}
+.pl.total{border-top:2px solid var(--ink)}
+.pl.total span{color:var(--ink);font-weight:600}
+.pl.total b{font-size:1.6rem;color:var(--accent)}
+.pl.note{display:block;color:var(--muted);font-size:.8rem}
+.pl.bonus b{color:var(--pass)}
+.k-c{background:var(--accent)} .k-w{background:var(--pass)} .k-i{background:var(--muted)}
+.calcseg{align-self:start;justify-self:start}
+.seg.calcseg input.p:checked+label{background:var(--accent);color:var(--accent-ink)}
+.calcout{background:var(--sunk);border-radius:8px;padding:4px 12px}
+.mult{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 76px 40px;gap:6px;align-items:end}
+.mult label{font-size:.68rem;color:var(--muted);display:block;margin-bottom:2px}
+.mult input{height:40px;border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:0 8px;min-width:0;width:100%}
+.mult .x{height:40px}
+.mult.active{outline:2px solid var(--pass);outline-offset:2px;border-radius:6px}
 .backupnote{font-size:.8rem;color:var(--muted);margin-top:-8px}
 .backupnote.due{color:var(--warn);font-weight:600}
 .daygroup h3{margin:6px 0 0;display:flex;justify-content:space-between;font:600 .85rem var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
@@ -201,6 +223,7 @@ main{padding-block:16px 120px}
     <div class="brand"><h1>RO Log</h1><span class="sync" id="sync">Connecting…</span></div>
     <div class="tabs" role="tablist">
       <button role="tab" id="tab-log" aria-selected="true">Log</button>
+      <button role="tab" id="tab-pay" aria-selected="false">Pay</button>
       <button role="tab" id="tab-new" aria-selected="false">+ New RO</button>
     </div>
   </div>
@@ -210,11 +233,16 @@ main{padding-block:16px 120px}
   <section class="view" id="view-log">
     <div class="week">
       <div class="weekhead">
-        <div><div class="lbl">Flagged hours</div><div class="range num" id="w-range"></div></div>
+        <div><div class="lbl">Pay week</div><div class="range num" id="w-range"></div></div>
         <div class="nav"><button id="w-prev" aria-label="Previous week">‹</button><button id="w-next" aria-label="Next week">›</button></div>
       </div>
+      <label class="wkstart" for="wk-start">Pay week starts on
+        <select id="wk-start">
+          <option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option>
+          <option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option>
+        </select></label>
       <div class="stats">
-        <div class="stat"><b class="big" id="s-week">0.0</b><span>Hours this week</span></div>
+        <div class="stat"><b class="big" id="s-week">0.0</b><span>Hours this pay week</span></div>
         <div class="stat"><b id="s-ros">0</b><span>Repair orders</span></div>
         <div class="stat"><b id="s-avg">0.0</b><span>Avg hrs / RO</span></div>
         <div class="stat"><b id="s-month">0.0</b><span id="s-month-l">Hours this month</span></div>
@@ -231,6 +259,54 @@ main{padding-block:16px 120px}
     </div>
     <div class="backupnote" id="backup-note" hidden></div>
     <div id="list" class="view"></div>
+  </section>
+
+  <section class="view" id="view-pay" hidden>
+    <div class="week">
+      <div class="weekhead">
+        <div><div class="lbl">Pay week</div><div class="range num" id="p-range"></div></div>
+        <div class="nav"><button id="p-prev" aria-label="Previous pay week">‹</button><button id="p-next" aria-label="Next pay week">›</button></div>
+      </div>
+      <div class="paylines" id="p-week"></div>
+    </div>
+
+    <div class="week">
+      <div class="weekhead">
+        <div><div class="lbl">Warranty bonus</div><div class="range" id="b-month"></div></div>
+        <div class="nav"><button id="b-prev" aria-label="Previous month">‹</button><button id="b-next" aria-label="Next month">›</button></div>
+      </div>
+      <div class="paylines" id="p-bonus"></div>
+    </div>
+
+    <div class="sec">
+      <h2>Labor calculator</h2>
+      <div class="body">
+        <div class="seg calcseg" role="radiogroup" aria-label="Pay type">
+          <input type="radio" class="p" name="calc-type" id="calc-c" value="C" checked><label for="calc-c">Customer pay</label>
+          <input type="radio" class="p" name="calc-type" id="calc-w" value="W"><label for="calc-w">Warranty</label>
+        </div>
+        <div class="grid">
+          <div class="f hours"><label for="calc-hrs">Labor hours</label><input id="calc-hrs" type="number" step="0.1" min="0" inputmode="decimal" placeholder="0.0"></div>
+          <div class="f" id="calc-mult-f" hidden><label for="calc-mult">Multiplier</label><input id="calc-mult" type="number" step="0.1" min="1" inputmode="decimal"></div>
+        </div>
+        <div class="paylines calcout" id="calc-out"></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Pay settings <small>Only you see these</small></h2>
+      <div class="body">
+        <div class="grid">
+          <div class="f"><label for="set-rate">Your flat rate ($/hr)</label><input id="set-rate" type="number" step="0.01" min="0" inputmode="decimal" placeholder="Optional"></div>
+          <div class="f"><label for="set-shop">Shop labor rate ($/hr)</label><input id="set-shop" type="number" step="0.01" min="0" inputmode="decimal" placeholder="222.00"></div>
+        </div>
+        <div class="flabel">Warranty multiplier</div>
+        <div class="recs" id="mults"></div>
+        <button type="button" class="btn" id="add-mult">+ Add multiplier range</button>
+        <span class="hint">Bonus hours = warranty hours × (multiplier − 1). Leave the end date empty if it's still running.</span>
+        <button type="button" class="btn primary" id="save-prefs">Save settings</button>
+      </div>
+    </div>
   </section>
 
   <form class="view" id="view-form" hidden autocomplete="off">
@@ -326,19 +402,22 @@ main{padding-block:16px 120px}
 const $=s=>document.getElementById(s);
 const ITEMS=[["battery","Battery"],["suspension","Suspension"],["exhaust","Exhaust"],["ballJoints","Ball joints"],["driveBelts","Drive belts"],["lights","Lights"],["leaks","Leaks"],["frontBrakes","Front brakes",1],["rearBrakes","Rear brakes",1]];
 const TIRES=[["lf","Left front"],["rf","Right front"],["lr","Left rear"],["rr","Right rear"],["spare","Spare"]];
-const DAYN=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+const DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 const LS={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const PREF0={weekStart:1,payRate:"",shopRate:"",mults:[]};
+let prefs=Object.assign({},PREF0,(()=>{const o=LS.get("ro-prefs")||{};const w=LS.get("ro-weekstart");if(o.weekStart==null&&Number.isInteger(w))o.weekStart=w;return o})());
+let startDow=Number.isInteger(prefs.weekStart)?prefs.weekStart:1;
 
 let records=LS.get("ro-cache")||[];
 const inClaude=!!(window.claude&&window.claude.use);
-let col=null, mode="local", editingId=null, weekOffset=0, downloads=null;
+let prefsDoc=null,col=null, mode="local", editingId=null, weekOffset=0, downloads=null;
 
 /* ---------- dates ---------- */
 const pad=n=>String(n).padStart(2,"0");
 const iso=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 const parse=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
 const today=()=>iso(new Date());
-function weekStart(off){const d=new Date();d.setHours(0,0,0,0);const dow=(d.getDay()+6)%7;d.setDate(d.getDate()-dow+off*7);return d}
+function weekStart(off){const d=new Date();d.setHours(0,0,0,0);const back=(d.getDay()-startDow+7)%7;d.setDate(d.getDate()-back+off*7);return d}
 const fmt=(d,o)=>d.toLocaleDateString(undefined,o);
 const h1=n=>(Math.round((+n||0)*10)/10).toFixed(1);
 
@@ -354,6 +433,11 @@ async function boot(){
   $("export").hidden=!downloads;$("pdf").hidden=!downloads;$("backup").hidden=!downloads;
   if(!db){mode="local";records=LS.get("ro-local")||[];setSync("local","Saved on this device only");render();return}
   mode="cloud";col=db.collection("ros");
+  prefsDoc=db.doc("settings/prefs");
+  prefsDoc.onSnapshot(sn=>{if(!sn.exists)return;
+    prefs=Object.assign({},PREF0,sn.data()||{});LS.set("ro-prefs",prefs);
+    if(Number.isInteger(prefs.weekStart)&&prefs.weekStart!==startDow){startDow=prefs.weekStart;weekOffset=0}
+    $("wk-start").value=String(startDow);fillPrefsForm();render();renderPay()},()=>{});
   col.onSnapshot(snap=>{
     records=snap.docs.map(d=>Object.assign({id:d.id},d.data()));
     LS.set("ro-cache",records);
@@ -383,7 +467,7 @@ function renderBackup(){
     :mode==="local"?"Not backed up yet. Tap Back up to save a copy to iCloud Drive.":"Backed up to the cloud automatically.";
 }
 function render(){
-  renderBackup();
+  renderBackup();renderPay();
   const ws=weekStart(weekOffset), we=new Date(ws);we.setDate(we.getDate()+6);
   const wsI=iso(ws), weI=iso(we), t=today();
   $("w-range").textContent=fmt(ws,{month:"short",day:"numeric"})+" – "+fmt(we,{month:"short",day:"numeric",year:"numeric"});
@@ -391,17 +475,17 @@ function render(){
   const inWeek=records.filter(r=>r.date>=wsI&&r.date<=weI);
   const wk=inWeek.reduce((a,r)=>a+(+r.hours||0),0);
   $("s-week").textContent=h1(wk);
-  $("s-week").nextElementSibling.textContent=weekOffset===0?"Hours this week":"Hours that week";
+  $("s-week").nextElementSibling.textContent=weekOffset===0?"Hours this pay week":"Hours that pay week";
   $("s-ros").textContent=inWeek.length;
   $("s-avg").textContent=inWeek.length?h1(wk/inWeek.length):"0.0";
   const ref=weekOffset===0?new Date():ws, mk=iso(ref).slice(0,7);
   $("s-month").textContent=h1(records.filter(r=>(r.date||"").slice(0,7)===mk).reduce((a,r)=>a+(+r.hours||0),0));
   $("s-month-l").textContent="Hours in "+fmt(ref,{month:"long"});
-  const per=DAYN.map((_,i)=>{const d=new Date(ws);d.setDate(d.getDate()+i);const k=iso(d);return{k,h:inWeek.filter(r=>r.date===k).reduce((a,r)=>a+(+r.hours||0),0)}});
+  const per=[0,1,2,3,4,5,6].map(i=>{const d=new Date(ws);d.setDate(d.getDate()+i);const k=iso(d);return{k,h:inWeek.filter(r=>r.date===k).reduce((a,r)=>a+(+r.hours||0),0)}});
   const max=Math.max(8,...per.map(p=>p.h));
   $("chart").innerHTML=per.map(p=>`<div class="bar${p.h?"":" zero"}${p.k===t?" today":""}"><i style="height:${(p.h/max*100).toFixed(1)}%"><em style="bottom:${(p.h/max*100).toFixed(1)}%">${p.h?h1(p.h):""}</em></i></div>`).join("");
   $("chart").querySelectorAll("em").forEach(e=>{const b=e.parentElement.parentElement;b.appendChild(e)});
-  $("days").innerHTML=per.map((p,i)=>`<span class="${p.k===t?"today":""}">${DAYN[i]}</span>`).join("");
+  $("days").innerHTML=per.map((p,i)=>`<span class="${p.k===t?"today":""}">${DOW[(startDow+i)%7]}</span>`).join("");
 
   const q=$("q").value.trim().toLowerCase();
   let list=q?records.filter(r=>[r.ro,r.tag,r.vin,r.work,r.ymm,r.engine,(r.jobs||[]).map(j=>j.op+" "+j.desc).join(" ")].join(" ").toLowerCase().includes(q)):inWeek;
@@ -564,19 +648,120 @@ $("del").onclick=async()=>{const d=$("del");
 
 /* ---------- nav ---------- */
 function show(v){
-  $("view-log").hidden=v!=="log";$("view-form").hidden=v!=="form";$("savebar").hidden=v!=="form";
-  $("tab-log").setAttribute("aria-selected",v==="log");$("tab-new").setAttribute("aria-selected",v==="form"&&!editingId);
+  $("view-log").hidden=v!=="log";$("view-form").hidden=v!=="form";$("savebar").hidden=v!=="form";$("view-pay").hidden=v!=="pay";
+  $("tab-log").setAttribute("aria-selected",v==="log");$("tab-pay").setAttribute("aria-selected",v==="pay");$("tab-new").setAttribute("aria-selected",v==="form"&&!editingId);
 }
 $("tab-log").onclick=()=>{show("log");render()};
 $("tab-new").onclick=()=>openForm(null);
+$("tab-pay").onclick=()=>{show("pay");renderPay();window.scrollTo(0,0)};
 $("cancel").onclick=()=>{show("log");render()};
 $("save").onclick=save;
+$("wk-start").value=String(startDow);
+$("wk-start").addEventListener("change",async()=>{
+  startDow=+$("wk-start").value;weekOffset=0;render();await savePrefs({weekStart:startDow},true);
+  toast(`Pay week now runs ${["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][startDow]} to ${["Saturday","Sunday","Monday","Tuesday","Wednesday","Thursday","Friday"][startDow]}`);
+});
 $("w-prev").onclick=()=>{weekOffset--;render()};
 $("w-next").onclick=()=>{if(weekOffset<0){weekOffset++;render()}};
 $("q").addEventListener("input",render);
 $("list").addEventListener("click",e=>{const b=e.target.closest(".ro");if(b)openForm(records.find(r=>r.id===b.dataset.id))});
 
 let toastT;function toast(m){const t=$("toast");t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,2600)}
+
+/* ---------- pay ---------- */
+const money=n=>"$"+(+n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtMult=m=>"×"+(+m).toFixed(2).replace(/0$/,"").replace(/\.0$/,"");
+function splitHours(r){const o={C:0,W:0,I:0};
+  (r.jobs||[]).forEach(j=>{const t=o[j.type]!=null?j.type:"C";o[t]+=+j.hrs||0});
+  const rest=(+r.hours||0)-(o.C+o.W+o.I);if(rest>0.0001)o.C+=rest;return o}
+function multFor(date){let best=null;
+  (prefs.mults||[]).forEach(m=>{if(!m.m||!m.from||date<m.from||(m.to&&date>m.to))return;if(!best||m.from>best.from)best=m});
+  return best?+best.m:1}
+function bonusFor(r){const w=splitHours(r).W,m=multFor(r.date);return{w,m,b:m>1?w*(m-1):0}}
+let payOffset=0,bonusOffset=0;
+function line(label,val,cls,key){return`<div class="pl ${cls||""}"><span>${key?`<i class="${key}"></i>`:""}${label}</span><b>${val}</b></div>`}
+function renderPay(){
+  if($("view-pay").hidden)return;
+  const rate=+prefs.payRate||0;
+  /* pay week */
+  const ws=weekStart(payOffset),we=new Date(ws);we.setDate(we.getDate()+6);const a=iso(ws),z=iso(we);
+  $("p-range").textContent=fmt(ws,{weekday:"short",month:"short",day:"numeric"})+" – "+fmt(we,{weekday:"short",month:"short",day:"numeric"});
+  $("p-next").disabled=payOffset>=0;
+  const wk=records.filter(r=>r.date>=a&&r.date<=z),t={C:0,W:0,I:0};let bon=0;
+  wk.forEach(r=>{const h=splitHours(r);t.C+=h.C;t.W+=h.W;t.I+=h.I;bon+=bonusFor(r).b});
+  const tot=t.C+t.W+t.I;
+  $("p-week").innerHTML=line("Customer pay",h1(t.C)+" hrs","","k-c")+line("Warranty",h1(t.W)+" hrs","","k-w")+line("Internal",h1(t.I)+" hrs","","k-i")+
+    line(`Flagged this week · ${wk.length} RO${wk.length===1?"":"s"}`,h1(tot)+" hrs","total")+
+    (rate?line(`Est. pay at ${money(rate)}/hr`,money(tot*rate)):"")+
+    (bon?line("Warranty bonus earned (paid next month)","+"+h1(bon)+" hrs","bonus"):"")+
+    (!rate?`<div class="pl note">Add your flat rate in Pay settings to see dollars.</div>`:"");
+  /* bonus month */
+  const md=new Date();md.setDate(1);md.setMonth(md.getMonth()+bonusOffset);
+  const mk=iso(md).slice(0,7),nx=new Date(md);nx.setMonth(nx.getMonth()+1);const pv=new Date(md);pv.setMonth(pv.getMonth()-1);
+  $("b-month").textContent=fmt(md,{month:"long",year:"numeric"});$("b-next").disabled=bonusOffset>=0;
+  const mon=records.filter(r=>(r.date||"").slice(0,7)===mk);let wh=0,bh=0;const used=new Set();
+  mon.forEach(r=>{const x=bonusFor(r);wh+=x.w;bh+=x.b;if(x.w&&x.m>1)used.add(fmtMult(x.m))});
+  const prevK=iso(pv).slice(0,7);const prevB=records.filter(r=>(r.date||"").slice(0,7)===prevK).reduce((s,r)=>s+bonusFor(r).b,0);
+  const hasMult=(prefs.mults||[]).some(m=>m.m&&m.from);
+  $("p-bonus").innerHTML=line("Warranty hours flagged",h1(wh)+" hrs","","k-w")+
+    line("Multiplier",used.size?[...used].join(", "):hasMult?"None in effect":"Not set")+
+    line(`Bonus hours · paid with the ${fmt(nx,{month:"long"})} bonus`,h1(bh)+" hrs","total bonus")+
+    (rate&&bh?line(`Bonus at ${money(rate)}/hr`,money(bh*rate),"bonus"):"")+
+    `<div class="pl note">Paying out in ${fmt(md,{month:"long"})}: the ${fmt(pv,{month:"long"})} bonus, ${h1(prevB)} hrs${rate&&prevB?" ("+money(prevB*rate)+")":""}.</div>`+
+    (!hasMult?`<div class="pl note">Set your warranty multiplier in Pay settings below.</div>`:"");
+  renderCalc();
+}
+function renderCalc(){
+  const w=$("calc-w").checked,hrs=+$("calc-hrs").value||0,rate=+prefs.payRate||0,shop=+prefs.shopRate||0;
+  $("calc-mult-f").hidden=!w;
+  if(w&&!$("calc-mult").value){const m=multFor(today());$("calc-mult").value=m>1?m:""}
+  let html="";
+  if(!w){
+    html=line("Customer labor price",shop?money(hrs*shop):"Set shop rate","total")+
+      (shop?`<div class="pl note">${h1(hrs)} hrs × ${money(shop)}/hr shop labor rate</div>`:"")+
+      line("You flag",h1(hrs)+" hrs")+(rate?line("Your pay",money(hrs*rate),"bonus"):"");
+  }else{
+    const m=Math.max(1,+$("calc-mult").value||1),b=hrs*(m-1);
+    html=line("Job pays",h1(hrs)+" hrs")+line(`Warranty bonus (${fmtMult(m)})`,"+"+h1(b)+" hrs","bonus")+
+      line("Total hours",h1(hrs+b)+" hrs","total")+
+      (rate?line("Paid this week",money(hrs*rate))+line("Added to next month's bonus",money(b*rate),"bonus"):"")+
+      `<div class="pl note">Bonus = ${h1(hrs)} × (${(+m).toString()} − 1) = ${h1(b)} hrs, paid with the following month's bonus.</div>`;
+  }
+  $("calc-out").innerHTML=html;
+}
+["calc-hrs","calc-mult"].forEach(id=>$(id).addEventListener("input",renderCalc));
+["calc-c","calc-w"].forEach(id=>$(id).addEventListener("change",renderCalc));
+$("p-prev").onclick=()=>{payOffset--;renderPay()};$("p-next").onclick=()=>{if(payOffset<0){payOffset++;renderPay()}};
+$("b-prev").onclick=()=>{bonusOffset--;renderPay()};$("b-next").onclick=()=>{if(bonusOffset<0){bonusOffset++;renderPay()}};
+
+let multN=0;
+function addMult(m){m=m||{};const n=multN++;const d=document.createElement("div");d.className="mult";d.dataset.n=n;
+  d.innerHTML=`<div><label for="m${n}-from">From</label><input id="m${n}-from" type="date" value="${esc(m.from)}"></div>
+  <div><label for="m${n}-to">To (optional)</label><input id="m${n}-to" type="date" value="${esc(m.to)}"></div>
+  <div><label for="m${n}-m">Multiplier</label><input id="m${n}-m" type="number" step="0.1" min="1" inputmode="decimal" placeholder="2.2" value="${esc(m.m)}"></div>
+  <button type="button" class="x" aria-label="Remove multiplier range">×</button>`;
+  d.querySelector(".x").onclick=()=>d.remove();
+  const t=today();if(m.from&&m.from<=t&&(!m.to||t<=m.to))d.classList.add("active");
+  $("mults").appendChild(d)}
+function fillPrefsForm(){
+  if(document.activeElement&&$("view-pay").contains(document.activeElement)&&document.activeElement.closest(".sec:last-child"))return;
+  $("set-rate").value=prefs.payRate||"";$("set-shop").value=prefs.shopRate||"";
+  $("mults").innerHTML="";multN=0;(prefs.mults&&prefs.mults.length?prefs.mults:[{from:today()}]).forEach(addMult)}
+$("add-mult").onclick=()=>{addMult({});$(`m${multN-1}-from`).focus()};
+async function savePrefs(patch,quiet){
+  prefs=Object.assign({},prefs,patch);LS.set("ro-prefs",prefs);
+  if(prefsDoc){try{await prefsDoc.set(prefs)}catch(e){if(!quiet)toast("Saved on this device. Cloud sync failed; try again.")}}
+}
+$("save-prefs").onclick=async()=>{
+  const mults=[...$("mults").children].map(d=>{const n=d.dataset.n;return{from:$(`m${n}-from`).value,to:$(`m${n}-to`).value,m:+$(`m${n}-m`).value||0}})
+    .filter(m=>m.m||m.to);
+  const bad=mults.find(m=>!m.from||m.m<1||(m.to&&m.to<m.from));
+  if(bad){toast(!bad.from?"Each multiplier range needs a start date":bad.m<1?"Multiplier must be 1 or more, like 2.2":"End date is before the start date");return}
+  mults.sort((a,b)=>a.from.localeCompare(b.from));
+  const v=x=>{const n=parseFloat(x);return n>0?n:""};
+  await savePrefs({payRate:v($("set-rate").value),shopRate:v($("set-shop").value),mults});
+  $("calc-mult").value="";fillPrefsForm();renderPay();toast("Pay settings saved");
+};
 
 /* ---------- backup / restore ---------- */
 $("backup").onclick=async()=>{
@@ -885,7 +1070,7 @@ $("pdf").onclick=async()=>{
 
 /* ---------- CSV export ---------- */
 $("export").onclick=async()=>{
-  const cols=["Date","RO","Tag","VIN","Miles","Tech","Flagged hrs","Work performed","Maint reset",...ITEMS.map(i=>i[1]),"Front brakes mm","Rear brakes mm",...TIRES.flatMap(([,n])=>[n+" mid",n+" edge"]),"Recommendations","Job lines","Year/Make/Model","Engine/drive","Advisor","Color","Stock","Time in","Promised","RO Log data"];
+  const cols=["Date","RO","Tag","VIN","Miles","Tech","Flagged hrs","Work performed","Maint reset",...ITEMS.map(i=>i[1]),"Front brakes mm","Rear brakes mm",...TIRES.flatMap(([,n])=>[n+" mid",n+" edge"]),"Recommendations","Job lines","Year/Make/Model","Engine/drive","Advisor","Color","Stock","Time in","Promised","Customer pay hrs","Warranty hrs","Internal hrs","Warranty multiplier","Warranty bonus hrs","RO Log data"];
   const q=v=>`"${String(v==null?"":v).replace(/"/g,'""')}"`;
   const rows=records.slice().sort((a,b)=>(a.date||"").localeCompare(b.date||"")).map(r=>{const i=r.inspection||{},t=r.tires||{};
     return[r.date,r.ro,r.tag,r.vin,r.miles,r.tech,h1(r.hours),r.work,r.maintReset?"Yes":"",
@@ -893,11 +1078,11 @@ $("export").onclick=async()=>{
       (i.frontBrakes||{}).mm,(i.rearBrakes||{}).mm,...TIRES.flatMap(([k])=>[(t[k]||{}).mid,(t[k]||{}).edge]),
       (r.recs||[]).map(x=>[x.qt&&x.qt+"x",x.desc,x.part,x.price&&"$"+x.price,x.hrs&&x.hrs+"h"].filter(Boolean).join(" ")).join(" | "),
       (r.jobs||[]).map(j=>[j.type,j.op,j.desc,j.hrs&&j.hrs+"h"].filter(Boolean).join(" ")).join(" | "),
-      r.ymm,r.engine,r.advisor,r.color,r.stock,r.timein,r.promised,JSON.stringify(r)].map(q).join(",")});
+      r.ymm,r.engine,r.advisor,r.color,r.stock,r.timein,r.promised,...(()=>{const h=splitHours(r),b=bonusFor(r);return[h1(h.C),h1(h.W),h1(h.I),b.m>1&&b.w?b.m:"",b.b?h1(b.b):""]})(),JSON.stringify(r)].map(q).join(",")});
   try{await downloads.save({filename:`ro-log-${today()}.csv`,data:[cols.map(q).join(","),...rows].join("\n")});}catch(e){}
 };
 
-render();boot();
+fillPrefsForm();render();boot();
 })();
 </script>
 
