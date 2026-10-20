@@ -176,6 +176,16 @@ main{padding-block:16px 120px}
 .lvl-pass{border-color:var(--pass)!important;background:var(--pass-bg)!important;color:var(--pass)}
 .lvl-warn{border-color:var(--warn)!important;background:var(--warn-bg)!important;color:var(--warn)}
 .lvl-fail{border-color:var(--fail)!important;background:var(--fail-bg)!important;color:var(--fail)}
+.additem{display:grid;gap:8px;padding:12px 16px;border-top:1px solid var(--line);background:var(--sunk)}
+.addrow{display:flex;gap:8px}
+.addrow input{flex:1;min-width:0;height:44px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:0 12px}
+.keep{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--muted)}
+.keep input{width:18px;height:18px;accent-color:var(--accent)}
+.irow .name small{font-size:.68rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);background:var(--accent-soft);padding:1px 6px;border-radius:4px}
+.ctl{display:flex;gap:6px;flex:0 0 auto}
+.chip{height:40px;padding:0 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);font-size:.78rem;font-weight:600;color:var(--muted)}
+.chip.on{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.chip.del{width:40px;padding:0;font-size:1.1rem}
 .toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-top:1px solid var(--line);font-weight:500}
 .toggle input{width:22px;height:22px;accent-color:var(--accent)}
 
@@ -376,6 +386,10 @@ main{padding-block:16px 120px}
     <div class="sec">
       <h2>Multipoint inspection <small id="insp-sum"></small></h2>
       <div class="insp" id="insp"></div>
+      <div class="additem">
+        <div class="addrow"><input id="new-item" placeholder="Add item, e.g. Wiper blades" autocomplete="off" aria-label="New inspection item"><button type="button" class="btn" id="add-item">+ Add</button></div>
+        <label class="keep" for="new-item-keep"><input type="checkbox" id="new-item-keep" checked> Add to every new RO</label>
+      </div>
       <label class="toggle" for="maint">Reset maintenance light<input type="checkbox" id="maint"></label>
     </div>
 
@@ -468,8 +482,8 @@ async function remove(id){
 }
 
 /* ---------- log view ---------- */
-function failCount(r){const i=r.inspection||{};return ITEMS.filter(([k])=>i[k]&&i[k].s==="fail").length}
-function passCount(r){const i=r.inspection||{};return ITEMS.filter(([k])=>i[k]&&i[k].s==="pass").length}
+function failCount(r){return Object.values(r.inspection||{}).filter(v=>v&&v.s==="fail").length}
+function passCount(r){return Object.values(r.inspection||{}).filter(v=>v&&v.s==="pass").length}
 function lowTires(r){const t=r.tires||{};let n=0;TIRES.forEach(([k])=>{const v=t[k]||{};[v.mid,v.edge].forEach(x=>{if(x!==""&&x!=null&&+x<=2)n++})});return n}
 function renderBackup(){
   const n=$("backup-note"),last=LS.get("ro-lastbackup");
@@ -532,10 +546,42 @@ function render(){
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 
 /* ---------- form build ---------- */
-$("insp").innerHTML=ITEMS.map(([k,n,b])=>`<div class="irow" id="row-${k}">
-  <span class="name"><span class="dot"></span>${n}</span>
+const BASE=ITEMS.map(([k,n,b])=>[k,n,!!b,false]);
+const slug=n=>"c_"+String(n).toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"").slice(0,40);
+function customPrefs(){return(prefs.customItems||[]).filter(c=>c&&c.k&&c.n)}
+function isPinned(k){return customPrefs().some(c=>c.k===k)}
+function itemsFor(r){const list=r?recordItems(r):BASE.slice(),have=new Set(list.map(i=>i[0]));
+  if(!r||!r.id)customPrefs().forEach(c=>{if(!have.has(c.k)){list.push([c.k,c.n,false,true]);have.add(c.k)}});
+  return list}
+function recordItems(r){const list=BASE.slice(),ins=(r&&r.inspection)||{};
+  Object.keys(ins).filter(k=>k.startsWith("c_")).forEach(k=>list.push([k,ins[k].name||k.slice(2).replace(/_/g," "),false,true]));
+  return list}
+let curItems=BASE.slice();
+function rowHTML([k,n,b,c]){return`<div class="irow" id="row-${k}">
+  <span class="name"><span class="dot"></span>${esc(n)}${c?" <small>Added</small>":""}</span>
   <span class="seg"><input type="radio" class="p" name="i-${k}" id="i-${k}-pass" value="pass"><label for="i-${k}-pass">Pass</label><input type="radio" class="x" name="i-${k}" id="i-${k}-fail" value="fail"><label for="i-${k}-fail">Fail</label></span>
-  <span class="extra">${b?`<span class="mm"><input id="i-${k}-mm" type="number" step="0.5" min="0" inputmode="decimal" placeholder="–" aria-label="${n} pad thickness in mm"><span>mm</span></span>`:""}<input id="i-${k}-note" placeholder="${b?"Notes":"Reason failed"}" ${b?"":"hidden"}></span></div>`).join("");
+  <span class="extra">${b?`<span class="mm"><input id="i-${k}-mm" type="number" step="0.5" min="0" inputmode="decimal" placeholder="–" aria-label="${esc(n)} pad thickness in mm"><span>mm</span></span>`:""}<input id="i-${k}-note" placeholder="${b?"Notes":"Reason failed"}" ${b?"":"hidden"}>${c?`<span class="ctl"><button type="button" class="chip${isPinned(k)?" on":""}" data-pin="${k}" aria-pressed="${isPinned(k)}">${isPinned(k)?"✓ Every RO":"This RO only"}</button><button type="button" class="chip del" data-del="${k}" aria-label="Remove ${esc(n)} from this RO">×</button></span>`:""}</span></div>`}
+function buildInsp(list){curItems=list;$("insp").innerHTML=list.map(rowHTML).join("")}
+buildInsp(itemsFor(null));
+function addItem(){
+  const n=$("new-item").value.trim().replace(/\s+/g," ");if(!n){$("new-item").focus();return}
+  const k=slug(n);if(k==="c_"){toast("Use letters or numbers in the name");return}
+  if(curItems.some(i=>i[0]===k||i[1].toLowerCase()===n.toLowerCase())){toast(`${n} is already on the list`);return}
+  const it=[k,n,false,true];curItems.push(it);
+  if($("new-item-keep").checked&&!isPinned(k))savePrefs({customItems:[...customPrefs(),{k,n}]},true);
+  $("insp").insertAdjacentHTML("beforeend",rowHTML(it));$("new-item").value="";refreshInsp();
+  toast($("new-item-keep").checked?`${n} added to every new RO`:`${n} added to this RO`)}
+$("add-item").onclick=addItem;
+$("new-item").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addItem()}});
+$("insp").addEventListener("click",e=>{
+  const pin=e.target.closest("[data-pin]"),del=e.target.closest("[data-del]");
+  if(pin){const k=pin.dataset.pin,it=curItems.find(i=>i[0]===k);const on=!isPinned(k);
+    savePrefs({customItems:on?[...customPrefs(),{k,n:it[1]}]:customPrefs().filter(c=>c.k!==k)},true);
+    pin.classList.toggle("on",on);pin.setAttribute("aria-pressed",on);pin.textContent=on?"✓ Every RO":"This RO only";
+    toast(on?`${it[1]} will be on every new RO`:`${it[1]} removed from new ROs`)}
+  if(del){const k=del.dataset.del;curItems=curItems.filter(i=>i[0]!==k);$("row-"+k).remove();refreshInsp();
+    if(isPinned(k))toast("Removed from this RO. Tap “Every RO” first to stop adding it to new ROs.")}
+});
 $("tires").innerHTML=TIRES.map(([k,n])=>`<div class="tire${k==="spare"?" spare":""}"><h4>${n}</h4><div class="pair">
   <div><label for="t-${k}-mid">Middle</label><input id="t-${k}-mid" type="number" min="0" max="20" inputmode="numeric" placeholder="–"></div>
   <div><label for="t-${k}-edge">Edges</label><input id="t-${k}-edge" type="number" min="0" max="20" inputmode="numeric" placeholder="–"></div></div></div>`).join("");
@@ -543,14 +589,14 @@ $("tires").innerHTML=TIRES.map(([k,n])=>`<div class="tire${k==="spare"?" spare":
 function lvl(el,v,good,soon){el.classList.remove("lvl-pass","lvl-warn","lvl-fail");if(v===""||v==null)return;v=+v;el.classList.add(v>=good?"lvl-pass":v>=soon?"lvl-warn":"lvl-fail")}
 function refreshInsp(){
   let p=0,f=0;
-  ITEMS.forEach(([k,,b])=>{
+  curItems.forEach(([k,,b])=>{
     const row=$("row-"+k), pass=$(`i-${k}-pass`).checked, fail=$(`i-${k}-fail`).checked, note=$(`i-${k}-note`);
     row.classList.toggle("is-pass",pass);row.classList.toggle("is-fail",fail);
     if(!b){note.hidden=!fail;note.classList.toggle("reason",fail)}else{note.classList.toggle("reason",fail);note.placeholder=fail?"Reason failed":"Notes"}
     if(b)lvl($(`i-${k}-mm`),$(`i-${k}-mm`).value,5,3);
     if(pass)p++;if(fail)f++;
   });
-  $("insp-sum").textContent=`${p} pass · ${f} fail · ${ITEMS.length-p-f} open`;
+  $("insp-sum").textContent=`${p} pass · ${f} fail · ${curItems.length-p-f} open`;
   TIRES.forEach(([k])=>["mid","edge"].forEach(s=>{const e=$(`t-${k}-${s}`);lvl(e,e.value,6,3)}));
 }
 /* tap a checked Pass/Fail again to clear it */
@@ -646,7 +692,8 @@ function openForm(r){
   ["ro","tag","date","hours","vin","miles","tech","work"].forEach(k=>$(k).value=r[k]==null?"":r[k]);
   $("maint").checked=!!r.maintReset;
   const ins=r.inspection||{};
-  ITEMS.forEach(([k,,b])=>{const v=ins[k]||{};if(v.s)$(`i-${k}-${v.s}`).checked=true;$(`i-${k}-note`).value=v.note||"";if(b)$(`i-${k}-mm`).value=v.mm==null?"":v.mm});
+  buildInsp(itemsFor(r.id?r:null));
+  curItems.forEach(([k,,b])=>{const v=ins[k]||{};if(v.s)$(`i-${k}-${v.s}`).checked=true;$(`i-${k}-note`).value=v.note||"";if(b)$(`i-${k}-mm`).value=v.mm==null?"":v.mm});
   const t=r.tires||{};TIRES.forEach(([k])=>{const v=t[k]||{};$(`t-${k}-mid`).value=v.mid==null?"":v.mid;$(`t-${k}-edge`).value=v.edge==null?"":v.edge});
   (r.recs||[]).forEach(addRec);
   ["ymm","engine","color","stock","advisor","timein","promised"].forEach(k=>$(k).value=r[k]||"");
@@ -664,7 +711,7 @@ function collect(){
     vin:$("vin").value.trim().toUpperCase(),miles:$("miles").value?+$("miles").value:"",tech:$("tech").value.trim(),
     work:$("work").value.trim(),maintReset:$("maint").checked,inspection:{},tires:{},recs:readRecs(),
     createdAt:prev&&prev.createdAt||Date.now(),updatedAt:Date.now()};
-  ITEMS.forEach(([k,,b])=>{const s=$(`i-${k}-pass`).checked?"pass":$(`i-${k}-fail`).checked?"fail":"";const o={s,note:$(`i-${k}-note`).value.trim()};if(b)o.mm=$(`i-${k}-mm`).value;rec.inspection[k]=o});
+  curItems.forEach(([k,n,b,c])=>{const s=$(`i-${k}-pass`).checked?"pass":$(`i-${k}-fail`).checked?"fail":"";const o={s,note:$(`i-${k}-note`).value.trim()};if(b)o.mm=$(`i-${k}-mm`).value;if(c)o.name=n;rec.inspection[k]=o});
   TIRES.forEach(([k])=>rec.tires[k]={mid:$(`t-${k}-mid`).value,edge:$(`t-${k}-edge`).value});
   rec.jobs=readJobs();
   ["ymm","engine","color","stock","advisor","timein","promised"].forEach(k=>rec[k]=$(k).value.trim());
@@ -1063,7 +1110,7 @@ function makePDF(r){
   /* multipoint */
   bar([["MULTIPOINT INSPECTION",5],["PASS",140,"center"],["FAILED",180,"center"],["REASON FAILED / MEASUREMENT",210]]);
   y0=y;const ins=r.inspection||{};
-  ITEMS.forEach(([k,n,b])=>{const v=ins[k]||{};const extra=[b&&v.mm!==""&&v.mm!=null?v.mm+" mm":"",v.note].filter(Boolean).join("  ");
+  recordItems(r).forEach(([k,n,b])=>{const v=ins[k]||{};const extra=[b&&v.mm!==""&&v.mm!=null?v.mm+" mm":"",v.note].filter(Boolean).join("  ");
     const el=fit(extra,CW-216,8.5);const h=Math.max(15,5+el.length*10);ensure(h);
     d.setFont("helvetica","normal");d.setFontSize(9);d.setTextColor(...INK);d.text(n,M+5,y+10.5);
     if(v.s==="pass")val("X",M+140,y+11,10,"center");
@@ -1128,11 +1175,13 @@ $("pdf").onclick=async()=>{
 
 /* ---------- CSV export ---------- */
 $("export").onclick=async()=>{
-  const cols=["Date","RO","Tag","VIN","Miles","Tech","Flagged hrs","Work performed","Maint reset",...ITEMS.map(i=>i[1]),"Front brakes mm","Rear brakes mm",...TIRES.flatMap(([,n])=>[n+" mid",n+" edge"]),"Recommendations","Job lines","Year/Make/Model","Engine/drive","Advisor","Color","Stock","Time in","Promised","Customer pay hrs","Warranty hrs","Internal hrs","Warranty multiplier","Warranty bonus hrs","Approved repairs $","Declined repairs $","RO Log data"];
+  const cust=[];const seenC=new Set(ITEMS.map(i=>i[1].toLowerCase()));
+  records.forEach(r=>recordItems(r).filter(i=>i[3]).forEach(([k,n])=>{if(!seenC.has(n.toLowerCase())){seenC.add(n.toLowerCase());cust.push([k,n])}}));
+  const cols=["Date","RO","Tag","VIN","Miles","Tech","Flagged hrs","Work performed","Maint reset",...ITEMS.map(i=>i[1]),...cust.map(c=>c[1]),"Front brakes mm","Rear brakes mm",...TIRES.flatMap(([,n])=>[n+" mid",n+" edge"]),"Recommendations","Job lines","Year/Make/Model","Engine/drive","Advisor","Color","Stock","Time in","Promised","Customer pay hrs","Warranty hrs","Internal hrs","Warranty multiplier","Warranty bonus hrs","Approved repairs $","Declined repairs $","RO Log data"];
   const q=v=>`"${String(v==null?"":v).replace(/"/g,'""')}"`;
   const rows=records.slice().sort((a,b)=>(a.date||"").localeCompare(b.date||"")).map(r=>{const i=r.inspection||{},t=r.tires||{};
     return[r.date,r.ro,r.tag,r.vin,r.miles,r.tech,h1(r.hours),r.work,r.maintReset?"Yes":"",
-      ...ITEMS.map(([k])=>{const v=i[k]||{};return v.s?(v.s==="fail"?"FAIL"+(v.note?": "+v.note:""):"Pass"):""}),
+      ...[...ITEMS,...cust].map(([k])=>{const v=i[k]||{};return v.s?(v.s==="fail"?"FAIL"+(v.note?": "+v.note:""):"Pass"):""}),
       (i.frontBrakes||{}).mm,(i.rearBrakes||{}).mm,...TIRES.flatMap(([k])=>[(t[k]||{}).mid,(t[k]||{}).edge]),
       (r.recs||[]).map(x=>[x.qt&&x.qt+"x",x.desc,x.part,x.price&&"$"+x.price,x.hrs&&x.hrs+"h",x.status&&"["+x.status+"]"].filter(Boolean).join(" ")).join(" | "),
       (r.jobs||[]).map(j=>[j.type,j.op,j.desc,j.hrs&&j.hrs+"h",j.type==="W"&&!jobGetsMult(j)?"(no mult)":""].filter(Boolean).join(" ")).join(" | "),
