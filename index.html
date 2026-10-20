@@ -118,6 +118,11 @@ main{padding-block:16px 120px}
 .btn.scan{flex:0 0 auto;display:flex;align-items:center;gap:6px;background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
 .btn.scan::before{content:"";width:16px;height:12px;border:2px solid currentColor;border-radius:3px;box-shadow:inset 3px 0 0 -1px currentColor,inset -3px 0 0 -1px currentColor}
 .btn.scan:disabled{opacity:.6;cursor:progress}
+.vinfo{border:1px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:8px 12px;display:grid;gap:2px}
+.vinfo-main{font:700 1.15rem/1.2 var(--f-display);letter-spacing:.03em;text-transform:uppercase}
+.vinfo-sub{font-size:.78rem;color:var(--muted)}
+.linkbtn{justify-self:start;border:0;background:none;padding:4px 0;color:var(--accent);font-weight:600;text-decoration:underline;text-underline-offset:3px}
+.linkbtn:disabled{opacity:.6;cursor:progress;text-decoration:none}
 
 .insp{display:grid}
 .irow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;align-items:center;padding:10px 16px;border-top:1px solid var(--line)}
@@ -229,7 +234,9 @@ main{padding-block:16px 120px}
         <div class="f"><label for="vin">VIN #</label>
           <div class="vinrow"><input id="vin" class="mono" maxlength="17" spellcheck="false"><button type="button" class="btn scan" id="vin-scan">Scan</button></div>
           <input type="file" id="vin-file" accept="image/*" capture="environment" hidden>
-          <span class="hint" id="vin-hint">17 characters</span></div>
+          <span class="hint" id="vin-hint">17 characters</span>
+          <div class="vinfo" id="vinfo" hidden><div class="vinfo-main" id="vinfo-main"></div><div class="vinfo-sub" id="vinfo-sub"></div></div>
+          <button type="button" class="linkbtn" id="vin-decode" hidden>Look up vehicle from VIN</button></div>
         <div class="grid">
           <div class="f"><label for="miles">Miles</label><input id="miles" type="number" inputmode="numeric" min="0"></div>
           <div class="f"><label for="tech">Tech #</label><input id="tech" class="mono"></div>
@@ -249,7 +256,10 @@ main{padding-block:16px 120px}
     <div class="sec">
       <h2>Vehicle details <small>Optional, prints on the PDF</small></h2>
       <div class="body">
-        <div class="f"><label for="ymm">Year / make / model</label><input id="ymm" placeholder="26 Lexus ES 500e"></div>
+        <div class="grid">
+          <div class="f"><label for="ymm">Year / make / model</label><input id="ymm" placeholder="26 Lexus ES 500e"></div>
+          <div class="f"><label for="engine">Engine / drive</label><input id="engine" placeholder="2.5L hybrid · AWD"></div>
+        </div>
         <div class="grid">
           <div class="f"><label for="color">Color</label><input id="color"></div>
           <div class="f"><label for="stock">Stock #</label><input id="stock" class="mono"></div>
@@ -373,7 +383,7 @@ function render(){
   $("days").innerHTML=per.map((p,i)=>`<span class="${p.k===t?"today":""}">${DAYN[i]}</span>`).join("");
 
   const q=$("q").value.trim().toLowerCase();
-  let list=q?records.filter(r=>[r.ro,r.tag,r.vin,r.work,r.ymm,(r.jobs||[]).map(j=>j.op+" "+j.desc).join(" ")].join(" ").toLowerCase().includes(q)):inWeek;
+  let list=q?records.filter(r=>[r.ro,r.tag,r.vin,r.work,r.ymm,r.engine,(r.jobs||[]).map(j=>j.op+" "+j.desc).join(" ")].join(" ").toLowerCase().includes(q)):inWeek;
   list=list.slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.updatedAt||0)-(a.updatedAt||0));
   const L=$("list");
   if(!list.length){
@@ -473,12 +483,15 @@ function updateBar(){
   const v=$("vin").value.trim().toUpperCase(),vh=$("vin-hint"),ok=v.length===17&&vinValid(v);
   vh.textContent=!v?"17 characters":v.length!==17?`${v.length} / 17 characters`:ok?"VIN check digit OK":"Check digit doesn't match. Double-check the VIN.";
   vh.classList.toggle("bad",!!v&&!ok);vh.classList.toggle("good",ok);
+  $("vin-decode").hidden=!ok||v===decodedVin;
+  if(v!==decodedVin&&!$("vinfo").hidden&&v!==shownVin)$("vinfo").hidden=true;
 }
 
 /* ---------- open / save ---------- */
 function openForm(r){
   editingId=r?r.id:null;
-  $("view-form").reset();$("recs").innerHTML="";recN=0;$("jobs").innerHTML="";jobN=0;
+  $("view-form").reset();$("vinfo").hidden=true;
+  decodedVin=shownVin=(r&&r.vin)||"";autoYmm=autoEng="";$("recs").innerHTML="";recN=0;$("jobs").innerHTML="";jobN=0;
   $("form-title").textContent=r?`Edit RO ${r.ro||""}`:"New repair order";
   $("form-sub").textContent=r&&r.updatedAt?"Last saved "+new Date(r.updatedAt).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}):"";
   r=r||{date:today(),tech:LS.get("ro-tech")||""};
@@ -488,7 +501,7 @@ function openForm(r){
   ITEMS.forEach(([k,,b])=>{const v=ins[k]||{};if(v.s)$(`i-${k}-${v.s}`).checked=true;$(`i-${k}-note`).value=v.note||"";if(b)$(`i-${k}-mm`).value=v.mm==null?"":v.mm});
   const t=r.tires||{};TIRES.forEach(([k])=>{const v=t[k]||{};$(`t-${k}-mid`).value=v.mid==null?"":v.mid;$(`t-${k}-edge`).value=v.edge==null?"":v.edge});
   (r.recs||[]).forEach(addRec);
-  ["ymm","color","stock","advisor","timein","promised"].forEach(k=>$(k).value=r[k]||"");
+  ["ymm","engine","color","stock","advisor","timein","promised"].forEach(k=>$(k).value=r[k]||"");
   (r.jobs&&r.jobs.length?r.jobs:[null]).forEach(addJob);
   hoursTouched=!!(+r.hours)&&Math.abs(+r.hours-jobSum(r.jobs))>.001;
   syncHours();
@@ -506,7 +519,7 @@ function collect(){
   ITEMS.forEach(([k,,b])=>{const s=$(`i-${k}-pass`).checked?"pass":$(`i-${k}-fail`).checked?"fail":"";const o={s,note:$(`i-${k}-note`).value.trim()};if(b)o.mm=$(`i-${k}-mm`).value;rec.inspection[k]=o});
   TIRES.forEach(([k])=>rec.tires[k]={mid:$(`t-${k}-mid`).value,edge:$(`t-${k}-edge`).value});
   rec.jobs=readJobs();
-  ["ymm","color","stock","advisor","timein","promised"].forEach(k=>rec[k]=$(k).value.trim());
+  ["ymm","engine","color","stock","advisor","timein","promised"].forEach(k=>rec[k]=$(k).value.trim());
   if(rec.stock)rec.stock=rec.stock.toUpperCase();
   return rec;
 }
@@ -598,12 +611,64 @@ $("vin-file").addEventListener("change",async e=>{
       else if(r.err==="none"){toast("Couldn't find a VIN barcode. Try closer, in good light.");return}}
     if(!vin){toast("Couldn't read a VIN. Try a closer, sharper photo.");return}
     $("vin").value=vin;
-    if(!$("ymm").value&&/^(JTH|JTJ|2T2|58A|58B|JT6|JTB)/.test(vin)){const y=vinYear(vin);if(y)$("ymm").value=String(y).slice(2)+" Lexus "}
     updateBar();
-    toast(vinValid(vin)?`VIN read from ${how}`:"VIN read, but the check digit doesn't match. Compare it to the car.");
+    if(vinValid(vin)){toast(`VIN read from ${how}. Looking up vehicle…`);await runDecode(vin)}
+    else toast("VIN read, but the check digit doesn't match. Compare it to the car.");
   }catch(err){toast("Couldn't open that photo. Try again.")}
   finally{b.disabled=false;b.textContent="Scan"}
 });
+
+/* ---------- VIN decode ---------- */
+let decodedVin="",shownVin="",autoYmm="",autoEng="";
+function wmiMake(v){const w=v.slice(0,3);
+  if(/^(JTH|JTJ|2T2|58A|58B|58V)$/.test(w))return"Lexus";
+  if(/^(JT|4T|5T|2T|3T|5Y)/.test(w))return"Toyota";
+  return""}
+const cap=s=>String(s||"").trim();
+async function decodeVin(vin){
+  const year=vinYear(vin),make=wmiMake(vin);
+  if(!inClaude){
+    try{const r=await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${vin}?format=json`);
+      const v=((await r.json()).Results||[])[0]||{};
+      if(v.Make&&v.Model){
+        const disp=v.DisplacementL?(+v.DisplacementL).toFixed(1)+"L":"";
+        const cyl=v.EngineCylinders?v.EngineCylinders+"-cyl":"";
+        const el=cap(v.ElectrificationLevel),elec=/^BEV/i.test(el)?"Electric":/PHEV/i.test(el)?"Plug-in hybrid":/HEV/i.test(el)?"Hybrid":"";
+        const fuel=!elec&&v.FuelTypePrimary&&!/gasoline/i.test(v.FuelTypePrimary)?v.FuelTypePrimary:"";
+        return{src:"NHTSA",year:v.ModelYear||year,make:titleCase(v.Make),model:cap(v.Model),trim:cap(v.Trim||v.Series),
+          engine:[disp,cyl,elec||fuel].filter(Boolean).join(" "),drive:shortDrive(v.DriveType),body:cap(v.BodyClass).split("/")[0]}}
+    }catch(e){}
+  }
+  let sample=null;try{sample=inClaude&&await window.claude.use("sample")}catch(e){}
+  if(sample){
+    try{const o=await sample.json(`Decode this vehicle VIN: ${vin}. Its 10th character gives model year ${year||"unknown"}${make?`, and its WMI indicates ${make}`:""}.
+Using the manufacturer's VIN structure, identify the vehicle. Reply as JSON: {"make":"","model":"","trim":"","engine":"","drive":"","body":""}.
+engine: short, like "2.5L 4-cyl hybrid" or "3.5L V6 turbo". drive: FWD, RWD, AWD or 4WD. body: like "Sedan" or "SUV".
+Leave any field as "" unless you are confident it is correct for this exact VIN. Never guess color.`,{modelTier:"default"});
+      if(o&&(o.model||o.make))return{src:"Claude",year,make:cap(o.make)||make,model:cap(o.model),trim:cap(o.trim),engine:cap(o.engine),drive:shortDrive(o.drive),body:cap(o.body)}}
+    catch(e){if(e&&e.code==="not_granted")return{src:"local",year,make,denied:true}}
+  }
+  return{src:"local",year,make}
+}
+function titleCase(s){s=cap(s);return s.length<=4&&s===s.toUpperCase()&&!/LEXUS/.test(s)?s:s.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase())}
+function shortDrive(d){d=cap(d);if(!d)return"";if(/all|awd/i.test(d))return"AWD";if(/4x4|4wd|four/i.test(d))return"4WD";if(/front|fwd/i.test(d))return"FWD";if(/rear|rwd/i.test(d))return"RWD";return d}
+async function runDecode(vin){
+  const b=$("vin-decode");b.disabled=true;b.textContent="Looking up…";
+  try{
+    const d=await decodeVin(vin);
+    const ymm=[d.year?String(d.year).slice(2):"",d.make,d.model,d.trim].filter(Boolean).join(" ");
+    const eng=[d.engine,d.drive].filter(Boolean).join(" · ");
+    if(ymm&&(!$("ymm").value.trim()||$("ymm").value===autoYmm)){$("ymm").value=ymm;autoYmm=ymm}
+    if(eng&&(!$("engine").value.trim()||$("engine").value===autoEng)){$("engine").value=eng;autoEng=eng}
+    decodedVin=shownVin=vin;
+    $("vinfo-main").textContent=[d.year,d.make,d.model,d.trim].filter(Boolean).join(" ")||"Vehicle not identified";
+    $("vinfo-sub").textContent=[eng,d.body].filter(Boolean).join(" · ")+(eng||d.body?"  —  ":"")+
+      (d.src==="NHTSA"?"From NHTSA":d.src==="Claude"?"Decoded by Claude. Check trim against the car.":d.denied?"Year and make only. Allow Claude to decode the full vehicle.":"Year and make only. Fill in the model.");
+    $("vinfo").hidden=false;
+    toast(d.model?"Vehicle filled in from VIN":"Year and make filled in");
+  }finally{b.disabled=false;b.textContent="Look up vehicle from VIN";updateBar()}
+}
+$("vin-decode").onclick=()=>{const v=$("vin").value.trim().toUpperCase();if(vinValid(v))runDecode(v)};
 
 /* ---------- PDF (printed-RO layout) ---------- */
 function mdy(s){if(!s)return"";const[y,m,d]=s.slice(0,10).split("-");return`${m}/${d}/${y.slice(2)}`}
@@ -631,8 +696,8 @@ function makePDF(r){
 
   /* vehicle / customer grid */
   const R=24;
-  let x=M;[["Vehicle I.D. No.",170,r.vin],["Year/Make/Model",243,r.ymm],["Stock No.",70,r.stock],["R.O. No.",65,r.ro]]
-    .forEach(([l,w,v])=>{cell(x,y,w,R,l,v,l==="Year/Make/Model"?8.5:9.5);x+=w});
+  let x=M;[["Vehicle I.D. No.",170,r.vin],["Year/Make/Model",243,[r.ymm,r.engine].filter(Boolean).join(" · ")],["Stock No.",70,r.stock],["R.O. No.",65,r.ro]]
+    .forEach(([l,w,v])=>{cell(x,y,w,R,l,v,l==="Year/Make/Model"?(String(v||"").length>40?7:8.5):9.5);x+=w});
   y+=R;
   d.setDrawColor(30);d.setLineWidth(.7);d.rect(M,y,230,R*2);lab("Tag No.",M+3,y+7);
   if(r.tag)val(r.tag,M+115,y+34,22,"center");
@@ -718,7 +783,7 @@ $("pdf").onclick=async()=>{
 
 /* ---------- CSV export ---------- */
 $("export").onclick=async()=>{
-  const cols=["Date","RO","Tag","VIN","Miles","Tech","Flagged hrs","Work performed","Maint reset",...ITEMS.map(i=>i[1]),"Front brakes mm","Rear brakes mm",...TIRES.flatMap(([,n])=>[n+" mid",n+" edge"]),"Recommendations","Job lines","Year/Make/Model","Advisor"];
+  const cols=["Date","RO","Tag","VIN","Miles","Tech","Flagged hrs","Work performed","Maint reset",...ITEMS.map(i=>i[1]),"Front brakes mm","Rear brakes mm",...TIRES.flatMap(([,n])=>[n+" mid",n+" edge"]),"Recommendations","Job lines","Year/Make/Model","Engine/drive","Advisor"];
   const q=v=>`"${String(v==null?"":v).replace(/"/g,'""')}"`;
   const rows=records.slice().sort((a,b)=>(a.date||"").localeCompare(b.date||"")).map(r=>{const i=r.inspection||{},t=r.tires||{};
     return[r.date,r.ro,r.tag,r.vin,r.miles,r.tech,h1(r.hours),r.work,r.maintReset?"Yes":"",
@@ -726,7 +791,7 @@ $("export").onclick=async()=>{
       (i.frontBrakes||{}).mm,(i.rearBrakes||{}).mm,...TIRES.flatMap(([k])=>[(t[k]||{}).mid,(t[k]||{}).edge]),
       (r.recs||[]).map(x=>[x.qt&&x.qt+"x",x.desc,x.part,x.price&&"$"+x.price,x.hrs&&x.hrs+"h"].filter(Boolean).join(" ")).join(" | "),
       (r.jobs||[]).map(j=>[j.type,j.op,j.desc,j.hrs&&j.hrs+"h"].filter(Boolean).join(" ")).join(" | "),
-      r.ymm,r.advisor].map(q).join(",")});
+      r.ymm,r.engine,r.advisor].map(q).join(",")});
   try{await downloads.save({filename:`ro-log-${today()}.csv`,data:[cols.map(q).join(","),...rows].join("\n")});}catch(e){}
 };
 
