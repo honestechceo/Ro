@@ -859,7 +859,10 @@ async function boot(){
   let db=null;
   try{ if(window.claude&&window.claude.use) db=await window.claude.use("db") }catch(e){}
   try{ if(window.claude&&window.claude.use)downloads=await window.claude.use("downloads") }catch(e){}
-  if(!downloads&&!inClaude)downloads={save:async({filename,data})=>{const blob=new Blob([data],{type:/\.pdf$/.test(filename)?"application/pdf":/\.json$/.test(filename)?"application/json":"text/csv"});
+  if(!downloads&&!inClaude)downloads={save:async({filename,data})=>{const type=/\.pdf$/.test(filename)?"application/pdf":/\.json$/.test(filename)?"application/json":"text/csv";const blob=new Blob([data],{type});
+    try{const file=new File([blob],filename,{type});
+      if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:filename});return}}
+    catch(e){if(e&&e.name==="AbortError")return}
     const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}};
   $("export").hidden=!downloads;$("pdf").hidden=!downloads;$("backup").hidden=!downloads;
   try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist().catch(()=>{})}catch(e){}
@@ -1133,6 +1136,7 @@ function updateBar(){
 
 /* ---------- open / save ---------- */
 function openForm(r){
+  if(!window.jspdf&&!$("pdf").hidden)loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js","jspdf");
   if(r&&r.kind==="hours"){openHours(r);return}
   editingId=r?r.id:null;
   $("view-form").reset();$("vinfo").hidden=true;
@@ -1182,14 +1186,29 @@ async function save(){
   try{await persist(rec);toast(`Saved RO ${ro} · ${h1(rec.hours)} hrs`);
     if(curView==="log"){const ws=weekStart(0);weekOffset=Math.floor((parse(rec.date)-ws)/(7*864e5));if(weekOffset>0)weekOffset=0}
     if(curView==="cal")calSel=rec.date;
-    back();
+    clearDraft();back();
   }catch(e){toast(e&&e.code==="quota_exceeded"?"Storage is full. Delete old ROs, then save again.":e&&e.code==="storage"?"This device couldn't save the RO. Remove a background photo in Settings, then try again.":"Couldn't save. Check your connection and tap Save again.")}
   finally{b.disabled=false;b.textContent="Save RO"}
 }
 let armT;
 $("del").onclick=async()=>{const d=$("del");
   if(!d.classList.contains("armed")){d.classList.add("armed");d.textContent="Tap again to delete";clearTimeout(armT);armT=setTimeout(()=>{d.classList.remove("armed");d.textContent="Delete this RO"},4000);return}
-  try{await remove(editingId);toast("RO deleted");back()}catch(e){toast("Couldn't delete. Try again.")}};
+  try{await remove(editingId);toast("RO deleted");clearDraft();back()}catch(e){toast("Couldn't delete. Try again.")}};
+
+/* ---------- draft: keep the open RO safe if the phone reloads the app ---------- */
+const DRAFT="ro-draft";let draftT;
+function writeDraft(){if($("view-form").hidden)return;try{LS.set(DRAFT,{rec:collect(),isNew:!editingId,ts:Date.now(),from:curView})}catch(e){}}
+function saveDraft(now){clearTimeout(draftT);if(now===true)writeDraft();else draftT=setTimeout(writeDraft,400)}
+function clearDraft(){clearTimeout(draftT);try{localStorage.removeItem(DRAFT)}catch(e){}}
+["input","change"].forEach(ev=>$("view-form").addEventListener(ev,saveDraft));
+$("view-form").addEventListener("click",()=>setTimeout(saveDraft,0));
+document.addEventListener("visibilitychange",()=>{if(document.hidden)saveDraft(true)});
+window.addEventListener("pagehide",()=>saveDraft(true));
+function restoreDraft(){const d=LS.get(DRAFT);if(!d||!d.rec)return;
+  if(Date.now()-(d.ts||0)>7*864e5){clearDraft();return}
+  curView=d.from&&d.from!=="form"?d.from:"log";openForm(d.rec);
+  if(d.isNew){editingId=null;$("del").hidden=true;$("form-title").textContent="New repair order"}
+  toast("Picked up the RO you were working on")}
 
 /* ---------- nav ---------- */
 let curView="log";
@@ -1205,7 +1224,7 @@ $("tab-new").onclick=()=>openForm(null);
 $("tab-cal").onclick=()=>{show("cal");renderCal();window.scrollTo(0,0)};
 $("tab-set").onclick=()=>{show("set");fillLookForm();renderAdvList();fillDealer();window.scrollTo(0,0)};
 $("tab-pay").onclick=()=>{show("pay");renderPay();window.scrollTo(0,0)};
-$("cancel").onclick=back;
+$("cancel").onclick=()=>{clearDraft();back()};
 $("save").onclick=save;
 $("wk-start").value=String(startDow);
 $("wk-start").addEventListener("change",async()=>{
@@ -1996,12 +2015,15 @@ function makePDF(r){
 }
 $("pdf").onclick=async()=>{
   const ro=$("ro").value.trim();if(!ro){$("ro").focus();toast("Enter the RO number first");return}
+  if(!$("date").value){$("date").focus();toast("Pick the RO date");return}
   if(!window.jspdf){toast("Preparing PDF…");
-    const ok=await new Promise(res=>{const s=document.createElement("script");s.src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";s.onload=()=>res(true);s.onerror=()=>res(false);document.head.appendChild(s)});
-    if(!ok||!window.jspdf){toast("PDF tool didn't load. Check your connection and try again.");return}}
-  try{const doc=makePDF(collect());
-    await downloads.save({filename:`RO-${ro.replace(/[^\w-]/g,"")}.pdf`,data:doc.output("arraybuffer")});}
-  catch(e){if(e&&e.code&&e.code!=="declined"&&e.code!=="cancelled")toast("Couldn't create the PDF. Try again.")}
+    if(!await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js","jspdf")){toast("PDF tool didn't load. Check your connection and try again.");return}}
+  const rec=collect();
+  try{await persist(rec);editingId=rec.id;$("del").hidden=false;$("form-title").textContent=`Edit RO ${ro}`;clearDraft();saveDraft(true)}
+  catch(e){toast("Couldn't save the RO first. Try Save RO, then PDF.");return}
+  try{const doc=makePDF(rec);
+    await downloads.save({filename:`RO-${ro.replace(/[^\w-]/g,"")}.pdf`,data:doc.output("arraybuffer")});toast(`RO ${ro} saved · PDF ready`)}
+  catch(e){if(e&&e.code&&e.code!=="declined"&&e.code!=="cancelled")toast("RO saved, but the PDF didn't open. Tap PDF again.")}
 };
 
 /* ---------- CSV export ---------- */
@@ -2021,7 +2043,7 @@ $("export").onclick=async()=>{
   try{await downloads.save({filename:`ro-log-${today()}.csv`,data:[cols.map(q).join(","),...rows].join("\n")});}catch(e){}
 };
 
-buildTicks();fillPrefsForm();applyMake();render();boot();loadPhotos();swipeTip();
+buildTicks();fillPrefsForm();applyMake();render();boot();loadPhotos();swipeTip();restoreDraft();
 })();
 </script>
 
