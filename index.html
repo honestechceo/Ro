@@ -225,10 +225,10 @@ main{padding-block:16px calc(120px + env(safe-area-inset-bottom,0px))}
 .pat-grid{background-image:linear-gradient(var(--pat) 1px,transparent 1px),linear-gradient(90deg,var(--pat) 1px,transparent 1px);background-size:22px 22px}
 .pat-tread{background-image:linear-gradient(135deg,var(--sheen) 25%,transparent 25%),linear-gradient(225deg,var(--sheen) 25%,transparent 25%),linear-gradient(315deg,var(--pat) 25%,transparent 25%),linear-gradient(45deg,var(--pat) 25%,transparent 25%);background-size:16px 16px}
 .pat-carbon{background-image:linear-gradient(27deg,var(--pat) 5px,transparent 5px),linear-gradient(207deg,var(--pat) 5px,transparent 5px),linear-gradient(27deg,var(--sheen) 5px,transparent 5px),linear-gradient(207deg,var(--sheen) 5px,transparent 5px),linear-gradient(90deg,var(--pat) 10px,transparent 10px),linear-gradient(var(--pat) 25%,transparent 25%,transparent 50%,var(--pat) 50%,var(--pat) 75%,transparent 75%);background-size:20px 20px}
-body.pat-steel{background-attachment:fixed}
+.bgfix{position:fixed;top:0;left:0;right:0;bottom:0;height:100lvh;z-index:-1;pointer-events:none;background-color:var(--bg);transform:translateZ(0)}
 body.has-photo .backupnote,body.has-photo .daygroup h3{background:var(--surface);padding:4px 8px;border-radius:6px;justify-self:start}
 body.has-photo .daygroup h3{justify-self:stretch}
-body.has-photo{background-size:cover;background-position:center;background-attachment:fixed}
+.bgfix.has-photo{background-size:cover;background-position:center}
 
 /* ---- polish layer ---- */
 .hbar{padding-block:10px}
@@ -444,6 +444,7 @@ body.has-photo{background-size:cover;background-position:center;background-attac
 
 </head>
 <body>
+<div class="bgfix" id="bgfix" aria-hidden="true"></div>
 <header>
   <div class="wrap hbar">
     <div class="brand"><span class="mark" aria-hidden="true">RO</span><div class="bt"><h1>RO Log</h1><span class="hdate" id="h-date"></span></div></div>
@@ -1271,11 +1272,12 @@ function applyLook(){
     if(tint){T.bg=mix(T.bg,L.bgHex,dark?.22:.2);T.sunk=mix(T.sunk,L.bgHex,dark?.1:.06)}
     Object.entries(T).forEach(([k,v])=>rs.setProperty("--"+k,v));rs.setProperty("color-scheme",dark?"dark":"light");
   }
-  const b=document.body;BGS.forEach(([k])=>b.classList.remove("pat-"+k));b.classList.remove("has-photo");b.style.backgroundImage="";
+  const b=$("bgfix");BGS.forEach(([k])=>{b.classList.remove("pat-"+k);document.body.classList.remove("pat-"+k)});b.classList.remove("has-photo");b.style.backgroundImage="";document.body.style.backgroundImage="";
   const photo=L.bg==="photo"?LS.get("ro-bgphoto"):null;
   if(photo){const c=hexRgb(dark?DARK.bg:LIGHT.bg),v=`rgba(${c.join(",")},${(+L.dim||70)/100})`;
     b.classList.add("has-photo");b.style.backgroundImage=`linear-gradient(${v},${v}),url("${photo}")`}
   else if(L.bg!=="plain"&&L.bg!=="photo")b.classList.add("pat-"+L.bg);
+  document.body.classList.toggle("has-photo",!!photo);
   const h=document.querySelector(".hero");
   if(h){HEROS.forEach(([k])=>h.classList.remove("h-"+k));h.style.backgroundImage="";
     const hp=L.hero==="photo"?LS.get("ro-herophoto"):null;
