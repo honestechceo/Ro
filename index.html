@@ -277,7 +277,15 @@ body.has-photo{background-size:cover;background-position:center;background-attac
 .h-accent{background:radial-gradient(120% 95% at 50% 0%,color-mix(in srgb,var(--hero-accent) 42%,#0A1018),#06090D 85%)!important}
 .h-carbon{background-color:#111316!important;background-image:linear-gradient(27deg,rgba(0,0,0,.45) 5px,transparent 5px),linear-gradient(207deg,rgba(0,0,0,.45) 5px,transparent 5px),linear-gradient(27deg,rgba(255,255,255,.045) 5px,transparent 5px),linear-gradient(207deg,rgba(255,255,255,.045) 5px,transparent 5px),linear-gradient(90deg,#16191D 10px,transparent 10px),linear-gradient(#17191C 25%,#131518 25%,#131518 50%,transparent 50%,transparent 75%,#1A1D21 75%,#1A1D21)!important;background-size:20px 20px!important}
 .h-steel{background:repeating-linear-gradient(90deg,rgba(255,255,255,.035) 0 1px,transparent 1px 3px),linear-gradient(160deg,#3B4452 0%,#1C222B 55%,#0E1217 100%)!important}
-.h-glass{background:rgba(10,15,21,.52)!important;-webkit-backdrop-filter:blur(18px) saturate(1.3);backdrop-filter:blur(18px) saturate(1.3);border-color:rgba(255,255,255,.16)!important}
+.h-glass{background:rgba(8,12,17,var(--glass-a,.25))!important;-webkit-backdrop-filter:blur(6px) saturate(1.2);backdrop-filter:blur(6px) saturate(1.2);border-color:rgba(255,255,255,.22)!important}
+.h-glass .g-read b,.h-glass .mini b,.h-glass .range,.h-glass .bar em{text-shadow:0 1px 3px rgba(0,0,0,.75)}
+.h-glass .g-read span,.h-glass .g-goal,.h-glass .mini span,.h-glass .lbl,.h-glass .days span,.h-glass .wkstart,.h-glass .herolink{color:#E3EAF1;text-shadow:0 1px 3px rgba(0,0,0,.85)}
+.h-color{background-color:#0A0F14!important}
+.bgtiles b.h-color{background:conic-gradient(from 200deg,#2A4A6B,#6B2A4A,#4A6B2A,#2A4A6B)!important}
+.bgtiles b.pat-tint{background:conic-gradient(from 200deg,#BFD3E6,#E6C9BF,#CFE6BF,#BFD3E6)}
+.colorrow{display:flex;align-items:center;gap:10px;font-size:.85rem;font-weight:500}
+.colorrow input[type=color]{width:56px;height:36px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:2px;cursor:pointer}
+.swatches .cpick i{background:conic-gradient(#e53935,#fdd835,#43a047,#1e88e5,#8e24aa,#e53935)!important}
 .h-photo{background-color:#0A0F14!important;background-size:cover!important;background-position:center!important}
 .bgtiles b.h-midnight,.bgtiles b.h-accent,.bgtiles b.h-carbon,.bgtiles b.h-steel,.bgtiles b.h-glass{border-color:transparent}
 .bgtiles b.h-midnight{background:radial-gradient(120% 90% at 50% 0%,var(--hero1),var(--hero2))}
@@ -318,6 +326,46 @@ body.has-photo{background-size:cover;background-position:center;background-attac
 .fab svg{width:28px;height:28px;stroke-width:2.6}
 .fab[aria-selected="true"]{outline:3px solid color-mix(in srgb,var(--accent) 35%,transparent);outline-offset:3px}
 .toast{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+.calcard{gap:12px}
+.todaybtn{width:auto!important;padding:0 10px;font-size:.8rem!important;font-weight:600}
+.csum{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.csum div{display:grid;gap:2px;min-width:0}
+.csum b{font:700 1.4rem/1 var(--f-display);font-variant-numeric:tabular-nums}
+.csum span{font-size:.68rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal{display:grid;gap:4px}
+.cal-h,.cal-r{display:grid;grid-template-columns:repeat(7,minmax(0,1fr)) minmax(0,1.15fr);gap:4px}
+.cal-h span{text-align:center;font:600 .7rem var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.cal-h span:last-child{color:var(--accent)}
+.cd,.cw{position:relative;display:grid;align-content:start;justify-items:center;gap:1px;min-height:54px;padding:5px 0 4px;border-radius:9px;border:1px solid var(--line);background:var(--sunk);color:var(--ink);font-variant-numeric:tabular-nums;overflow:hidden}
+.cd::before{content:"";position:absolute;inset:0;background:var(--accent);opacity:calc(var(--heat,0)*.5);pointer-events:none}
+.cd>*{position:relative}
+.cd .dn{font-size:.72rem;color:var(--muted);font-weight:600}
+.cd b{font:700 .95rem/1.1 var(--f-display)}
+.cd i{font-style:normal;font-size:.6rem;line-height:1;letter-spacing:1px;color:var(--ink);opacity:.7}
+.cd.has .dn{color:var(--ink)}
+.cd.out{opacity:.45}
+.cd.today{border-color:var(--accent);border-width:2px}
+.cd.sel{outline:2px solid var(--ink);outline-offset:1px}
+.cw{align-content:center;background:var(--surface);font:700 .9rem var(--f-display);color:var(--muted)}
+.cw.has{color:var(--accent);border-color:var(--accent)}
+.calhint{margin-top:-4px}
+.cday{display:grid;gap:10px}
+.cday .daygroup>.btn{justify-self:stretch}
+.advpair{display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:8px}
+.advpair input{width:100%;min-width:0;height:44px;border:1px solid var(--line);border-radius:8px;background:var(--sunk);padding:0 12px}
+.advchips{display:flex;flex-wrap:wrap;gap:6px}
+.advchips:empty{display:none}
+.achip{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-size:.85rem;font-weight:500;color:var(--ink)}
+.achip small{font-family:var(--f-mono);color:var(--muted);font-size:.75rem}
+.achip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.achip.on small{color:var(--accent-ink);opacity:.8}
+.achip.save{border-style:dashed;color:var(--accent)}
+.advlist{display:grid;gap:6px}
+.advlist:empty::before{content:"No advisors yet. Add them below.";font-size:.85rem;color:var(--muted)}
+.advrow{display:grid;grid-template-columns:minmax(0,1fr) 100px 40px;gap:6px}
+.advrow input,.advadd input{width:100%;min-width:0;height:42px;border:1px solid var(--line);border-radius:8px;background:var(--sunk);padding:0 10px}
+.advrow .x{height:42px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--muted);font-size:1.1rem}
+.advadd{display:grid;grid-template-columns:minmax(0,1fr) 100px auto;gap:6px}
 .toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-top:1px solid var(--line);font-weight:500}
 .toggle input{width:22px;height:22px;accent-color:var(--accent)}
 
@@ -473,7 +521,27 @@ body.has-photo{background-size:cover;background-position:center;background-attac
     </div>
   </section>
 
+  <section class="view" id="view-cal" hidden>
+    <div class="week calcard">
+      <div class="weekhead">
+        <div><div class="lbl">Calendar</div><div class="range" id="c-month"></div></div>
+        <div class="nav"><button id="c-prev" aria-label="Previous month">‹</button><button id="c-today" class="todaybtn">Today</button><button id="c-next" aria-label="Next month">›</button></div>
+      </div>
+      <div class="csum" id="c-sum"></div>
+      <div class="cal" id="cal"></div>
+      <div class="hint calhint">Rows are your pay weeks. Tap a day to see its ROs, or a week total to open that week.</div>
+    </div>
+    <div class="cday" id="c-day"></div>
+  </section>
+
   <section class="view" id="view-set" hidden>
+    <div class="sec">
+      <h2>Advisors <small>Tap one on an RO to fill it in</small></h2>
+      <div class="body">
+        <div class="advlist" id="advs"></div>
+        <div class="advadd"><input id="adv-name" placeholder="Advisor name" autocomplete="off" aria-label="Advisor name"><input id="adv-no" class="mono" placeholder="Adv #" inputmode="numeric" autocomplete="off" aria-label="Advisor number"><button type="button" class="btn" id="adv-add">+ Add</button></div>
+      </div>
+    </div>
     <div class="sec">
       <h2>Appearance <small id="look-where"></small></h2>
       <div class="body">
@@ -485,8 +553,10 @@ body.has-photo{background-size:cover;background-position:center;background-attac
         </span>
         <div class="flabel">Accent color</div>
         <div class="swatches" id="swatches" role="radiogroup" aria-label="Accent color"></div>
+        <label class="colorrow" id="accent-row" hidden>Pick your accent <input type="color" id="accent-hex"></label>
         <div class="flabel">Background</div>
         <div class="bgtiles" id="bgtiles" role="radiogroup" aria-label="Background"></div>
+        <label class="colorrow" id="bgtint-row" hidden>Pick a tint <input type="color" id="bg-hex"></label>
         <input type="file" id="bg-file" accept="image/*" hidden>
         <div class="f" id="dim-f" hidden>
           <label for="bg-dim">Photo dimming <span id="dim-val"></span></label>
@@ -496,6 +566,8 @@ body.has-photo{background-size:cover;background-position:center;background-attac
         </div>
         <div class="flabel">Dashboard card</div>
         <div class="bgtiles" id="herotiles" role="radiogroup" aria-label="Dashboard card background"></div>
+        <label class="colorrow" id="herohex-row" hidden>Pick a card color <input type="color" id="hero-hex"></label>
+        <div class="f" id="glass-f" hidden><label for="glass-clear">See-through <span id="glass-val"></span></label><input type="range" id="glass-clear" min="0" max="100" step="5" style="width:100%;accent-color:var(--accent)"></div>
         <input type="file" id="hero-file" accept="image/*" hidden>
         <div class="f" id="hdim-f" hidden>
           <label for="hero-dim">Card photo dimming <span id="hdim-val"></span></label>
@@ -541,8 +613,12 @@ body.has-photo{background-size:cover;background-position:center;background-attac
     </div>
 
     <div class="sec">
-      <h2>Vehicle details <small>Optional, prints on the PDF</small></h2>
+      <h2>Advisor &amp; vehicle <small>Prints on the PDF</small></h2>
       <div class="body">
+        <div class="f advf"><label for="advisor">Advisor</label>
+          <div class="advpair"><input id="advisor" placeholder="Name" autocomplete="off"><input id="advisorNo" class="mono" placeholder="Adv #" inputmode="numeric" autocomplete="off" aria-label="Advisor number"></div>
+          <div class="advchips" id="advchips"></div>
+        </div>
         <div class="grid">
           <div class="f"><label for="ymm">Year / make / model</label><input id="ymm" placeholder="26 Lexus ES 500e"></div>
           <div class="f"><label for="engine">Engine / drive</label><input id="engine" placeholder="2.5L hybrid · AWD"></div>
@@ -550,7 +626,7 @@ body.has-photo{background-size:cover;background-position:center;background-attac
         <div class="grid">
           <div class="f"><label for="color">Color</label><input id="color"></div>
           <div class="f"><label for="stock">Stock #</label><input id="stock" class="mono"></div>
-          <div class="f"><label for="advisor">Advisor</label><input id="advisor"></div>
+
         </div>
         <div class="grid">
           <div class="f"><label for="timein">Time received</label><input id="timein" type="time"></div>
@@ -603,7 +679,7 @@ body.has-photo{background-size:cover;background-position:center;background-attac
     <button class="dk" role="tab" id="tab-log" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg><span>Log</span></button>
     <button class="dk" role="tab" id="tab-pay" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M16.5 7.5c-.8-1.3-2.4-2-4.5-2-2.6 0-4.2 1.3-4.2 3.1 0 4.4 9 2.3 9 6.8 0 1.9-1.8 3.2-4.6 3.2-2.3 0-4-.8-4.8-2.3"/></svg><span>Pay</span></button>
     <button class="fab" role="tab" id="tab-new" aria-selected="false" aria-label="New RO"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
-    <button class="dk" id="tab-find" aria-label="Search ROs"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg><span>Search</span></button>
+    <button class="dk" role="tab" id="tab-cal" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Calendar</span></button>
     <button class="dk" id="tab-set" aria-pressed="false" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.6a.5.5 0 0 0 .1-.6l-1.9-3.3a.5.5 0 0 0-.6-.2l-2.4 1a7.3 7.3 0 0 0-1.7-1L14.5 2.8a.5.5 0 0 0-.5-.4h-3.8a.5.5 0 0 0-.5.4L9.4 5.3a7.3 7.3 0 0 0-1.7 1l-2.4-1a.5.5 0 0 0-.6.2L2.8 8.8a.5.5 0 0 0 .1.6l2 1.6a7.6 7.6 0 0 0 0 2l-2 1.6a.5.5 0 0 0-.1.6l1.9 3.3a.5.5 0 0 0 .6.2l2.4-1a7.3 7.3 0 0 0 1.7 1l.4 2.5a.5.5 0 0 0 .5.4h3.8a.5.5 0 0 0 .5-.4l.4-2.5a7.3 7.3 0 0 0 1.7-1l2.4 1a.5.5 0 0 0 .6-.2l1.9-3.3a.5.5 0 0 0-.1-.6zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg><span>Settings</span></button>
   </div>
 </nav>
@@ -649,7 +725,7 @@ async function boot(){
   prefsDoc.onSnapshot(sn=>{if(!sn.exists)return;
     prefs=Object.assign({},PREF0,sn.data()||{});LS.set("ro-prefs",prefs);
     if(Number.isInteger(prefs.weekStart)&&prefs.weekStart!==startDow){startDow=prefs.weekStart;weekOffset=0}
-    $("wk-start").value=String(startDow);fillPrefsForm();applyLook();if(!$("view-set").hidden)fillLookForm();render();renderPay()},()=>{});
+    $("wk-start").value=String(startDow);fillPrefsForm();applyLook();if(!$("view-set").hidden){fillLookForm();renderAdvList()}if(!$("view-form").hidden)renderAdvChips();render();renderPay()},()=>{});
   col.onSnapshot(snap=>{
     records=snap.docs.map(d=>Object.assign({id:d.id},d.data()));
     LS.set("ro-cache",records);
@@ -684,7 +760,7 @@ function buildTicks(){const g=$("g-ticks");if(!g)return;let h="";
     h+=`<line x1="${(cx+r1*Math.cos(a)).toFixed(1)}" y1="${(cy-r1*Math.sin(a)).toFixed(1)}" x2="${(cx+r2*Math.cos(a)).toFixed(1)}" y2="${(cy-r2*Math.sin(a)).toFixed(1)}" class="${i%5?"t":"t big"}"/>`}
   g.innerHTML=h}
 function render(){
-  renderBackup();renderPay();
+  renderBackup();renderPay();renderCal();
   const ws=weekStart(weekOffset), we=new Date(ws);we.setDate(we.getDate()+6);
   const wsI=iso(ws), weI=iso(we), t=today();
   $("w-range").textContent=fmt(ws,{month:"short",day:"numeric"})+" – "+fmt(we,{month:"short",day:"numeric",year:"numeric"});
@@ -710,7 +786,7 @@ function render(){
   $("days").innerHTML=per.map((p,i)=>`<span class="${p.k===t?"today":""}">${DOW[(startDow+i)%7]}</span>`).join("");
 
   const q=$("q").value.trim().toLowerCase();
-  let list=q?records.filter(r=>[r.ro,r.tag,r.vin,r.work,r.ymm,r.engine,(r.jobs||[]).map(j=>j.op+" "+j.desc).join(" ")].join(" ").toLowerCase().includes(q)):inWeek;
+  let list=q?records.filter(r=>[r.ro,r.tag,r.vin,r.work,r.ymm,r.engine,r.advisor,r.advisorNo,(r.jobs||[]).map(j=>j.op+" "+j.desc).join(" ")].join(" ").toLowerCase().includes(q)):inWeek;
   list=list.slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.updatedAt||0)-(a.updatedAt||0));
   const L=$("list");
   if(!list.length){
@@ -722,7 +798,10 @@ function render(){
   L.innerHTML=Object.keys(groups).map(d=>{
     const rs=groups[d], tot=rs.reduce((a,r)=>a+(+r.hours||0),0);
     return `<div class="daygroup"><h3><span>${d?fmt(parse(d),{weekday:"long",month:"short",day:"numeric"}):"No date"}</span><span class="num">${h1(tot)} hrs</span></h3>`+
-    rs.map(r=>{
+    rs.map(roCard).join("")+`</div>`;
+  }).join("");
+}
+function roCard(r){
       const f=failCount(r),p=passCount(r),lt=lowTires(r),recs=(r.recs||[]).filter(x=>x.desc);
       const pills=[f?`<span class="pill fail">${f} failed</span>`:p?`<span class="pill pass">MPI passed</span>`:`<span class="pill">No MPI</span>`];
       if(lt)pills.push(`<span class="pill warn">${lt} low tire reading${lt>1?"s":""}</span>`);
@@ -735,9 +814,7 @@ function render(){
         <span class="id">RO ${esc(r.ro||"—")}${r.tag?`<small>Tag ${esc(r.tag)}</small>`:""}</span>
         <span class="hrs">${h1(r.hours)}<small>hrs</small></span>
         ${r.work?`<span class="work">${esc(r.work)}</span>`:""}
-        <span class="meta">${pills.join("")}${r.vin?`<span class="mono">…${esc(r.vin.slice(-8))}</span>`:""}</span></button>`}).join("")+`</div>`;
-  }).join("");
-}
+        <span class="meta">${pills.join("")}${r.vin?`<span class="mono">…${esc(r.vin.slice(-8))}</span>`:""}</span></button>`}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 
 /* ---------- form build ---------- */
@@ -891,8 +968,9 @@ function openForm(r){
   curItems.forEach(([k,,b])=>{const v=ins[k]||{};if(v.s)$(`i-${k}-${v.s}`).checked=true;$(`i-${k}-note`).value=v.note||"";if(b)$(`i-${k}-mm`).value=v.mm==null?"":v.mm});
   const t=r.tires||{};TIRES.forEach(([k])=>{const v=t[k]||{};$(`t-${k}-mid`).value=v.mid==null?"":v.mid;$(`t-${k}-edge`).value=v.edge==null?"":v.edge});
   (r.recs||[]).forEach(addRec);
-  ["ymm","engine","color","stock","advisor","timein","promised"].forEach(k=>$(k).value=r[k]||"");
+  ["ymm","engine","color","stock","advisor","advisorNo","timein","promised"].forEach(k=>$(k).value=r[k]||"");
   (r.jobs&&r.jobs.length?r.jobs:[null]).forEach(addJob);
+  renderAdvChips();
   hoursTouched=!!(+r.hours)&&Math.abs(+r.hours-jobSum(r.jobs))>.001;
   syncHours();
   $("del").hidden=!editingId;$("del").classList.remove("armed");$("del").textContent="Delete this RO";
@@ -909,7 +987,7 @@ function collect(){
   curItems.forEach(([k,n,b,c])=>{const s=$(`i-${k}-pass`).checked?"pass":$(`i-${k}-fail`).checked?"fail":"";const o={s,note:$(`i-${k}-note`).value.trim()};if(b)o.mm=$(`i-${k}-mm`).value;if(c)o.name=n;rec.inspection[k]=o});
   TIRES.forEach(([k])=>rec.tires[k]={mid:$(`t-${k}-mid`).value,edge:$(`t-${k}-edge`).value});
   rec.jobs=readJobs();
-  ["ymm","engine","color","stock","advisor","timein","promised"].forEach(k=>rec[k]=$(k).value.trim());
+  ["ymm","engine","color","stock","advisor","advisorNo","timein","promised"].forEach(k=>rec[k]=$(k).value.trim());
   if(rec.stock)rec.stock=rec.stock.toUpperCase();
   return rec;
 }
@@ -921,27 +999,32 @@ async function save(){
   if(rec.tech)LS.set("ro-tech",rec.tech);
   const b=$("save");b.disabled=true;b.textContent="Saving…";
   try{await persist(rec);toast(`Saved RO ${ro} · ${h1(rec.hours)} hrs`);
-    const ws=weekStart(0);weekOffset=Math.floor((parse(rec.date)-ws)/(7*864e5));if(weekOffset>0)weekOffset=0;
-    show("log");render();
+    if(curView==="log"){const ws=weekStart(0);weekOffset=Math.floor((parse(rec.date)-ws)/(7*864e5));if(weekOffset>0)weekOffset=0}
+    if(curView==="cal")calSel=rec.date;
+    back();
   }catch(e){toast(e&&e.code==="quota_exceeded"?"Storage is full. Delete old ROs, then save again.":"Couldn't save. Check your connection and tap Save again.")}
   finally{b.disabled=false;b.textContent="Save RO"}
 }
 let armT;
 $("del").onclick=async()=>{const d=$("del");
   if(!d.classList.contains("armed")){d.classList.add("armed");d.textContent="Tap again to delete";clearTimeout(armT);armT=setTimeout(()=>{d.classList.remove("armed");d.textContent="Delete this RO"},4000);return}
-  try{await remove(editingId);toast("RO deleted");show("log");render()}catch(e){toast("Couldn't delete. Try again.")}};
+  try{await remove(editingId);toast("RO deleted");back()}catch(e){toast("Couldn't delete. Try again.")}};
 
 /* ---------- nav ---------- */
+let curView="log";
+function back(){show(curView);if(curView==="cal")renderCal();else if(curView==="pay")renderPay();else render()}
 function show(v){
+  if(v!=="form")curView=v;
+  $("view-cal").hidden=v!=="cal";$("tab-cal").setAttribute("aria-selected",v==="cal");
   $("view-log").hidden=v!=="log";$("view-form").hidden=v!=="form";$("savebar").hidden=v!=="form";$("view-pay").hidden=v!=="pay";$("view-set").hidden=v!=="set";$("tab-set").setAttribute("aria-pressed",v==="set");$("dock").hidden=v==="form";
   $("tab-log").setAttribute("aria-selected",v==="log");$("tab-pay").setAttribute("aria-selected",v==="pay");$("tab-new").setAttribute("aria-selected",v==="form"&&!editingId);
 }
 $("tab-log").onclick=()=>{show("log");render()};
 $("tab-new").onclick=()=>openForm(null);
-$("tab-find").onclick=()=>{show("log");render();const q=$("q");q.scrollIntoView({block:"center",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});setTimeout(()=>q.focus(),250)};
-$("tab-set").onclick=()=>{show("set");fillLookForm();window.scrollTo(0,0)};
+$("tab-cal").onclick=()=>{show("cal");renderCal();window.scrollTo(0,0)};
+$("tab-set").onclick=()=>{show("set");fillLookForm();renderAdvList();window.scrollTo(0,0)};
 $("tab-pay").onclick=()=>{show("pay");renderPay();window.scrollTo(0,0)};
-$("cancel").onclick=()=>{show("log");render()};
+$("cancel").onclick=back;
 $("save").onclick=save;
 $("wk-start").value=String(startDow);
 $("wk-start").addEventListener("change",async()=>{
@@ -955,15 +1038,92 @@ $("list").addEventListener("click",e=>{const b=e.target.closest(".ro");if(b)open
 
 let toastT;function toast(m){const t=$("toast");t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,2600)}
 
+/* ---------- advisors ---------- */
+function advisors(){return(prefs.advisors||[]).filter(a=>a&&(a.name||a.no))}
+function renderAdvList(){
+  if(document.activeElement&&$("advs").contains(document.activeElement))return;
+  $("advs").innerHTML=advisors().map((a,i)=>`<div class="advrow" data-i="${i}"><input value="${esc(a.name)}" data-k="name" aria-label="Advisor name"><input class="mono" value="${esc(a.no)}" data-k="no" inputmode="numeric" aria-label="Advisor number"><button type="button" class="x" aria-label="Remove ${esc(a.name)}">×</button></div>`).join("")}
+function renderAdvChips(){
+  const n=$("advisor").value.trim(),no=$("advisorNo").value.trim(),list=advisors();
+  const known=list.some(a=>a.name.toLowerCase()===n.toLowerCase()&&(!no||String(a.no)===no));
+  $("advchips").innerHTML=list.map((a,i)=>`<button type="button" class="achip${a.name===n&&String(a.no||"")===no?" on":""}" data-i="${i}">${esc(a.name)}${a.no?` <small>#${esc(a.no)}</small>`:""}</button>`).join("")+
+    (n&&!known?`<button type="button" class="achip save" id="adv-save">+ Save ${esc(n)}${no?" #"+esc(no):""}</button>`:"")+
+    (!list.length&&!n?`<span class="hint">Add your advisors in Settings to pick them with one tap.</span>`:"")}
+async function saveAdvisors(list,msg){await savePrefs({advisors:list},true);renderAdvList();renderAdvChips();if(msg)toast(msg)}
+$("advchips").addEventListener("click",e=>{
+  const c=e.target.closest(".achip[data-i]");
+  if(c){const a=advisors()[+c.dataset.i];$("advisor").value=a.name;$("advisorNo").value=a.no||"";renderAdvChips();return}
+  if(e.target.closest("#adv-save")){const n=$("advisor").value.trim(),no=$("advisorNo").value.trim();
+    saveAdvisors([...advisors().filter(a=>!(a.name.toLowerCase()===n.toLowerCase())),{name:n,no}].sort((a,b)=>a.name.localeCompare(b.name)),`${n} saved to your advisors`)}
+});
+$("advisor").addEventListener("input",renderAdvChips);
+$("advisorNo").addEventListener("input",()=>{const no=$("advisorNo").value.trim(),m=advisors().find(a=>String(a.no)===no&&no);
+  if(m&&!$("advisor").value.trim())$("advisor").value=m.name;renderAdvChips()});
+$("adv-add").onclick=()=>{const n=$("adv-name").value.trim().replace(/\s+/g," "),no=$("adv-no").value.trim();
+  if(!n){$("adv-name").focus();toast("Enter the advisor's name");return}
+  if(advisors().some(a=>a.name.toLowerCase()===n.toLowerCase())){toast(`${n} is already on the list`);return}
+  $("adv-name").value="";$("adv-no").value="";
+  saveAdvisors([...advisors(),{name:n,no}].sort((a,b)=>a.name.localeCompare(b.name)),`${n} added`)};
+$("adv-no").addEventListener("keydown",e=>{if(e.key==="Enter")$("adv-add").click()});
+$("advs").addEventListener("change",e=>{const row=e.target.closest(".advrow");if(!row)return;
+  const list=advisors().map(a=>Object.assign({},a)),i=+row.dataset.i;list[i][e.target.dataset.k]=e.target.value.trim();
+  if(!list[i].name&&!list[i].no)list.splice(i,1);saveAdvisors(list,"Advisors saved")});
+$("advs").addEventListener("click",e=>{const x=e.target.closest(".x");if(!x)return;const row=x.closest(".advrow"),list=advisors().slice(),gone=list.splice(+row.dataset.i,1)[0];
+  row.remove();saveAdvisors(list,`${gone.name||"Advisor"} removed`)});
+
+/* ---------- calendar ---------- */
+let calMonth=null,calSel=null;
+function renderCal(){
+  if($("view-cal").hidden)return;
+  const now=new Date(),t=today();if(!calSel)calSel=t;
+  const m=calMonth||new Date(now.getFullYear(),now.getMonth(),1);
+  const first=new Date(m.getFullYear(),m.getMonth(),1),last=new Date(m.getFullYear(),m.getMonth()+1,0);
+  const start=new Date(first);start.setDate(start.getDate()-((first.getDay()-startDow+7)%7));
+  const byDay={};records.forEach(r=>{(byDay[r.date]=byDay[r.date]||[]).push(r)});
+  const hrs=k=>(byDay[k]||[]).reduce((a,r)=>a+(+r.hours||0),0);
+  $("c-month").textContent=fmt(first,{month:"long",year:"numeric"});
+  const mk=iso(first).slice(0,7),mrecs=records.filter(r=>(r.date||"").slice(0,7)===mk);
+  const days=[...new Set(mrecs.map(r=>r.date))],mh=mrecs.reduce((a,r)=>a+(+r.hours||0),0);
+  let best=null;days.forEach(k=>{const h=hrs(k);if(!best||h>best.h)best={k,h}});
+  $("c-sum").innerHTML=`<div><b>${h1(mh)}</b><span>Hours</span></div><div><b>${mrecs.length}</b><span>ROs</span></div><div><b>${days.length?h1(mh/days.length):"0.0"}</b><span>Avg / day</span></div><div><b>${best?h1(best.h):"–"}</b><span>${best?"Best · "+fmt(parse(best.k),{month:"short",day:"numeric"}):"Best day"}</span></div>`;
+  let maxH=8;Object.keys(byDay).forEach(k=>{if(k.slice(0,7)===mk)maxH=Math.max(maxH,hrs(k))});
+  let h=`<div class="cal-h">${[0,1,2,3,4,5,6].map(i=>`<span>${DOW[(startDow+i)%7].slice(0,2)}</span>`).join("")}<span>Wk</span></div>`;
+  const d=new Date(start);
+  while(d<=last){
+    const rowStart=iso(d);let sum=0,cells="";
+    for(let i=0;i<7;i++){const k=iso(d),hh=hrs(k),n=(byDay[k]||[]).length,out=d.getMonth()!==first.getMonth();sum+=hh;
+      cells+=`<button type="button" class="cd${out?" out":""}${k===t?" today":""}${k===calSel?" sel":""}${hh?" has":""}" data-day="${k}" style="--heat:${hh?Math.min(1,.18+hh/maxH*.82).toFixed(2):0}" aria-label="${fmt(d,{weekday:"long",month:"long",day:"numeric"})}: ${h1(hh)} hours, ${n} RO${n===1?"":"s"}"><span class="dn">${d.getDate()}</span>${hh?`<b>${h1(hh)}</b>`:""}${n?`<i>${"•".repeat(Math.min(n,4))}</i>`:""}</button>`;
+      d.setDate(d.getDate()+1)}
+    h+=`<div class="cal-r">${cells}<button type="button" class="cw${sum?" has":""}" data-wk="${rowStart}" aria-label="Pay week starting ${fmt(parse(rowStart),{month:"long",day:"numeric"})}: ${h1(sum)} hours">${sum?h1(sum):"–"}</button></div>`;
+  }
+  $("cal").innerHTML=h;
+  const sel=byDay[calSel]||[],sh=hrs(calSel);
+  $("c-day").innerHTML=`<div class="daygroup"><h3><span>${fmt(parse(calSel),{weekday:"long",month:"short",day:"numeric"})}</span><span class="num">${h1(sh)} hrs</span></h3>`+
+    (sel.length?sel.slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)).map(roCard).join(""):`<div class="empty"><strong>No ROs this day</strong>Tap below to add one dated ${fmt(parse(calSel),{month:"short",day:"numeric"})}.</div>`)+
+    `<button type="button" class="btn primary" id="c-add">+ Add RO for ${fmt(parse(calSel),{month:"short",day:"numeric"})}</button></div>`;
+}
+$("c-prev").onclick=()=>{const m=calMonth||new Date(new Date().getFullYear(),new Date().getMonth(),1);calMonth=new Date(m.getFullYear(),m.getMonth()-1,1);renderCal()};
+$("c-next").onclick=()=>{const m=calMonth||new Date(new Date().getFullYear(),new Date().getMonth(),1);calMonth=new Date(m.getFullYear(),m.getMonth()+1,1);renderCal()};
+$("c-today").onclick=()=>{calMonth=null;calSel=today();renderCal()};
+$("cal").addEventListener("click",e=>{
+  const c=e.target.closest(".cd"),w=e.target.closest(".cw");
+  if(c){calSel=c.dataset.day;const dd=parse(calSel),m=calMonth||new Date();if(dd.getMonth()!==m.getMonth()||dd.getFullYear()!==m.getFullYear())calMonth=new Date(dd.getFullYear(),dd.getMonth(),1);renderCal()}
+  if(w){const off=Math.round((parse(w.dataset.wk)-weekStart(0))/(7*864e5));weekOffset=Math.min(0,off);show("log");render();window.scrollTo(0,0)}
+});
+$("c-day").addEventListener("click",e=>{
+  const b=e.target.closest(".ro");if(b){openForm(records.find(r=>r.id===b.dataset.id));return}
+  if(e.target.closest("#c-add")){openForm(null);$("date").value=calSel}
+});
+
 /* ---------- appearance ---------- */
 const LIGHT={bg:"#EDF0EF",surface:"#FFFFFF",sunk:"#F5F7F6",ink:"#15191D",muted:"#5B6570",line:"#D3D9D7",accent:"#1D4F91","accent-ink":"#FFFFFF","accent-soft":"#E2EAF5",
   pass:"#1D7444","pass-bg":"#E1F1E7",warn:"#9A6514","warn-bg":"#FAEED5",fail:"#B42318","fail-bg":"#FBE3DF",pat:"rgba(21,25,29,.07)",sheen:"rgba(255,255,255,.6)",hero1:"#16263C",hero2:"#0A1320","hero-accent":"#78A6E8"};
 const DARK={bg:"#101316",surface:"#191D21",sunk:"#14181B",ink:"#E7EAEC",muted:"#97A1AB",line:"#2B3238",accent:"#78A6E8","accent-ink":"#0C1828","accent-soft":"#1C2A3C",
   pass:"#5BC98D","pass-bg":"#15301F",warn:"#E5B456","warn-bg":"#33280F",fail:"#F2786A","fail-bg":"#3A1916",pat:"rgba(231,234,236,.06)",sheen:"rgba(255,255,255,.035)",hero1:"#1C2735",hero2:"#10161E","hero-accent":"#78A6E8"};
 const ACCENTS={blue:["Lexus blue","#1D4F91","#78A6E8"],red:["Red","#B42318","#F2786A"],teal:["Teal","#0F6873","#5CC8D2"],orange:["Orange","#A8500B","#F0A35E"],purple:["Purple","#5B3FA8","#AE9BF0"],graphite:["Graphite","#3B4450","#B7C0CA"]};
-const BGS=[["plain","Plain"],["steel","Brushed steel"],["tread","Tread plate"],["carbon","Carbon fiber"],["grid","Blueprint grid"],["photo","Your photo"]];
-const LOOK0={theme:"system",accent:"blue",bg:"plain",dim:70,hero:"midnight",heroDim:55};
-const HEROS=[["midnight","Midnight"],["accent","Accent glow"],["carbon","Carbon fiber"],["steel","Brushed steel"],["glass","Glass"],["photo","Your photo"]];
+const BGS=[["plain","Plain"],["tint","Color tint"],["steel","Brushed steel"],["tread","Tread plate"],["carbon","Carbon fiber"],["grid","Blueprint grid"],["photo","Your photo"]];
+const LOOK0={theme:"system",accent:"blue",bg:"plain",dim:70,hero:"midnight",heroDim:55,glass:70,accentHex:"#E0A030",heroHex:"#2A4A6B",bgHex:"#3E7CB1"};
+const HEROS=[["midnight","Midnight"],["accent","Accent glow"],["color","Custom color"],["carbon","Carbon fiber"],["steel","Brushed steel"],["glass","Glass"],["photo","Your photo"]];
 const mq=window.matchMedia?matchMedia("(prefers-color-scheme: dark)"):{matches:false};
 function look(){return Object.assign({},LOOK0,prefs.look||{})}
 function hexRgb(h){h=h.replace("#","");return[0,2,4].map(i=>parseInt(h.slice(i,i+2),16))}
@@ -973,9 +1133,11 @@ function isDarkNow(L){const h=document.documentElement.getAttribute("data-theme"
 function applyLook(){
   const L=look(),dark=isDarkNow(L),rs=document.documentElement.style;
   Object.keys(LIGHT).forEach(k=>rs.removeProperty("--"+k));rs.removeProperty("color-scheme");
-  if(L.theme!=="system"||L.accent!=="blue"){
-    const T=Object.assign({},dark?DARK:LIGHT),a=ACCENTS[L.accent]||ACCENTS.blue;
+  const tint=L.bg==="tint"&&/^#[0-9a-f]{6}$/i.test(L.bgHex||"");
+  if(L.theme!=="system"||L.accent!=="blue"||tint){
+    const T=Object.assign({},dark?DARK:LIGHT),a=L.accent==="custom"?customAccent(L.accentHex):(ACCENTS[L.accent]||ACCENTS.blue);
     if(L.accent!=="blue"){T["hero-accent"]=a[2];const hb=mix(a[1],"#0A0F14",.72);T.hero1=dark?mix(a[1],"#151B22",.78):hb;T.hero2=dark?"#10161E":mix(a[1],"#05080B",.86);T.accent=dark?a[2]:a[1];T["accent-soft"]=dark?mix(T.accent,T.surface,.8):mix(T.accent,"#FFFFFF",.87);T["accent-ink"]=dark?"#0E1114":"#FFFFFF"}
+    if(tint){T.bg=mix(T.bg,L.bgHex,dark?.22:.2);T.sunk=mix(T.sunk,L.bgHex,dark?.1:.06)}
     Object.entries(T).forEach(([k,v])=>rs.setProperty("--"+k,v));rs.setProperty("color-scheme",dark?"dark":"light");
   }
   const b=document.body;BGS.forEach(([k])=>b.classList.remove("pat-"+k));b.classList.remove("has-photo");b.style.backgroundImage="";
@@ -987,14 +1149,27 @@ function applyLook(){
   if(h){HEROS.forEach(([k])=>h.classList.remove("h-"+k));h.style.backgroundImage="";
     const hp=L.hero==="photo"?LS.get("ro-herophoto"):null;
     if(hp){const a=(+L.heroDim||55)/100;h.classList.add("h-photo");h.style.backgroundImage=`linear-gradient(rgba(6,10,14,${a}),rgba(6,10,14,${Math.min(.95,a+.15)})),url("${hp}")`}
-    else if(L.hero&&L.hero!=="midnight"&&L.hero!=="photo")h.classList.add("h-"+L.hero)}
+    else if(L.hero&&L.hero!=="midnight"&&L.hero!=="photo")h.classList.add("h-"+L.hero);
+    if(L.hero==="color"){const c=darkEnough(L.heroHex||"#2A4A6B");h.style.backgroundImage=`radial-gradient(120% 95% at 50% 0%,${mix(c,"#000000",.15)},${mix(c,"#000000",.72)} 88%)`}
+    const ga=(1-Math.max(0,Math.min(100,+L.glass||0))/100)*.85;h.style.setProperty("--glass-a",ga.toFixed(2))}
 }
+function lum(hex){const[r,g,b]=hexRgb(hex).map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)});return .2126*r+.7152*g+.0722*b}
+function customAccent(hex){hex=/^#[0-9a-f]{6}$/i.test(hex||"")?hex:"#E0A030";
+  let l=hex;while(lum(l)>.18)l=mix(l,"#000000",.12);
+  let d=hex;while(lum(d)<.32)d=mix(d,"#FFFFFF",.12);
+  return["Custom",l,d]}
+function darkEnough(hex){let c=hex;while(lum(c)>.09)c=mix(c,"#000000",.1);return c}
 mq.addEventListener&&mq.addEventListener("change",applyLook);
 try{new MutationObserver(applyLook).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]})}catch(e){}
-$("swatches").innerHTML=Object.entries(ACCENTS).map(([k,[n,l]])=>`<input type="radio" name="look-accent" id="la-${k}" value="${k}"><label for="la-${k}"><i style="background:${l}"></i>${n}</label>`).join("");
+$("swatches").innerHTML=Object.entries(ACCENTS).map(([k,[n,l]])=>`<input type="radio" name="look-accent" id="la-${k}" value="${k}"><label for="la-${k}"><i style="background:${l}"></i>${n}</label>`).join("")+
+  `<input type="radio" name="look-accent" id="la-custom" value="custom"><label for="la-custom" class="cpick"><i></i>Custom</label>`;
 $("bgtiles").innerHTML=BGS.map(([k,n])=>`<input type="radio" name="look-bg" id="lb-${k}" value="${k}"><label for="lb-${k}"${k==="photo"?' class="phototile"':""}><b class="${k==="photo"?"":"pat-"+k}" id="lbp-${k}">${k==="photo"?"+":""}</b>${n}</label>`).join("");
 $("herotiles").innerHTML=HEROS.map(([k,n])=>`<input type="radio" name="look-hero" id="lh-${k}" value="${k}"><label for="lh-${k}"${k==="photo"?' class="phototile"':""}><b class="${k==="photo"?"":"h-"+k}" id="hbp-${k}">${k==="photo"?"+":""}</b>${n}</label>`).join("");
 function fillLookForm(){const L=look();
+  $("accent-row").hidden=L.accent!=="custom";$("accent-hex").value=L.accentHex;
+  $("bgtint-row").hidden=L.bg!=="tint";$("bg-hex").value=L.bgHex;
+  $("herohex-row").hidden=L.hero!=="color";$("hero-hex").value=L.heroHex;
+  $("glass-f").hidden=L.hero!=="glass";$("glass-clear").value=L.glass;$("glass-val").textContent=L.glass+"%";
   ($("lh-"+L.hero)||$("lh-midnight")).checked=true;const hp=LS.get("ro-herophoto"),ht=$("hbp-photo");
   ht.style.backgroundImage=hp?`url("${hp}")`:"";ht.textContent=hp?"":"+";
   $("hdim-f").hidden=!(L.hero==="photo"&&hp);$("hero-dim").value=L.heroDim;$("hdim-val").textContent=L.heroDim+"%";$("look-where").textContent=mode==="cloud"?"Synced to your account":"Saved on this device";
@@ -1023,6 +1198,10 @@ $("bg-file").addEventListener("change",async e=>{const f=e.target.files&&e.targe
 document.getElementsByName("look-hero").forEach(i=>i.addEventListener("change",()=>{
   if(i.value==="photo"&&!LS.get("ro-herophoto")){fillLookForm();$("hero-file").click();return}
   setLook({hero:i.value},true)}));
+$("accent-hex").addEventListener("input",()=>setLook({accent:"custom",accentHex:$("accent-hex").value}));
+$("bg-hex").addEventListener("input",()=>setLook({bg:"tint",bgHex:$("bg-hex").value}));
+$("hero-hex").addEventListener("input",()=>setLook({hero:"color",heroHex:$("hero-hex").value}));
+$("glass-clear").addEventListener("input",()=>setLook({glass:+$("glass-clear").value}));
 $("hero-dim").addEventListener("input",()=>setLook({heroDim:+$("hero-dim").value}));
 $("hero-change").onclick=()=>$("hero-file").click();
 $("hero-remove").onclick=()=>{try{localStorage.removeItem("ro-herophoto")}catch(e){}setLook({hero:"midnight"},true);toast("Card photo removed")};
@@ -1200,7 +1379,7 @@ function csvToRecords(text){
     const rec={id:"c"+safeId(ro)+"-"+date,ro,tag:g("Tag").toUpperCase(),date,hours:+g("Flagged hrs")||0,
       vin:g("VIN").toUpperCase(),miles:g("Miles")?(+g("Miles").replace(/,/g,"")||""):"",tech:g("Tech"),work:g("Work performed"),
       maintReset:/^y/i.test(g("Maint reset")),inspection:{},tires:{},recs:[],jobs:[],
-      ymm:g("Year/Make/Model"),engine:g("Engine/drive"),advisor:g("Advisor"),color:g("Color"),stock:g("Stock"),
+      ymm:g("Year/Make/Model"),engine:g("Engine/drive"),advisor:g("Advisor"),advisorNo:g("Advisor #"),color:g("Color"),stock:g("Stock"),
       timein:g("Time in"),promised:g("Promised"),createdAt:now,updatedAt:now+rowN,_csv:true};
     ITEMS.forEach(([k,n,b])=>{const v=g(n);const o={s:/^pass/i.test(v)?"pass":/^fail/i.test(v)?"fail":"",note:(v.match(/^fail:\s*([\s\S]*)$/i)||[])[1]||""};
       if(b)o.mm=g(n+" mm");rec.inspection[k]=o});
@@ -1367,7 +1546,7 @@ function makePDF(r){
   if(r.tag)val(r.tag,M+115,y+34,22,"center");
   x=M+230;[["Color",110,r.color],["Mileage",70,r.miles===""||r.miles==null?"":Number(r.miles).toLocaleString()],["R.O. Date",70,mdy(r.date)],["Time Received",68,t12(r.timein)]]
     .forEach(([l,w,v])=>{cell(x,y,w,R,l,v);x+=w});
-  x=M+230;[["Advisor",110,r.advisor],["Tech No.",70,r.tech],["Promised",70,r.promised?mdy(r.promised)+" "+t12(r.promised.slice(11)):"",7.5],["Flagged Hrs",68,h1(r.hours)]]
+  x=M+230;[["Advisor",110,[r.advisorNo&&"#"+r.advisorNo,r.advisor].filter(Boolean).join(" ")],["Tech No.",70,r.tech],["Promised",70,r.promised?mdy(r.promised)+" "+t12(r.promised.slice(11)):"",7.5],["Flagged Hrs",68,h1(r.hours)]]
     .forEach(([l,w,v,sz])=>{cell(x,y+R,w,R,l,v,sz);x+=w});
   y+=R*2+12;
 
@@ -1455,7 +1634,7 @@ $("pdf").onclick=async()=>{
 $("export").onclick=async()=>{
   const cust=[];const seenC=new Set(ITEMS.map(i=>i[1].toLowerCase()));
   records.forEach(r=>recordItems(r).filter(i=>i[3]).forEach(([k,n])=>{if(!seenC.has(n.toLowerCase())){seenC.add(n.toLowerCase());cust.push([k,n])}}));
-  const cols=["Date","RO","Tag","VIN","Miles","Tech","Flagged hrs","Work performed","Maint reset",...ITEMS.map(i=>i[1]),...cust.map(c=>c[1]),"Front brakes mm","Rear brakes mm",...TIRES.flatMap(([,n])=>[n+" mid",n+" edge"]),"Recommendations","Job lines","Year/Make/Model","Engine/drive","Advisor","Color","Stock","Time in","Promised","Customer pay hrs","Warranty hrs","Internal hrs","Warranty multiplier","Warranty bonus hrs","Approved repairs $","Declined repairs $","RO Log data"];
+  const cols=["Date","RO","Tag","VIN","Miles","Tech","Flagged hrs","Work performed","Maint reset",...ITEMS.map(i=>i[1]),...cust.map(c=>c[1]),"Front brakes mm","Rear brakes mm",...TIRES.flatMap(([,n])=>[n+" mid",n+" edge"]),"Recommendations","Job lines","Year/Make/Model","Engine/drive","Advisor","Advisor #","Color","Stock","Time in","Promised","Customer pay hrs","Warranty hrs","Internal hrs","Warranty multiplier","Warranty bonus hrs","Approved repairs $","Declined repairs $","RO Log data"];
   const q=v=>`"${String(v==null?"":v).replace(/"/g,'""')}"`;
   const rows=records.slice().sort((a,b)=>(a.date||"").localeCompare(b.date||"")).map(r=>{const i=r.inspection||{},t=r.tires||{};
     return[r.date,r.ro,r.tag,r.vin,r.miles,r.tech,h1(r.hours),r.work,r.maintReset?"Yes":"",
@@ -1463,7 +1642,7 @@ $("export").onclick=async()=>{
       (i.frontBrakes||{}).mm,(i.rearBrakes||{}).mm,...TIRES.flatMap(([k])=>[(t[k]||{}).mid,(t[k]||{}).edge]),
       (r.recs||[]).map(x=>[x.qt&&x.qt+"x",x.desc,x.part,x.price&&"$"+x.price,x.hrs&&x.hrs+"h",x.status&&"["+x.status+"]"].filter(Boolean).join(" ")).join(" | "),
       (r.jobs||[]).map(j=>[j.type,j.op,j.desc,j.hrs&&j.hrs+"h",j.type==="W"&&!jobGetsMult(j)?"(no mult)":""].filter(Boolean).join(" ")).join(" | "),
-      r.ymm,r.engine,r.advisor,r.color,r.stock,r.timein,r.promised,...(()=>{const h=splitHours(r),b=bonusFor(r);return[h1(h.C),h1(h.W),h1(h.I),b.m>1&&b.w?b.m:"",b.b?h1(b.b):""]})(),...(()=>{const T=recTotals(r.recs);return[T.approved.n?T.approved.$.toFixed(2):"",T.declined.n?T.declined.$.toFixed(2):""]})(),JSON.stringify(r)].map(q).join(",")});
+      r.ymm,r.engine,r.advisor,r.advisorNo,r.color,r.stock,r.timein,r.promised,...(()=>{const h=splitHours(r),b=bonusFor(r);return[h1(h.C),h1(h.W),h1(h.I),b.m>1&&b.w?b.m:"",b.b?h1(b.b):""]})(),...(()=>{const T=recTotals(r.recs);return[T.approved.n?T.approved.$.toFixed(2):"",T.declined.n?T.declined.$.toFixed(2):""]})(),JSON.stringify(r)].map(q).join(",")});
   try{await downloads.save({filename:`ro-log-${today()}.csv`,data:[cols.map(q).join(","),...rows].join("\n")});}catch(e){}
 };
 
