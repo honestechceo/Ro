@@ -1726,14 +1726,45 @@ async function readBarcode(canvas){
   hints.set(Z.DecodeHintType.POSSIBLE_FORMATS,[Z.BarcodeFormat.CODE_39,Z.BarcodeFormat.CODE_128,Z.BarcodeFormat.QR_CODE,Z.BarcodeFormat.DATA_MATRIX,Z.BarcodeFormat.PDF_417]);
   hints.set(Z.DecodeHintType.TRY_HARDER,true);
   const r=new Z.MultiFormatReader();r.setHints(hints);
-  const tries=[canvas];
-  const rot=document.createElement("canvas");rot.width=canvas.height;rot.height=canvas.width;
-  const g=rot.getContext("2d");g.translate(rot.width/2,rot.height/2);g.rotate(Math.PI/2);g.drawImage(canvas,-canvas.width/2,-canvas.height/2);tries.push(rot);
+  const tries=[canvas,rotCanvas(canvas,90),rotCanvas(canvas,-90)];
   for(const cv of tries){
-    for(const Bin of [Z.HybridBinarizer,Z.GlobalHistogramBinarizer]){
-      try{const res=r.decode(new Z.BinaryBitmap(new Bin(new Z.HTMLCanvasElementLuminanceSource(cv))));const v=findVin(res.getText());if(v)return v}catch(e){}
-    }}
+    for(const inv of [false,true]){
+      for(const Bin of [Z.HybridBinarizer,Z.GlobalHistogramBinarizer]){
+        try{let src=new Z.HTMLCanvasElementLuminanceSource(cv);if(inv)src=src.invert?src.invert():new Z.InvertedLuminanceSource(src);
+          const res=r.decode(new Z.BinaryBitmap(new Bin(src)));const v=findVin(res.getText());if(v)return v}catch(e){}
+      }}}
   return null}
+function rotCanvas(c,deg){const o=document.createElement("canvas");const q=Math.abs(deg)===90;o.width=q?c.height:c.width;o.height=q?c.width:c.height;
+  const g=o.getContext("2d");g.translate(o.width/2,o.height/2);g.rotate(deg*Math.PI/180);g.drawImage(c,-c.width/2,-c.height/2);return o}
+function grayCanvas(c,invert){const o=document.createElement("canvas");o.width=c.width;o.height=c.height;const g=o.getContext("2d");g.drawImage(c,0,0);
+  const im=g.getImageData(0,0,o.width,o.height),d=im.data;let lo=255,hi=0;
+  for(let i=0;i<d.length;i+=4){const y=(d[i]*.299+d[i+1]*.587+d[i+2]*.114)|0;d[i]=y;if(y<lo)lo=y;if(y>hi)hi=y}
+  const span=Math.max(1,hi-lo);for(let i=0;i<d.length;i+=4){let y=(d[i]-lo)*255/span;if(invert)y=255-y;d[i]=d[i+1]=d[i+2]=y}
+  g.putImageData(im,0,0);return o}
+/* Read the printed VIN line from the label text. Works line by line on standalone words so stray text can't fake a VIN. */
+function vinFromText(text){
+  const known=v=>!!wmiMake(v)||/^(JT|4T|5T|2T|3T|1G|2G|3G|KM|KN|1C|2C|3C|1F|2F|3F|1N|3N|5N|JN|JF|JM|WB|WD|W1|WA|WV|YV|SA)/.test(v);
+  const CONF={"0":"DQU","1":"IL7T","2":"Z","5":"S","6":"G","8":"B","D":"0","S":"5","B":"8","Z":"2","G":"6","U":"0V","V":"UY","L":"1","T":"17","Y":"V","4":"A","A":"4","7":"T1","H":"N","N":"H","M":"N"};
+  const clean=t=>t.replace(/[^A-Z0-9]/g,"").replace(/I/g,"1").replace(/[OQ]/g,"0");
+  const cands=[];
+  for(const raw of String(text||"").toUpperCase().split(/\r?\n/)){
+    const toks=raw.split(/\s+/).filter(Boolean),pieces=new Set();
+    for(let i=0;i<toks.length;i++)for(let n=1;n<=3&&i+n<=toks.length;n++){const c=clean(toks.slice(i,i+n).join(""));if(c.length>=17&&c.length<=19)pieces.add(c)}
+    for(const p of pieces)for(let i=0;i+17<=p.length;i++){const w=p.slice(i,i+17);
+      if(vinValid(w)){if(known(w)||p.length===17)cands.push({v:w,score:known(w)?3:1,fixed:false});continue}
+      for(let k=0;k<17;k++){if(k===8)continue;for(const c of (CONF[w[k]]||"")){const t=w.slice(0,k)+c+w.slice(k+1);
+        if(vinValid(t)&&known(t)&&/\d{5}$/.test(t))cands.push({v:t,score:2,fixed:true})}}}}
+  cands.sort((a,b)=>b.score-a.score);return cands[0]||null}
+let ocrWorker=null;
+async function readWithOCR(file,progress){
+  if(!await loadScript("https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js","Tesseract"))return{err:"load"};
+  try{if(!ocrWorker)ocrWorker=await window.Tesseract.createWorker("eng");await ocrWorker.setParameters({tessedit_pageseg_mode:"6"})}catch(e){ocrWorker=null;return{err:"load"}}
+  const base=await shrink(file,1600);
+  const plans=[[90,false],[-90,false],[0,false],[90,true],[-90,true],[0,true]];
+  for(let i=0;i<plans.length;i++){const[deg,inv]=plans[i];progress&&progress(i+1,plans.length);
+    const c=grayCanvas(deg?rotCanvas(base,deg):base,inv);
+    try{const{data}=await ocrWorker.recognize(c);const hit=vinFromText(data&&data.text);if(hit)return hit}catch(e){}}
+  return{err:"none"}}
 async function readWithClaude(canvas){
   let sample=null;try{sample=window.claude&&await window.claude.use("sample")}catch(e){}
   if(!sample)return{err:"none"};
@@ -1750,14 +1781,19 @@ $("vin-file").addEventListener("change",async e=>{
     let vin=null,how="";
     const big=await shrink(f,1800);
     vin=await readBarcode(big);if(vin)how="barcode";
-    if(!vin){const r=await readWithClaude(await shrink(f,1500));
+    if(!vin)vin=await readBarcode(await shrink(f,2600)),how=vin?"barcode":how;
+    let fixedNote=false;
+    if(!vin&&inClaude){const r=await readWithClaude(await shrink(f,1500));
       if(r.vin){vin=r.vin;how="photo"}
-      else if(r.err==="not_granted"){toast("Allow Claude to read photos to scan printed VINs");return}
-      else if(r.err==="none"){toast("Couldn't find a VIN barcode. Try closer, in good light.");return}}
+      else if(r.err==="not_granted"){toast("Allow Claude to read photos to scan printed VINs");return}}
+    if(!vin&&!inClaude){b.textContent="Reading label…";
+      const r=await readWithOCR(f,(i,n)=>{b.textContent=`Reading ${i}/${n}…`});
+      if(r&&r.v){vin=r.v;how="label text";fixedNote=r.fixed}
+      else if(r&&r.err==="load"){toast(navigator.onLine===false?"Text reading needs internet the first time. Try again when online.":"Couldn't start text reading. Try again.");return}}
     if(!vin){toast("Couldn't read a VIN. Try a closer, sharper photo.");return}
     $("vin").value=vin;
     updateBar();
-    if(vinValid(vin)){toast(`VIN read from ${how}. Looking up vehicle…`);await runDecode(vin)}
+    if(vinValid(vin)){toast(fixedNote?`VIN read from ${how}, with one character corrected. Check it against the car.`:`VIN read from ${how}. Looking up vehicle…`);await runDecode(vin)}
     else toast("VIN read, but the check digit doesn't match. Compare it to the car.");
   }catch(err){toast("Couldn't open that photo. Try again.")}
   finally{b.disabled=false;b.textContent="Scan"}
