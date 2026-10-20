@@ -366,6 +366,31 @@ body.has-photo{background-size:cover;background-position:center;background-attac
 .advrow input,.advadd input{width:100%;min-width:0;height:42px;border:1px solid var(--line);border-radius:8px;background:var(--sunk);padding:0 10px}
 .advrow .x{height:42px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--muted);font-size:1.1rem}
 .advadd{display:grid;grid-template-columns:minmax(0,1fr) 100px auto;gap:6px}
+.sheet{position:fixed;inset:0;z-index:30;background:rgba(5,8,12,.55);display:flex;align-items:flex-end;justify-content:center;padding-top:env(safe-area-inset-top,0px)}
+.sheet-card{width:100%;max-width:560px;max-height:92vh;overflow:auto;background:var(--surface);color:var(--ink);border-radius:20px 20px 0 0;padding:16px max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:grid;gap:12px;box-shadow:0 -10px 40px rgba(0,0,0,.35)}
+@media (prefers-reduced-motion:no-preference){.sheet:not([hidden]) .sheet-card{animation:sheetup .25s cubic-bezier(.2,.8,.2,1)}@keyframes sheetup{from{transform:translateY(40px);opacity:.4}}}
+.sheet-head{display:flex;justify-content:space-between;align-items:center}
+.sheet-head h2{margin:0;font:700 1.35rem var(--f-display);letter-spacing:.06em;text-transform:uppercase}
+.sheet-head .x{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--sunk);font-size:1.3rem;color:var(--muted)}
+.sheet .hint{margin:0}
+.modeseg{justify-self:start}
+.seg.modeseg input.p:checked+label{background:var(--accent);color:var(--accent-ink)}
+.sheet .f input,.sheet .f select{width:100%;height:44px;border:1px solid var(--line);border-radius:8px;background:var(--sunk);padding:0 12px;color:var(--ink);font:inherit}
+.hsplit{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.hsplit input{font:700 1.2rem var(--f-display)!important}
+.hdays{display:grid;gap:6px;margin-bottom:10px}
+.hday{display:grid;grid-template-columns:minmax(0,1fr) 110px;align-items:center;gap:10px}
+.hday span{font-weight:500}
+.hday span small{color:var(--warn);font-weight:600;margin-left:6px}
+.hday input{height:42px;border:1px solid var(--line);border-radius:8px;background:var(--sunk);padding:0 10px;font:700 1.1rem var(--f-display);color:var(--ink);text-align:right;width:100%}
+.sheet-total{display:flex;justify-content:space-between;align-items:baseline;border-top:2px solid var(--ink);padding-top:10px;font-weight:600}
+.sheet-total b{font:700 1.8rem var(--f-display);color:var(--accent)}
+.sheet-actions{display:grid;grid-template-columns:auto 1fr auto auto;gap:8px}
+.cbtns{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:8px}
+.ro.manual{background:repeating-linear-gradient(135deg,var(--surface) 0 12px,var(--sunk) 12px 24px)}
+.ro.manual::before{background:var(--warn)}
+.ro.manual .id{font-family:var(--f-body);font-weight:700;font-size:1rem}
+.cd u{text-decoration:none;font-size:.55rem;font-weight:700;color:var(--warn);line-height:1}
 .toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-top:1px solid var(--line);font-weight:500}
 .toggle input{width:22px;height:22px;accent-color:var(--accent)}
 
@@ -461,6 +486,7 @@ body.has-photo{background-size:cover;background-position:center;background-attac
     </div>
     <div class="tools">
       <input class="search" id="q" type="search" placeholder="Search RO, tag, VIN or work" autocomplete="off">
+      <button class="btn primary" id="add-hours">+ Past hours</button>
       <button class="btn" id="export" hidden>Export CSV</button>
       <button class="btn" id="backup" hidden>Back up</button>
       <button class="btn" id="restore">Restore</button>
@@ -683,6 +709,34 @@ body.has-photo{background-size:cover;background-position:center;background-attac
     <button class="dk" id="tab-set" aria-pressed="false" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.6a.5.5 0 0 0 .1-.6l-1.9-3.3a.5.5 0 0 0-.6-.2l-2.4 1a7.3 7.3 0 0 0-1.7-1L14.5 2.8a.5.5 0 0 0-.5-.4h-3.8a.5.5 0 0 0-.5.4L9.4 5.3a7.3 7.3 0 0 0-1.7 1l-2.4-1a.5.5 0 0 0-.6.2L2.8 8.8a.5.5 0 0 0 .1.6l2 1.6a7.6 7.6 0 0 0 0 2l-2 1.6a.5.5 0 0 0-.1.6l1.9 3.3a.5.5 0 0 0 .6.2l2.4-1a7.3 7.3 0 0 0 1.7 1l.4 2.5a.5.5 0 0 0 .5.4h3.8a.5.5 0 0 0 .5-.4l.4-2.5a7.3 7.3 0 0 0 1.7-1l2.4 1a.5.5 0 0 0 .6-.2l1.9-3.3a.5.5 0 0 0-.1-.6zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg><span>Settings</span></button>
   </div>
 </nav>
+<div class="sheet" id="hsheet" hidden>
+  <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="hs-title">
+    <div class="sheet-head"><h2 id="hs-title">Add past hours</h2><button type="button" class="x" id="hs-close" aria-label="Close">×</button></div>
+    <p class="hint">For days you didn't log ROs. These hours count toward your totals, gauge, calendar and bonus, but not your RO count.</p>
+    <span class="seg modeseg" id="hs-modes" role="radiogroup" aria-label="How to enter">
+      <input type="radio" class="p" name="hs-mode" id="hm-day" value="day"><label for="hm-day">One day</label>
+      <input type="radio" class="p" name="hs-mode" id="hm-days" value="days"><label for="hm-days">Each day</label>
+      <input type="radio" class="p" name="hs-mode" id="hm-week" value="week"><label for="hm-week">Week total</label>
+    </span>
+    <div class="f" id="hs-dayf"><label for="hs-date">Date</label><input type="date" id="hs-date"></div>
+    <div class="f" id="hs-weekf" hidden><label for="hs-wdate">Any day in the pay week</label><input type="date" id="hs-wdate"><span class="hint" id="hs-wrange"></span></div>
+    <div id="hs-split" class="hsplit">
+      <div class="f"><label for="hs-c">Customer pay</label><input id="hs-c" type="number" step="0.1" min="0" inputmode="decimal" placeholder="0.0"></div>
+      <div class="f"><label for="hs-w">Warranty</label><input id="hs-w" type="number" step="0.1" min="0" inputmode="decimal" placeholder="0.0"></div>
+      <div class="f"><label for="hs-wn">Warranty, no multiplier</label><input id="hs-wn" type="number" step="0.1" min="0" inputmode="decimal" placeholder="PDI etc."></div>
+      <div class="f"><label for="hs-i">Internal</label><input id="hs-i" type="number" step="0.1" min="0" inputmode="decimal" placeholder="0.0"></div>
+    </div>
+    <div id="hs-daysf" hidden>
+      <div class="hdays" id="hs-days"></div>
+      <div class="f"><label for="hs-dtype">These hours are</label>
+        <select id="hs-dtype"><option value="C">Customer pay</option><option value="W">Warranty (gets multiplier)</option><option value="Wn">Warranty, no multiplier</option><option value="I">Internal</option></select>
+        <span class="hint">Mixed days? Use One day for those and split the hours.</span></div>
+    </div>
+    <div class="f"><label for="hs-note">Note (optional)</label><input id="hs-note" placeholder="e.g. From pay stub"></div>
+    <div class="sheet-total"><span>Total</span><b id="hs-total">0.0 hrs</b></div>
+    <div class="sheet-actions"><button type="button" class="btn danger" id="hs-del" hidden>Delete</button><span></span><button type="button" class="btn" id="hs-cancel">Cancel</button><button type="button" class="btn primary" id="hs-save">Save hours</button></div>
+  </div>
+</div>
 <div class="toast" id="toast" hidden></div>
 
 <script>
@@ -773,8 +827,9 @@ function render(){
   $("g-fill").setAttribute("stroke-dasharray",`${pct.toFixed(2)} 100`);$("g-fill").classList.toggle("hit",wk>=goal);
   $("g-goal").innerHTML=wk>=goal?`<b>Goal hit</b> · ${h1(wk-goal)} hrs over ${goal}`:`${Math.round(wk/goal*100)}% of ${goal} hr goal · <b>${h1(goal-wk)}</b> to go`;
   $("h-date").textContent=fmt(new Date(),{weekday:"long",month:"short",day:"numeric"});
-  $("s-ros").textContent=inWeek.length;
-  $("s-avg").textContent=inWeek.length?h1(wk/inWeek.length):"0.0";
+  const wkRO=inWeek.filter(isRO),wkROh=wkRO.reduce((a,r)=>a+(+r.hours||0),0);
+  $("s-ros").textContent=wkRO.length;
+  $("s-avg").textContent=wkRO.length?h1(wkROh/wkRO.length):"0.0";
   const ref=weekOffset===0?new Date():ws, mk=iso(ref).slice(0,7);
   $("s-month").textContent=h1(records.filter(r=>(r.date||"").slice(0,7)===mk).reduce((a,r)=>a+(+r.hours||0),0));
   $("s-month-l").textContent="Hours in "+fmt(ref,{month:"long"});
@@ -801,7 +856,16 @@ function render(){
     rs.map(roCard).join("")+`</div>`;
   }).join("");
 }
+function isRO(r){return r&&r.kind!=="hours"}
+function hoursCard(r){const h=splitHours(r),ws=r.span==="week"?parse(r.date):null,we=ws?new Date(ws):null;if(we)we.setDate(we.getDate()+6);
+  const parts=[h.C&&`<span class="pill">C ${h1(h.C)}</span>`,h.W&&`<span class="pill pass">W ${h1(h.W)}</span>`,h.I&&`<span class="pill">I ${h1(h.I)}</span>`].filter(Boolean).join("");
+  return`<button type="button" class="ro manual" data-id="${esc(r.id)}">
+    <span class="id">${r.span==="week"?"Week total":"Hours only"}${ws?`<small>${fmt(ws,{month:"short",day:"numeric"})} – ${fmt(we,{month:"short",day:"numeric"})}</small>`:""}</span>
+    <span class="hrs">${h1(r.hours)}<small>hrs</small></span>
+    ${r.note?`<span class="work">${esc(r.note)}</span>`:""}
+    <span class="meta">${parts}<span class="pill warn">No RO</span></span></button>`}
 function roCard(r){
+  if(r&&r.kind==="hours")return hoursCard(r);
       const f=failCount(r),p=passCount(r),lt=lowTires(r),recs=(r.recs||[]).filter(x=>x.desc);
       const pills=[f?`<span class="pill fail">${f} failed</span>`:p?`<span class="pill pass">MPI passed</span>`:`<span class="pill">No MPI</span>`];
       if(lt)pills.push(`<span class="pill warn">${lt} low tire reading${lt>1?"s":""}</span>`);
@@ -955,6 +1019,7 @@ function updateBar(){
 
 /* ---------- open / save ---------- */
 function openForm(r){
+  if(r&&r.kind==="hours"){openHours(r);return}
   editingId=r?r.id:null;
   $("view-form").reset();$("vinfo").hidden=true;
   decodedVin=shownVin=(r&&r.vin)||"";autoYmm=autoEng="";$("recs").innerHTML="";recN=0;$("jobs").innerHTML="";jobN=0;
@@ -1071,6 +1136,71 @@ $("advs").addEventListener("change",e=>{const row=e.target.closest(".advrow");if
 $("advs").addEventListener("click",e=>{const x=e.target.closest(".x");if(!x)return;const row=x.closest(".advrow"),list=advisors().slice(),gone=list.splice(+row.dataset.i,1)[0];
   row.remove();saveAdvisors(list,`${gone.name||"Advisor"} removed`)});
 
+/* ---------- past hours ---------- */
+let hsEdit=null;
+function weekStartFor(k){const d=parse(k),b=(d.getDay()-startDow+7)%7;d.setDate(d.getDate()-b);return d}
+function hsMode(){return $("hm-days").checked?"days":$("hm-week").checked?"week":"day"}
+function hsNum(id){const v=parseFloat($(id).value);return v>0?Math.round(v*10)/10:0}
+function hsRender(){
+  const m=hsMode();
+  $("hs-dayf").hidden=m!=="day";$("hs-weekf").hidden=m==="day";$("hs-split").hidden=m==="days";$("hs-daysf").hidden=m!=="days";
+  if(m!=="day"){const k=$("hs-wdate").value||today(),ws=weekStartFor(k),we=new Date(ws);we.setDate(we.getDate()+6);
+    $("hs-wrange").textContent=`Pay week ${fmt(ws,{weekday:"short",month:"short",day:"numeric"})} – ${fmt(we,{weekday:"short",month:"short",day:"numeric"})}`;
+    if(m==="days"){const cur=[...$("hs-days").querySelectorAll("input")].map(i=>i.value),key=iso(ws);
+      if($("hs-days").dataset.wk!==key){$("hs-days").dataset.wk=key;
+        $("hs-days").innerHTML=[0,1,2,3,4,5,6].map(i=>{const d=new Date(ws);d.setDate(d.getDate()+i);const dk=iso(d),have=records.filter(r=>r.date===dk).reduce((a,r)=>a+(+r.hours||0),0);
+          return`<label class="hday" for="hs-d${i}"><span>${fmt(d,{weekday:"short",month:"short",day:"numeric"})}${have?`<small>already ${h1(have)}</small>`:""}</span><input id="hs-d${i}" data-day="${dk}" type="number" step="0.1" min="0" inputmode="decimal" placeholder="0.0"></label>`}).join("")}}}
+  let tot=0;
+  if(m==="days")$("hs-days").querySelectorAll("input").forEach(i=>{const v=parseFloat(i.value);if(v>0)tot+=v});
+  else tot=hsNum("hs-c")+hsNum("hs-w")+hsNum("hs-wn")+hsNum("hs-i");
+  $("hs-total").textContent=h1(tot)+" hrs";
+}
+function openHours(r,opt){
+  opt=opt||{};hsEdit=r||null;
+  ["hs-c","hs-w","hs-wn","hs-i","hs-note"].forEach(id=>$(id).value="");$("hs-days").innerHTML="";delete $("hs-days").dataset.wk;
+  const mode=r?(r.span==="week"?"week":"day"):(opt.mode||"day");
+  $("hm-"+mode).checked=true;$("hm-days").disabled=!!r;$("hm-days").nextElementSibling.hidden=!!r;
+  const d=(r&&r.date)||opt.date||today();$("hs-date").value=d;$("hs-wdate").value=d;
+  if(r){const j=r.jobs||[],sum=f=>j.filter(f).reduce((a,x)=>a+(+x.hrs||0),0);
+    const c=sum(x=>x.type==="C"),w=sum(x=>x.type==="W"&&!x.noMult),wn=sum(x=>x.type==="W"&&x.noMult),i=sum(x=>x.type==="I");
+    $("hs-c").value=c||"";$("hs-w").value=w||"";$("hs-wn").value=wn||"";$("hs-i").value=i||"";$("hs-note").value=r.note||""}
+  $("hs-title").textContent=r?"Edit hours":"Add past hours";$("hs-del").hidden=!r;$("hs-del").classList.remove("armed");$("hs-del").textContent="Delete";
+  $("hsheet").hidden=false;document.body.style.overflow="hidden";hsRender();
+  setTimeout(()=>{try{(mode==="days"?$("hs-d0"):$("hs-c")).focus({preventScroll:true})}catch(e){}},60);
+}
+function closeHours(){$("hsheet").hidden=true;document.body.style.overflow="";hsEdit=null}
+function hJobs(c,w,wn,i){return[c&&{type:"C",op:"",desc:"Hours entry",hrs:String(c)},w&&{type:"W",op:"",desc:"Hours entry",hrs:String(w),noMult:false},wn&&{type:"W",op:"",desc:"Hours entry (no multiplier)",hrs:String(wn),noMult:true},i&&{type:"I",op:"",desc:"Hours entry",hrs:String(i)}].filter(Boolean)}
+function hRec(date,span,jobs,note,prev){const now=Date.now();
+  return{id:prev?prev.id:"h"+now.toString(36)+Math.random().toString(36).slice(2,6),kind:"hours",span,ro:"",date,
+    hours:Math.round(jobs.reduce((a,j)=>a+(+j.hrs||0),0)*10)/10,jobs,note,inspection:{},tires:{},recs:[],createdAt:prev&&prev.createdAt||now,updatedAt:now}}
+$("hs-save").onclick=async()=>{
+  const m=hsMode(),note=$("hs-note").value.trim(),out=[];
+  if(m==="days"){const t=$("hs-dtype").value;
+    $("hs-days").querySelectorAll("input").forEach(i=>{const v=Math.round((parseFloat(i.value)||0)*10)/10;if(v>0)out.push(hRec(i.dataset.day,"day",t==="C"?hJobs(v,0,0,0):t==="W"?hJobs(0,v,0,0):t==="Wn"?hJobs(0,0,v,0):hJobs(0,0,0,v),note))})}
+  else{const jobs=hJobs(hsNum("hs-c"),hsNum("hs-w"),hsNum("hs-wn"),hsNum("hs-i"));
+    if(jobs.length){const date=m==="week"?iso(weekStartFor($("hs-wdate").value||today())):($("hs-date").value||today());out.push(hRec(date,m==="week"?"week":"day",jobs,note,hsEdit))}}
+  if(!out.length){toast("Enter some hours first");return}
+  if(m==="day"&&!$("hs-date").value){toast("Pick the date");return}
+  const b=$("hs-save");b.disabled=true;b.textContent="Saving…";
+  try{for(const r of out)await persist(r);
+    const tot=out.reduce((a,r)=>a+r.hours,0);closeHours();
+    if(curView==="log"){const off=Math.round((weekStartFor(out[0].date)-weekStart(0))/(7*864e5));weekOffset=Math.min(0,off)}
+    if(curView==="cal")calSel=out[0].date;
+    render();toast(out.length>1?`Saved ${h1(tot)} hrs across ${out.length} days`:`Saved ${h1(tot)} hrs`)}
+  catch(e){toast("Couldn't save. Check your connection and try again.")}
+  finally{b.disabled=false;b.textContent="Save hours"}
+};
+let hsArm;
+$("hs-del").onclick=async()=>{const d=$("hs-del");
+  if(!d.classList.contains("armed")){d.classList.add("armed");d.textContent="Tap to confirm";clearTimeout(hsArm);hsArm=setTimeout(()=>{d.classList.remove("armed");d.textContent="Delete"},4000);return}
+  try{await remove(hsEdit.id);closeHours();render();toast("Hours entry deleted")}catch(e){toast("Couldn't delete. Try again.")}};
+$("hs-close").onclick=closeHours;$("hs-cancel").onclick=closeHours;
+$("hsheet").addEventListener("click",e=>{if(e.target===$("hsheet"))closeHours()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("hsheet").hidden)closeHours()});
+$("hsheet").addEventListener("input",hsRender);$("hsheet").addEventListener("change",hsRender);
+$("add-hours").onclick=()=>{const ws=weekStart(weekOffset),t=today(),we=new Date(ws);we.setDate(we.getDate()+6);
+  const inWk=t>=iso(ws)&&t<=iso(we);openHours(null,{mode:"day",date:inWk?t:iso(ws)})};
+
 /* ---------- calendar ---------- */
 let calMonth=null,calSel=null;
 function renderCal(){
@@ -1085,14 +1215,14 @@ function renderCal(){
   const mk=iso(first).slice(0,7),mrecs=records.filter(r=>(r.date||"").slice(0,7)===mk);
   const days=[...new Set(mrecs.map(r=>r.date))],mh=mrecs.reduce((a,r)=>a+(+r.hours||0),0);
   let best=null;days.forEach(k=>{const h=hrs(k);if(!best||h>best.h)best={k,h}});
-  $("c-sum").innerHTML=`<div><b>${h1(mh)}</b><span>Hours</span></div><div><b>${mrecs.length}</b><span>ROs</span></div><div><b>${days.length?h1(mh/days.length):"0.0"}</b><span>Avg / day</span></div><div><b>${best?h1(best.h):"–"}</b><span>${best?"Best · "+fmt(parse(best.k),{month:"short",day:"numeric"}):"Best day"}</span></div>`;
+  $("c-sum").innerHTML=`<div><b>${h1(mh)}</b><span>Hours</span></div><div><b>${mrecs.filter(isRO).length}</b><span>ROs</span></div><div><b>${days.length?h1(mh/days.length):"0.0"}</b><span>Avg / day</span></div><div><b>${best?h1(best.h):"–"}</b><span>${best?"Best · "+fmt(parse(best.k),{month:"short",day:"numeric"}):"Best day"}</span></div>`;
   let maxH=8;Object.keys(byDay).forEach(k=>{if(k.slice(0,7)===mk)maxH=Math.max(maxH,hrs(k))});
   let h=`<div class="cal-h">${[0,1,2,3,4,5,6].map(i=>`<span>${DOW[(startDow+i)%7].slice(0,2)}</span>`).join("")}<span>Wk</span></div>`;
   const d=new Date(start);
   while(d<=last){
     const rowStart=iso(d);let sum=0,cells="";
-    for(let i=0;i<7;i++){const k=iso(d),hh=hrs(k),n=(byDay[k]||[]).length,out=d.getMonth()!==first.getMonth();sum+=hh;
-      cells+=`<button type="button" class="cd${out?" out":""}${k===t?" today":""}${k===calSel?" sel":""}${hh?" has":""}" data-day="${k}" style="--heat:${hh?Math.min(1,.18+hh/maxH*.82).toFixed(2):0}" aria-label="${fmt(d,{weekday:"long",month:"long",day:"numeric"})}: ${h1(hh)} hours, ${n} RO${n===1?"":"s"}"><span class="dn">${d.getDate()}</span>${hh?`<b>${h1(hh)}</b>`:""}${n?`<i>${"•".repeat(Math.min(n,4))}</i>`:""}</button>`;
+    for(let i=0;i<7;i++){const k=iso(d),hh=hrs(k),n=(byDay[k]||[]).filter(isRO).length,man=(byDay[k]||[]).some(r=>!isRO(r)),out=d.getMonth()!==first.getMonth();sum+=hh;
+      cells+=`<button type="button" class="cd${out?" out":""}${k===t?" today":""}${k===calSel?" sel":""}${hh?" has":""}" data-day="${k}" style="--heat:${hh?Math.min(1,.18+hh/maxH*.82).toFixed(2):0}" aria-label="${fmt(d,{weekday:"long",month:"long",day:"numeric"})}: ${h1(hh)} hours, ${n} RO${n===1?"":"s"}"><span class="dn">${d.getDate()}</span>${hh?`<b>${h1(hh)}</b>`:""}${n?`<i>${"•".repeat(Math.min(n,4))}</i>`:""}${man?"<u>+HRS</u>":""}</button>`;
       d.setDate(d.getDate()+1)}
     h+=`<div class="cal-r">${cells}<button type="button" class="cw${sum?" has":""}" data-wk="${rowStart}" aria-label="Pay week starting ${fmt(parse(rowStart),{month:"long",day:"numeric"})}: ${h1(sum)} hours">${sum?h1(sum):"–"}</button></div>`;
   }
@@ -1100,7 +1230,7 @@ function renderCal(){
   const sel=byDay[calSel]||[],sh=hrs(calSel);
   $("c-day").innerHTML=`<div class="daygroup"><h3><span>${fmt(parse(calSel),{weekday:"long",month:"short",day:"numeric"})}</span><span class="num">${h1(sh)} hrs</span></h3>`+
     (sel.length?sel.slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)).map(roCard).join(""):`<div class="empty"><strong>No ROs this day</strong>Tap below to add one dated ${fmt(parse(calSel),{month:"short",day:"numeric"})}.</div>`)+
-    `<button type="button" class="btn primary" id="c-add">+ Add RO for ${fmt(parse(calSel),{month:"short",day:"numeric"})}</button></div>`;
+    `<div class="cbtns"><button type="button" class="btn primary" id="c-add">+ Add RO</button><button type="button" class="btn" id="c-addh">+ Hours only</button></div></div>`;
 }
 $("c-prev").onclick=()=>{const m=calMonth||new Date(new Date().getFullYear(),new Date().getMonth(),1);calMonth=new Date(m.getFullYear(),m.getMonth()-1,1);renderCal()};
 $("c-next").onclick=()=>{const m=calMonth||new Date(new Date().getFullYear(),new Date().getMonth(),1);calMonth=new Date(m.getFullYear(),m.getMonth()+1,1);renderCal()};
@@ -1113,6 +1243,7 @@ $("cal").addEventListener("click",e=>{
 $("c-day").addEventListener("click",e=>{
   const b=e.target.closest(".ro");if(b){openForm(records.find(r=>r.id===b.dataset.id));return}
   if(e.target.closest("#c-add")){openForm(null);$("date").value=calSel}
+  if(e.target.closest("#c-addh"))openHours(null,{mode:"day",date:calSel});
 });
 
 /* ---------- appearance ---------- */
@@ -1244,7 +1375,7 @@ function renderPay(){
   wk.forEach(r=>{const h=splitHours(r);t.C+=h.C;t.W+=h.W;t.I+=h.I;bon+=bonusFor(r).b});
   const tot=t.C+t.W+t.I;
   $("p-week").innerHTML=(tot?`<div class="mixbar" aria-hidden="true"><i class="k-c" style="flex:${t.C}"></i><i class="k-w" style="flex:${t.W}"></i><i class="k-i" style="flex:${t.I}"></i></div>`:"")+line("Customer pay",h1(t.C)+" hrs","","k-c")+line("Warranty",h1(t.W)+" hrs","","k-w")+line("Internal",h1(t.I)+" hrs","","k-i")+
-    line(`Flagged this week · ${wk.length} RO${wk.length===1?"":"s"}`,h1(tot)+" hrs","total")+
+    line(`Flagged this week · ${wk.filter(isRO).length} RO${wk.filter(isRO).length===1?"":"s"}`,h1(tot)+" hrs","total")+
     (rate?line(`Est. pay at ${money(rate)}/hr`,money(tot*rate)):"")+
     (bon?line("Warranty bonus earned (paid next month)","+"+h1(bon)+" hrs","bonus"):"")+
     (!rate?`<div class="pl note">Add your flat rate in Pay settings to see dollars.</div>`:"");
@@ -1331,7 +1462,7 @@ $("restore-file").addEventListener("change",async e=>{
   try{text=await f.text()}catch(err){toast("Couldn't open that file");return}
   const t=text.replace(/^\uFEFF/,"").trim();
   if(/^[\[{]/.test(t)){
-    try{const j=JSON.parse(t);incoming=(Array.isArray(j)?j:j.records||[]).filter(r=>r&&typeof r==="object"&&r.id&&r.ro)}
+    try{const j=JSON.parse(t);incoming=(Array.isArray(j)?j:j.records||[]).filter(r=>r&&typeof r==="object"&&r.id&&(r.ro||r.kind==="hours"))}
     catch(err){toast("That file isn't an RO Log backup");return}
   }else{
     incoming=csvToRecords(t);
@@ -1340,7 +1471,7 @@ $("restore-file").addEventListener("change",async e=>{
   if(!incoming.length){toast("No repair orders found in that file");return}
   const have=new Map(records.map(r=>[r.id,r]));
   const roDate=new Set(records.map(r=>r.ro+"|"+r.date));
-  const todo=incoming.filter(r=>{const h=have.get(r.id);if(h)return!r._csv&&(r.updatedAt||0)>(h.updatedAt||0);return!roDate.has(r.ro+"|"+r.date)})
+  const todo=incoming.filter(r=>{const h=have.get(r.id);if(h)return!r._csv&&(r.updatedAt||0)>(h.updatedAt||0);return!(r.ro&&roDate.has(r.ro+"|"+r.date))})
     .map(r=>{const c=Object.assign({},r);delete c._csv;return c});
   if(!todo.length){toast("Everything in that backup is already here");return}
   try{
@@ -1373,7 +1504,7 @@ function csvToRecords(text){
   return rows.slice(1).map((c,rowN)=>{
     const g=n=>{const i=ix(n);return i<0?"":String(c[i]||"").trim()};
     const raw=g("RO Log data");
-    if(raw){try{const r=JSON.parse(raw);if(r&&r.ro&&r.id)return r}catch(e){}}
+    if(raw){try{const r=JSON.parse(raw);if(r&&r.id&&(r.ro||r.kind==="hours"))return r}catch(e){}}
     const ro=g("RO");if(!ro)return null;
     const date=normDate(g("Date"))||today();
     const rec={id:"c"+safeId(ro)+"-"+date,ro,tag:g("Tag").toUpperCase(),date,hours:+g("Flagged hrs")||0,
@@ -1634,7 +1765,7 @@ $("pdf").onclick=async()=>{
 $("export").onclick=async()=>{
   const cust=[];const seenC=new Set(ITEMS.map(i=>i[1].toLowerCase()));
   records.forEach(r=>recordItems(r).filter(i=>i[3]).forEach(([k,n])=>{if(!seenC.has(n.toLowerCase())){seenC.add(n.toLowerCase());cust.push([k,n])}}));
-  const cols=["Date","RO","Tag","VIN","Miles","Tech","Flagged hrs","Work performed","Maint reset",...ITEMS.map(i=>i[1]),...cust.map(c=>c[1]),"Front brakes mm","Rear brakes mm",...TIRES.flatMap(([,n])=>[n+" mid",n+" edge"]),"Recommendations","Job lines","Year/Make/Model","Engine/drive","Advisor","Advisor #","Color","Stock","Time in","Promised","Customer pay hrs","Warranty hrs","Internal hrs","Warranty multiplier","Warranty bonus hrs","Approved repairs $","Declined repairs $","RO Log data"];
+  const cols=["Date","RO","Tag","VIN","Miles","Tech","Flagged hrs","Work performed","Maint reset",...ITEMS.map(i=>i[1]),...cust.map(c=>c[1]),"Front brakes mm","Rear brakes mm",...TIRES.flatMap(([,n])=>[n+" mid",n+" edge"]),"Recommendations","Job lines","Year/Make/Model","Engine/drive","Advisor","Advisor #","Color","Stock","Time in","Promised","Customer pay hrs","Warranty hrs","Internal hrs","Warranty multiplier","Warranty bonus hrs","Approved repairs $","Declined repairs $","Entry","RO Log data"];
   const q=v=>`"${String(v==null?"":v).replace(/"/g,'""')}"`;
   const rows=records.slice().sort((a,b)=>(a.date||"").localeCompare(b.date||"")).map(r=>{const i=r.inspection||{},t=r.tires||{};
     return[r.date,r.ro,r.tag,r.vin,r.miles,r.tech,h1(r.hours),r.work,r.maintReset?"Yes":"",
@@ -1642,7 +1773,7 @@ $("export").onclick=async()=>{
       (i.frontBrakes||{}).mm,(i.rearBrakes||{}).mm,...TIRES.flatMap(([k])=>[(t[k]||{}).mid,(t[k]||{}).edge]),
       (r.recs||[]).map(x=>[x.qt&&x.qt+"x",x.desc,x.part,x.price&&"$"+x.price,x.hrs&&x.hrs+"h",x.status&&"["+x.status+"]"].filter(Boolean).join(" ")).join(" | "),
       (r.jobs||[]).map(j=>[j.type,j.op,j.desc,j.hrs&&j.hrs+"h",j.type==="W"&&!jobGetsMult(j)?"(no mult)":""].filter(Boolean).join(" ")).join(" | "),
-      r.ymm,r.engine,r.advisor,r.advisorNo,r.color,r.stock,r.timein,r.promised,...(()=>{const h=splitHours(r),b=bonusFor(r);return[h1(h.C),h1(h.W),h1(h.I),b.m>1&&b.w?b.m:"",b.b?h1(b.b):""]})(),...(()=>{const T=recTotals(r.recs);return[T.approved.n?T.approved.$.toFixed(2):"",T.declined.n?T.declined.$.toFixed(2):""]})(),JSON.stringify(r)].map(q).join(",")});
+      r.ymm,r.engine,r.advisor,r.advisorNo,r.color,r.stock,r.timein,r.promised,...(()=>{const h=splitHours(r),b=bonusFor(r);return[h1(h.C),h1(h.W),h1(h.I),b.m>1&&b.w?b.m:"",b.b?h1(b.b):""]})(),...(()=>{const T=recTotals(r.recs);return[T.approved.n?T.approved.$.toFixed(2):"",T.declined.n?T.declined.$.toFixed(2):""]})(),r.kind==="hours"?(r.span==="week"?"Week total (no RO)":"Hours only (no RO)"):"RO",JSON.stringify(r)].map(q).join(",")});
   try{await downloads.save({filename:`ro-log-${today()}.csv`,data:[cols.map(q).join(","),...rows].join("\n")});}catch(e){}
 };
 
