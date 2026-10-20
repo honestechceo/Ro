@@ -397,6 +397,16 @@ body.has-photo .daygroup h3{justify-self:stretch}
 .st-row b.ok{color:var(--pass)} .st-row b.bad{color:var(--fail)}
 .st-bar{height:8px;border-radius:999px;background:var(--sunk);overflow:hidden;border:1px solid var(--line)}
 .st-bar i{display:block;height:100%;background:var(--pass)} .st-bar i.warn{background:var(--warn)} .st-bar i.bad{background:var(--fail)}
+@media (prefers-reduced-motion:no-preference){
+  .cal.slide-l{animation:slidel .28s cubic-bezier(.2,.8,.2,1)}.cal.slide-r{animation:slider .28s cubic-bezier(.2,.8,.2,1)}
+  .view.slide-l{animation:slidel .28s cubic-bezier(.2,.8,.2,1)}
+  .view.slide-r{animation:slider .28s cubic-bezier(.2,.8,.2,1)}
+  @keyframes slidel{from{opacity:0;transform:translateX(48px)}}
+  @keyframes slider{from{opacity:0;transform:translateX(-48px)}}
+  .view.bump-l{animation:bumpl .25s ease-out}.view.bump-r{animation:bumpr .25s ease-out}
+  @keyframes bumpl{50%{transform:translateX(-14px)}}@keyframes bumpr{50%{transform:translateX(14px)}}
+}
+body{overflow-x:hidden}
 .toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-top:1px solid var(--line);font-weight:500}
 .toggle input{width:22px;height:22px;accent-color:var(--accent)}
 
@@ -1175,6 +1185,40 @@ $("advs").addEventListener("change",e=>{const row=e.target.closest(".advrow");if
 $("advs").addEventListener("click",e=>{const x=e.target.closest(".x");if(!x)return;const row=x.closest(".advrow"),list=advisors().slice(),gone=list.splice(+row.dataset.i,1)[0];
   row.remove();saveAdvisors(list,`${gone.name||"Advisor"} removed`)});
 
+/* ---------- swipe between tabs ---------- */
+const TABS=[["log","tab-log"],["pay","tab-pay"],["cal","tab-cal"],["set","tab-set"]];
+let sw=null,swiped=0;
+document.addEventListener("click",e=>{if(e.isTrusted&&Date.now()-swiped<350){e.stopPropagation();e.preventDefault()}},true);
+function swipeBlocked(t){
+  if(curView==="form"||!$("hsheet").hidden||!$("view-form").hidden)return true;
+  return !!(t&&t.closest&&t.closest('input,select,textarea,.swatches,.bgtiles,[type=range],.noswipe'));
+}
+document.addEventListener("touchstart",e=>{
+  if(e.touches.length!==1||swipeBlocked(e.target)){sw=null;return}
+  const p=e.touches[0];if(p.clientX<24||p.clientX>innerWidth-24){sw=null;return}
+  sw={x:p.clientX,y:p.clientY,t:Date.now(),cal:!!(e.target.closest&&e.target.closest("#cal"))};
+},{passive:true});
+document.addEventListener("touchend",e=>{
+  if(!sw)return;const p=e.changedTouches[0],dx=p.clientX-sw.x,dy=p.clientY-sw.y,dt=Date.now()-sw.t,onCal=sw.cal;sw=null;
+  if(Math.abs(dx)<70||Math.abs(dx)<Math.abs(dy)*1.6||dt>700)return;
+  if(onCal){$(dx<0?"c-next":"c-prev").click();const c=$("cal");if(!matchMedia("(prefers-reduced-motion: reduce)").matches){c.classList.remove("slide-l","slide-r");void c.offsetWidth;c.classList.add(dx<0?"slide-l":"slide-r");setTimeout(()=>c.classList.remove("slide-l","slide-r"),320)}swiped=Date.now();return}
+  goTab(dx<0?1:-1);swiped=Date.now();
+},{passive:true});
+document.addEventListener("touchcancel",()=>{sw=null},{passive:true});
+function goTab(step){
+  const i=TABS.findIndex(([v])=>v===curView);if(i<0)return;
+  const j=i+step;if(j<0||j>=TABS.length){nudge(step);return}
+  $(TABS[j][1]).click();
+  const v=$("view-"+TABS[j][0]);if(v&&!matchMedia("(prefers-reduced-motion: reduce)").matches){
+    v.classList.remove("slide-l","slide-r");void v.offsetWidth;v.classList.add(step>0?"slide-l":"slide-r");
+    setTimeout(()=>v.classList.remove("slide-l","slide-r"),320)}
+  window.scrollTo(0,0);
+  try{if(navigator.vibrate)navigator.vibrate(8)}catch(e){}
+}
+function nudge(step){const v=$("view-"+curView);if(!v||matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  v.classList.remove("bump-l","bump-r");void v.offsetWidth;v.classList.add(step>0?"bump-l":"bump-r");setTimeout(()=>v.classList.remove("bump-l","bump-r"),260)}
+function swipeTip(){if(LS.get("ro-swipetip")||!("ontouchstart" in window))return;LS.set("ro-swipetip",1);setTimeout(()=>toast("Tip: swipe left or right to switch tabs"),1200)}
+
 /* ---------- past hours ---------- */
 let hsEdit=null;
 function weekStartFor(k){const d=parse(k),b=(d.getDay()-startDow+7)%7;d.setDate(d.getDate()-b);return d}
@@ -1840,7 +1884,7 @@ $("export").onclick=async()=>{
   try{await downloads.save({filename:`ro-log-${today()}.csv`,data:[cols.map(q).join(","),...rows].join("\n")});}catch(e){}
 };
 
-buildTicks();fillPrefsForm();render();boot();loadPhotos();
+buildTicks();fillPrefsForm();render();boot();loadPhotos();swipeTip();
 })();
 </script>
 
