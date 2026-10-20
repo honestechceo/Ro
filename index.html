@@ -484,6 +484,8 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color])
 .tire .trio input{width:100%;height:44px;text-align:center;font:600 1.1rem var(--f-mono);border:2px solid var(--line);border-radius:8px;background:var(--surface);padding:0}
 .ro.st-attn::before{background:var(--warn)}
 @media (max-width:380px){.irow .seg label{padding:8px 8px;font-size:.8rem}}
+.rec.fromrec{border-color:var(--pass);background:color-mix(in srgb,var(--pass-bg) 55%,var(--sunk))}
+.srctag{grid-column:1/-1;font-size:.72rem;font-weight:700;letter-spacing:.02em;color:var(--pass)}
 </style>
 
 </head>
@@ -1037,7 +1039,7 @@ $("view-form").addEventListener("submit",e=>{e.preventDefault();save()});
 
 let recN=0;
 function addRec(r){
-  r=r||{};const n=recN++;const d=document.createElement("div");d.className="rec";d.dataset.n=n;
+  r=r||{};const n=recN++;const d=document.createElement("div");d.className="rec";d.dataset.n=n;d.dataset.rid=r.rid||("rc"+Date.now().toString(36)+Math.random().toString(36).slice(2,5));
   d.innerHTML=`<div class="top"><input id="r${n}-desc" placeholder="Repair (e.g. front pads & rotors)" value="${esc(r.desc)}"><button type="button" class="x" aria-label="Remove recommendation">×</button></div>
   <div class="cells"><div><label for="r${n}-qt">QT</label><input id="r${n}-qt" type="number" min="0" inputmode="numeric" value="${esc(r.qt)}"></div>
   <div class="pn"><label for="r${n}-part">Part #</label><input id="r${n}-part" class="mono" value="${esc(r.part)}"></div>
@@ -1045,7 +1047,7 @@ function addRec(r){
   <div><label for="r${n}-hrs">Hrs labor</label><input id="r${n}-hrs" type="number" step="0.1" min="0" inputmode="decimal" value="${esc(r.hrs)}"></div></div>
   <div class="checks"><label><input type="checkbox" id="r${n}-stk" ${r.stk?"checked":""}>In stock</label><label><input type="checkbox" id="r${n}-pdc" ${r.pdc?"checked":""}>PDC order</label></div>
   <div class="status"><span class="seg"><input type="radio" class="p" name="rs${n}" id="r${n}-ok" value="approved"${r.status==="approved"?" checked":""}><label for="r${n}-ok">Approved</label><input type="radio" class="x" name="rs${n}" id="r${n}-no" value="declined"${r.status==="declined"?" checked":""}><label for="r${n}-no">Declined</label></span><em id="r${n}-st"></em></div>`;
-  d.querySelector(".top .x").onclick=()=>{d.remove();updateBar()};
+  d.querySelector(".top .x").onclick=()=>{const j=linkedJob(d.dataset.rid);if(j){j.remove();syncHours();toast("Repair and its job line removed")}d.remove();updateBar()};
   $("recs").appendChild(d);recStatusUI(n);
 }
 $("add-rec").onclick=()=>{addRec();$(`r${recN-1}-desc`).focus()};
@@ -1056,18 +1058,37 @@ function recStatusUI(n){const st=recStatus(n),d=$(`r${n}-ok`).closest(".rec");
 $("recs").addEventListener("pointerdown",e=>{const l=e.target.closest(".seg label");if(l){const i=$(l.htmlFor);i.dataset.was=i.checked?"1":""}});
 $("recs").addEventListener("click",e=>{const l=e.target.closest(".seg label");if(!l)return;const i=$(l.htmlFor),n=l.htmlFor.match(/^r(\d+)-/)[1];
   if(i.dataset.was==="1"){e.preventDefault();i.checked=false;i.dataset.was=""}
-  setTimeout(()=>{recStatusUI(n);updateBar()},0)});
+  setTimeout(()=>{recStatusUI(n);syncApproved(n);updateBar()},0)});
+function linkedJob(rid){return rid?[...$("jobs").children].find(d=>d.dataset.from===rid):null}
+function syncApproved(n,quiet){
+  const d=$(`r${n}-ok`).closest(".rec"),rid=d.dataset.rid,st=recStatus(n),j=linkedJob(rid);
+  const desc=$(`r${n}-desc`).value.trim(),hrs=$(`r${n}-hrs`).value.trim();
+  if(st==="approved"&&!j){
+    if(!desc&&!hrs){if(!quiet)toast("Add a description or labor hours so it can go on the job lines");return}
+    const blank=[...$("jobs").children].find(x=>!x.dataset.from&&!["op","desc","hrs"].some(k=>$(`j${x.dataset.n}-${k}`).value.trim()));
+    if(blank)blank.remove();
+    addJob({type:"C",op:"",desc,hrs,fromRec:rid});syncHours();
+    if(!quiet)toast(`Added to services performed${hrs?` · ${h1(hrs)} hrs`:""}`);
+  }else if(st!=="approved"&&j){
+    j.remove();if(!$("jobs").children.length)addJob();syncHours();
+    if(!quiet)toast("Removed from services performed");
+  }
+}
+$("recs").addEventListener("input",e=>{const m=e.target.id&&e.target.id.match(/^r(\d+)-(desc|hrs)$/);if(!m)return;
+  const n=m[1],j=linkedJob($(`r${n}-ok`).closest(".rec").dataset.rid);if(!j)return;
+  $(`j${j.dataset.n}-${m[2]}`).value=e.target.value;syncHours()});
 
 let jobN=0, hoursTouched=false;
 function addJob(j){
-  j=j||{type:"C"};const n=jobN++;const d=document.createElement("div");d.className="rec";d.dataset.n=n;
+  j=j||{type:"C"};const n=jobN++;const d=document.createElement("div");d.className="rec";d.dataset.n=n;if(j.fromRec){d.dataset.from=j.fromRec;d.classList.add("fromrec")}
   d.innerHTML=`<div class="job">
     <div><label for="j${n}-type">Type</label><select id="j${n}-type">${["C","W","I"].map(t=>`<option${j.type===t?" selected":""}>${t}</option>`).join("")}</select></div>
     <div><label for="j${n}-op">Op code</label><input id="j${n}-op" class="mono" value="${esc(j.op)}" placeholder="${myMake()==="Lexus"||!myMake()?"31LEZ":"Op code"}"></div>
     <div><label for="j${n}-hrs">Hours</label><input id="j${n}-hrs" type="number" step="0.1" min="0" inputmode="decimal" value="${esc(j.hrs)}"></div>
     <button type="button" class="x" aria-label="Remove job line">×</button>
     <div class="desc"><label for="j${n}-desc">Description</label><input id="j${n}-desc" value="${esc(j.desc)}" placeholder="Pre-delivery inspection"></div>
-    <label class="multchk" id="j${n}-mwrap" hidden><input type="checkbox" id="j${n}-mult"><span>Gets warranty multiplier</span><em id="j${n}-mwhy"></em></label></div>`;
+    <label class="multchk" id="j${n}-mwrap" hidden><input type="checkbox" id="j${n}-mult"><span>Gets warranty multiplier</span><em id="j${n}-mwhy"></em></label>
+    ${j.fromRec?`<span class="srctag">✓ Approved recommendation</span>`:""}</div>`;
   d.querySelector(".x").onclick=()=>{d.remove();syncHours();updateBar()};
   $("jobs").appendChild(d);
   const cb=$(`j${n}-mult`);
@@ -1085,7 +1106,7 @@ function jobMultUI(n){
 }
 $("add-job").onclick=()=>{addJob();$(`j${jobN-1}-op`).focus()};
 function readJobs(){return[...$("jobs").children].map(d=>{const n=d.dataset.n,v=k=>$(`j${n}-${k}`).value.trim();
-  const o={type:v("type"),op:v("op").toUpperCase(),desc:v("desc"),hrs:v("hrs")};if(o.type==="W")o.noMult=!$(`j${n}-mult`).checked;return o}).filter(j=>j.op||j.desc||j.hrs)}
+  const o={type:v("type"),op:v("op").toUpperCase(),desc:v("desc"),hrs:v("hrs")};if(d.dataset.from)o.fromRec=d.dataset.from;if(o.type==="W")o.noMult=!$(`j${n}-mult`).checked;return o}).filter(j=>j.op||j.desc||j.hrs)}
 const jobSum=js=>(js||[]).reduce((a,j)=>a+(+j.hrs||0),0);
 function syncHours(){const s=jobSum(readJobs());
   $("hours-hint").textContent=s?`Job lines total ${h1(s)}`:"";
@@ -1093,7 +1114,7 @@ function syncHours(){const s=jobSum(readJobs());
 $("hours").addEventListener("input",()=>{hoursTouched=$("hours").value!==""});
 $("jobs").addEventListener("input",syncHours);
 function readRecs(){return[...$("recs").children].map(d=>{const n=d.dataset.n,v=k=>$(`r${n}-${k}`).value.trim();
-  return{desc:v("desc"),qt:v("qt"),part:v("part").toUpperCase(),price:v("price"),hrs:v("hrs"),stk:$(`r${n}-stk`).checked,pdc:$(`r${n}-pdc`).checked,status:recStatus(n)}}).filter(r=>r.desc||r.part||r.price||r.hrs)}
+  return{desc:v("desc"),qt:v("qt"),part:v("part").toUpperCase(),price:v("price"),hrs:v("hrs"),stk:$(`r${n}-stk`).checked,pdc:$(`r${n}-pdc`).checked,status:recStatus(n),rid:d.dataset.rid}}).filter(r=>r.desc||r.part||r.price||r.hrs)}
 function recTotals(rs){const t={approved:{n:0,$:0,h:0},declined:{n:0,$:0,h:0},"":{n:0,$:0,h:0}};
   (rs||[]).forEach(r=>{const k=t[r.status]?r.status:"";t[k].n++;t[k].$+=(+r.price||0)*(+r.qt||1);t[k].h+=+r.hrs||0});return t}
 function updateBar(){
