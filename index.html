@@ -470,6 +470,18 @@ input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color])
 .additem{grid-template-columns:minmax(0,1fr)}
 .addrow{min-width:0}.addrow input{width:0;flex:1 1 0}
 .advadd,.advrow,.advpair,.hsplit,.cells,.job,.mult{min-width:0}
+.seg input.a:checked+label{background:var(--warn);color:var(--surface)}
+.irow.is-attn .dot{background:var(--warn)}
+.irow .extra input.reason-a{border-color:var(--warn)}
+.irow .seg label{padding:8px 11px}
+.mm{gap:5px;flex-wrap:nowrap}
+.mm label{font:700 .8rem var(--f-display);color:var(--muted)}
+.mm input{width:60px!important;flex:0 0 60px!important}
+.tire .trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.tire .trio label{font-size:.66rem;color:var(--muted);display:block;margin-bottom:2px;text-align:center}
+.tire .trio input{width:100%;height:44px;text-align:center;font:600 1.1rem var(--f-mono);border:2px solid var(--line);border-radius:8px;background:var(--surface);padding:0}
+.ro.st-attn::before{background:var(--warn)}
+@media (max-width:380px){.irow .seg label{padding:8px 8px;font-size:.8rem}}
 </style>
 
 </head>
@@ -861,8 +873,9 @@ async function remove(id){
 
 /* ---------- log view ---------- */
 function failCount(r){return Object.values(r.inspection||{}).filter(v=>v&&v.s==="fail").length}
+function attnCount(r){return Object.values(r.inspection||{}).filter(v=>v&&v.s==="attn").length}
 function passCount(r){return Object.values(r.inspection||{}).filter(v=>v&&v.s==="pass").length}
-function lowTires(r){const t=r.tires||{};let n=0;TIRES.forEach(([k])=>{const v=t[k]||{};[v.mid,v.edge].forEach(x=>{if(x!==""&&x!=null&&+x<=2)n++})});return n}
+function lowTires(r){const t=r.tires||{};let n=0;TIRES.forEach(([k])=>{const v=t[k]||{};[v.in,v.mid,v.out,v.edge].forEach(x=>{if(x!==""&&x!=null&&+x<=2)n++})});return n}
 function renderBackup(){
   const n=$("backup-note"),last=LS.get("ro-lastbackup");
   if(!records.length||$("backup").hidden){n.hidden=true;return}
@@ -929,15 +942,15 @@ function hoursCard(r){const h=splitHours(r),ws=r.span==="week"?parse(r.date):nul
     <span class="meta">${parts}<span class="pill warn">No RO</span></span></button>`}
 function roCard(r){
   if(r&&r.kind==="hours")return hoursCard(r);
-      const f=failCount(r),p=passCount(r),lt=lowTires(r),recs=(r.recs||[]).filter(x=>x.desc);
-      const pills=[f?`<span class="pill fail">${f} failed</span>`:p?`<span class="pill pass">MPI passed</span>`:`<span class="pill">No MPI</span>`];
+      const f=failCount(r),at=attnCount(r),p=passCount(r),lt=lowTires(r),recs=(r.recs||[]).filter(x=>x.desc);
+      const pills=f||at?[f&&`<span class="pill fail">${f} failed</span>`,at&&`<span class="pill warn">${at} attention</span>`].filter(Boolean):[p?`<span class="pill pass">MPI passed</span>`:`<span class="pill">No MPI</span>`];
       if(lt)pills.push(`<span class="pill warn">${lt} low tire reading${lt>1?"s":""}</span>`);
       if(recs.length){const T=recTotals(recs);
         if(T.approved.n)pills.push(`<span class="pill pass">${T.approved.n} approved</span>`);
         if(T.declined.n)pills.push(`<span class="pill fail">${T.declined.n} declined</span>`);
         if(T[""].n)pills.push(`<span class="pill">${T[""].n} rec${T[""].n>1?"s":""} waiting</span>`);}
       if(r.maintReset)pills.push(`<span class="pill">Maint reset</span>`);
-      return `<button type="button" class="ro ${f?"st-fail":p?"st-pass":"st-none"}" data-id="${esc(r.id)}">
+      return `<button type="button" class="ro ${f?"st-fail":at?"st-attn":p?"st-pass":"st-none"}" data-id="${esc(r.id)}">
         <span class="id">RO ${esc(r.ro||"—")}${r.tag?`<small>Tag ${esc(r.tag)}</small>`:""}</span>
         <span class="hrs">${h1(r.hours)}<small>hrs</small></span>
         ${r.work?`<span class="work">${esc(r.work)}</span>`:""}
@@ -958,8 +971,8 @@ function recordItems(r){const list=BASE.slice(),ins=(r&&r.inspection)||{};
 let curItems=BASE.slice();
 function rowHTML([k,n,b,c]){return`<div class="irow" id="row-${k}">
   <span class="name"><span class="dot"></span>${esc(n)}${c?" <small>Added</small>":""}</span>
-  <span class="seg"><input type="radio" class="p" name="i-${k}" id="i-${k}-pass" value="pass"><label for="i-${k}-pass">Pass</label><input type="radio" class="x" name="i-${k}" id="i-${k}-fail" value="fail"><label for="i-${k}-fail">Fail</label></span>
-  <span class="extra">${b?`<span class="mm"><input id="i-${k}-mm" type="number" step="0.5" min="0" inputmode="decimal" placeholder="–" aria-label="${esc(n)} pad thickness in mm"><span>mm</span></span>`:""}<input id="i-${k}-note" placeholder="${b?"Notes":"Reason failed"}" ${b?"":"hidden"}>${c?`<span class="ctl"><button type="button" class="chip${isPinned(k)?" on":""}" data-pin="${k}" aria-pressed="${isPinned(k)}">${isPinned(k)?"✓ Every RO":"This RO only"}</button><button type="button" class="chip del" data-del="${k}" aria-label="Remove ${esc(n)} from this RO">×</button></span>`:""}</span></div>`}
+  <span class="seg"><input type="radio" class="p" name="i-${k}" id="i-${k}-pass" value="pass"><label for="i-${k}-pass">Pass</label><input type="radio" class="a" name="i-${k}" id="i-${k}-attn" value="attn"><label for="i-${k}-attn">Attn</label><input type="radio" class="x" name="i-${k}" id="i-${k}-fail" value="fail"><label for="i-${k}-fail">Fail</label></span>
+  <span class="extra">${b?`<span class="mm"><label for="i-${k}-mmL">L</label><input id="i-${k}-mmL" type="number" step="0.5" min="0" inputmode="decimal" placeholder="–" aria-label="${esc(n)} left pad in mm"><label for="i-${k}-mmR">R</label><input id="i-${k}-mmR" type="number" step="0.5" min="0" inputmode="decimal" placeholder="–" aria-label="${esc(n)} right pad in mm"><span>mm</span></span>`:""}<input id="i-${k}-note" placeholder="${b?"Notes":"What's wrong"}" ${b?"":"hidden"}>${c?`<span class="ctl"><button type="button" class="chip${isPinned(k)?" on":""}" data-pin="${k}" aria-pressed="${isPinned(k)}">${isPinned(k)?"✓ Every RO":"This RO only"}</button><button type="button" class="chip del" data-del="${k}" aria-label="Remove ${esc(n)} from this RO">×</button></span>`:""}</span></div>`}
 function buildInsp(list){curItems=list;$("insp").innerHTML=list.map(rowHTML).join("")}
 buildInsp(itemsFor(null));
 function addItem(){
@@ -981,22 +994,25 @@ $("insp").addEventListener("click",e=>{
   if(del){const k=del.dataset.del;curItems=curItems.filter(i=>i[0]!==k);$("row-"+k).remove();refreshInsp();
     if(isPinned(k))toast("Removed from this RO. Tap “Every RO” first to stop adding it to new ROs.")}
 });
-$("tires").innerHTML=TIRES.map(([k,n])=>`<div class="tire${k==="spare"?" spare":""}"><h4>${n}</h4><div class="pair">
+$("tires").innerHTML=TIRES.map(([k,n])=>`<div class="tire${k==="spare"?" spare":""}"><h4>${n}</h4><div class="trio">
+  <div><label for="t-${k}-in">Inside</label><input id="t-${k}-in" type="number" min="0" max="20" inputmode="numeric" placeholder="–"></div>
   <div><label for="t-${k}-mid">Middle</label><input id="t-${k}-mid" type="number" min="0" max="20" inputmode="numeric" placeholder="–"></div>
-  <div><label for="t-${k}-edge">Edges</label><input id="t-${k}-edge" type="number" min="0" max="20" inputmode="numeric" placeholder="–"></div></div></div>`).join("");
+  <div><label for="t-${k}-out">Outside</label><input id="t-${k}-out" type="number" min="0" max="20" inputmode="numeric" placeholder="–"></div></div></div>`).join("");
 
 function lvl(el,v,good,soon){el.classList.remove("lvl-pass","lvl-warn","lvl-fail");if(v===""||v==null)return;v=+v;el.classList.add(v>=good?"lvl-pass":v>=soon?"lvl-warn":"lvl-fail")}
 function refreshInsp(){
-  let p=0,f=0;
+  let p=0,f=0,a=0;
   curItems.forEach(([k,,b])=>{
-    const row=$("row-"+k), pass=$(`i-${k}-pass`).checked, fail=$(`i-${k}-fail`).checked, note=$(`i-${k}-note`);
-    row.classList.toggle("is-pass",pass);row.classList.toggle("is-fail",fail);
-    if(!b){note.hidden=!fail;note.classList.toggle("reason",fail)}else{note.classList.toggle("reason",fail);note.placeholder=fail?"Reason failed":"Notes"}
-    if(b)lvl($(`i-${k}-mm`),$(`i-${k}-mm`).value,5,3);
-    if(pass)p++;if(fail)f++;
+    const row=$("row-"+k), pass=$(`i-${k}-pass`).checked, attn=$(`i-${k}-attn`).checked, fail=$(`i-${k}-fail`).checked, note=$(`i-${k}-note`);
+    row.classList.toggle("is-pass",pass);row.classList.toggle("is-attn",attn);row.classList.toggle("is-fail",fail);
+    const bad=fail||attn;note.classList.toggle("reason",fail);note.classList.toggle("reason-a",attn);
+    if(!b){note.hidden=!bad}else{note.placeholder=fail?"Reason failed":attn?"What needs attention":"Notes"}
+    if(!b)note.placeholder=fail?"Reason failed":"What needs attention";
+    if(b){lvl($(`i-${k}-mmL`),$(`i-${k}-mmL`).value,5,3);lvl($(`i-${k}-mmR`),$(`i-${k}-mmR`).value,5,3)}
+    if(pass)p++;if(fail)f++;if(attn)a++;
   });
-  $("insp-sum").textContent=`${p} pass · ${f} fail · ${curItems.length-p-f} open`;
-  TIRES.forEach(([k])=>["mid","edge"].forEach(s=>{const e=$(`t-${k}-${s}`);lvl(e,e.value,6,3)}));
+  $("insp-sum").textContent=`${p} pass · ${a} attention · ${f} fail · ${curItems.length-p-f-a} open`;
+  TIRES.forEach(([k])=>["in","mid","out"].forEach(s=>{const e=$(`t-${k}-${s}`);lvl(e,e.value,6,3)}));
 }
 /* tap a checked Pass/Fail again to clear it */
 $("insp").addEventListener("pointerdown",e=>{const l=e.target.closest(".seg label");if(l){const i=$(l.htmlFor);i.dataset.was=i.checked?"1":""}});
@@ -1093,8 +1109,9 @@ function openForm(r){
   $("maint").checked=!!r.maintReset;
   const ins=r.inspection||{};
   buildInsp(itemsFor(r.id?r:null));
-  curItems.forEach(([k,,b])=>{const v=ins[k]||{};if(v.s)$(`i-${k}-${v.s}`).checked=true;$(`i-${k}-note`).value=v.note||"";if(b)$(`i-${k}-mm`).value=v.mm==null?"":v.mm});
-  const t=r.tires||{};TIRES.forEach(([k])=>{const v=t[k]||{};$(`t-${k}-mid`).value=v.mid==null?"":v.mid;$(`t-${k}-edge`).value=v.edge==null?"":v.edge});
+  curItems.forEach(([k,,b])=>{const v=ins[k]||{};if(v.s)$(`i-${k}-${v.s}`).checked=true;$(`i-${k}-note`).value=v.note||"";
+    if(b){const L=v.mmL!=null?v.mmL:v.mm,R=v.mmR!=null?v.mmR:v.mm;$(`i-${k}-mmL`).value=L==null?"":L;$(`i-${k}-mmR`).value=R==null?"":R}});
+  const t=r.tires||{};TIRES.forEach(([k])=>{const v=t[k]||{},e=x=>x==null?"":x;$(`t-${k}-in`).value=e(v.in!=null?v.in:v.edge);$(`t-${k}-mid`).value=e(v.mid);$(`t-${k}-out`).value=e(v.out!=null?v.out:v.edge)});
   (r.recs||[]).forEach(addRec);
   ["ymm","engine","color","stock","advisor","advisorNo","timein","promised"].forEach(k=>$(k).value=r[k]||"");
   (r.jobs&&r.jobs.length?r.jobs:[null]).forEach(addJob);
@@ -1112,8 +1129,9 @@ function collect(){
     vin:$("vin").value.trim().toUpperCase(),miles:$("miles").value?+$("miles").value:"",tech:$("tech").value.trim(),
     work:$("work").value.trim(),maintReset:$("maint").checked,inspection:{},tires:{},recs:readRecs(),
     createdAt:prev&&prev.createdAt||Date.now(),updatedAt:Date.now()};
-  curItems.forEach(([k,n,b,c])=>{const s=$(`i-${k}-pass`).checked?"pass":$(`i-${k}-fail`).checked?"fail":"";const o={s,note:$(`i-${k}-note`).value.trim()};if(b)o.mm=$(`i-${k}-mm`).value;if(c)o.name=n;rec.inspection[k]=o});
-  TIRES.forEach(([k])=>rec.tires[k]={mid:$(`t-${k}-mid`).value,edge:$(`t-${k}-edge`).value});
+  curItems.forEach(([k,n,b,c])=>{const s=$(`i-${k}-pass`).checked?"pass":$(`i-${k}-attn`).checked?"attn":$(`i-${k}-fail`).checked?"fail":"";const o={s,note:$(`i-${k}-note`).value.trim()};
+    if(b){o.mmL=$(`i-${k}-mmL`).value;o.mmR=$(`i-${k}-mmR`).value;const nums=[o.mmL,o.mmR].filter(x=>x!=="").map(Number);o.mm=nums.length?String(Math.min(...nums)):""}if(c)o.name=n;rec.inspection[k]=o});
+  TIRES.forEach(([k])=>rec.tires[k]={in:$(`t-${k}-in`).value,mid:$(`t-${k}-mid`).value,out:$(`t-${k}-out`).value});
   rec.jobs=readJobs();
   ["ymm","engine","color","stock","advisor","advisorNo","timein","promised"].forEach(k=>rec[k]=$(k).value.trim());
   if(rec.stock)rec.stock=rec.stock.toUpperCase();
@@ -1633,9 +1651,9 @@ function csvToRecords(text){
       maintReset:/^y/i.test(g("Maint reset")),inspection:{},tires:{},recs:[],jobs:[],
       ymm:g("Year/Make/Model"),engine:g("Engine/drive"),advisor:g("Advisor"),advisorNo:g("Advisor #"),color:g("Color"),stock:g("Stock"),
       timein:g("Time in"),promised:g("Promised"),createdAt:now,updatedAt:now+rowN,_csv:true};
-    ITEMS.forEach(([k,n,b])=>{const v=g(n);const o={s:/^pass/i.test(v)?"pass":/^fail/i.test(v)?"fail":"",note:(v.match(/^fail:\s*([\s\S]*)$/i)||[])[1]||""};
-      if(b)o.mm=g(n+" mm");rec.inspection[k]=o});
-    TIRES.forEach(([k,n])=>rec.tires[k]={mid:g(n+" mid"),edge:g(n+" edge")});
+    ITEMS.forEach(([k,n,b])=>{const v=g(n);const o={s:/^pass/i.test(v)?"pass":/^fail/i.test(v)?"fail":/^attn|^attention/i.test(v)?"attn":"",note:(v.match(/^(?:fail|attn|attention):\s*([\s\S]*)$/i)||[])[1]||""};
+      if(b){const m=g(n+" mm");o.mmL=g(n+" L mm")||m;o.mmR=g(n+" R mm")||m;const nums=[o.mmL,o.mmR].filter(x=>x!=="").map(Number);o.mm=nums.length?String(Math.min(...nums)):""}rec.inspection[k]=o});
+    TIRES.forEach(([k,n])=>{const e=g(n+" edge");rec.tires[k]={in:g(n+" inside")||e,mid:g(n+" middle")||g(n+" mid"),out:g(n+" outside")||e}});
     g("Recommendations").split(" | ").filter(x=>x.trim()).forEach(line=>{
       const sm=line.match(/\[(approved|declined)\]\s*$/i);line=line.replace(/\[(approved|declined)\]\s*$/i,"");
       let w=line.trim().split(/\s+/),r={desc:"",qt:"",part:"",price:"",hrs:"",stk:false,pdc:false,status:sm?sm[1].toLowerCase():""};
@@ -1817,18 +1835,24 @@ function makePDF(r){
   box(y0);y+=12;
 
   /* multipoint */
-  bar([["MULTIPOINT INSPECTION",5],["PASS",140,"center"],["FAILED",180,"center"],["REASON FAILED / MEASUREMENT",210]]);
-  y0=y;const ins=r.inspection||{};
-  recordItems(r).forEach(([k,n,b])=>{const v=ins[k]||{};const extra=[b&&v.mm!==""&&v.mm!=null?v.mm+" mm":"",v.note].filter(Boolean).join("  ");
-    const el=fit(extra,CW-216,8.5);const h=Math.max(15,5+el.length*10);ensure(h);
+  bar([["MULTIPOINT INSPECTION",5],["PASS",136,"center"],["ATTN",168,"center"],["FAIL",200,"center"],["REASON / MEASUREMENT",222]]);
+  y0=y;const ins=r.inspection||{};const COLS=[120,152,184,216];
+  recordItems(r).forEach(([k,n,b])=>{const v=ins[k]||{};
+    const L=v.mmL!=null?v.mmL:v.mm,R=v.mmR!=null?v.mmR:v.mm;
+    const meas=b&&((L!==""&&L!=null)||(R!==""&&R!=null))?`L ${L===""||L==null?"-":L} mm  R ${R===""||R==null?"-":R} mm`:"";
+    const extra=[meas,v.note].filter(Boolean).join("   ");
+    const el=fit(extra,CW-226,8.5);const h=Math.max(15,5+el.length*10);ensure(h);
+    if(v.s==="fail"){d.setFillColor(...TINT);d.rect(M+184,y,CW-184,h,"F")}
+    if(v.s==="attn"){d.setFillColor(250,240,212);d.rect(M+152,y,CW-152,h,"F")}
     d.setFont("helvetica","normal");d.setFontSize(9);d.setTextColor(...INK);d.text(n,M+5,y+10.5);
-    if(v.s==="pass")val("X",M+140,y+11,10,"center");
-    if(v.s==="fail"){d.setFillColor(...TINT);d.rect(M+160,y,CW-160,h,"F");val("X",M+180,y+11,10,"center")}
-    el.forEach((t,i)=>val(t,M+210,y+10.5+i*10,8.5));
-    d.setDrawColor(30);d.setLineWidth(.5);[120,160,200].forEach(cx=>d.line(M+cx,y,M+cx,y+h));
+    if(v.s==="pass")val("X",M+136,y+11,10,"center");
+    if(v.s==="attn")val("X",M+168,y+11,10,"center");
+    if(v.s==="fail")val("X",M+200,y+11,10,"center");
+    el.forEach((t,i)=>val(t,M+222,y+10.5+i*10,8.5));
+    d.setDrawColor(30);d.setLineWidth(.5);COLS.forEach(cx=>d.line(M+cx,y,M+cx,y+h));
     y+=h;hline(y)});
   ensure(15);d.setFont("helvetica","normal");d.setFontSize(9);d.setTextColor(...INK);d.text("Reset maintenance light",M+5,y+10.5);
-  val(r.maintReset?"YES":"NO",M+140,y+11,9,"center");d.setDrawColor(30);d.setLineWidth(.5);[120,160,200].forEach(cx=>d.line(M+cx,y,M+cx,y+15));y+=15;
+  val(r.maintReset?"YES":"NO",M+136,y+11,9,"center");d.setDrawColor(30);d.setLineWidth(.5);COLS.forEach(cx=>d.line(M+cx,y,M+cx,y+15));y+=15;
   box(y0);y+=12;
 
   /* tires */
@@ -1837,10 +1861,12 @@ function makePDF(r){
   const tf=v=>v===""||v==null?null:+v>=6?[222,240,227]:+v>=3?[250,238,208]:[250,222,216];
   TIRES.forEach(([k,n],i)=>{const tx=M+i*tw,v=tc[k]||{};
     d.setFont("helvetica","bold");d.setFontSize(8);d.setTextColor(...INK);d.text(n.toUpperCase(),tx+tw/2,y+10,{align:"center"});
-    [["mid","Middle"],["edge","Edges"]].forEach(([s,sl],j)=>{const sx=tx+j*tw/2;lab(sl,sx+tw/4,y+21,"center");
-      const f=tf(v[s]);if(f){d.setFillColor(...f);d.rect(sx+3,y+25,tw/2-6,18,"F")}
-      val(v[s]===""||v[s]==null?"-":v[s],sx+tw/4,y+38,11,"center")});
-    d.setDrawColor(30);d.setLineWidth(.5);if(i)d.line(tx,y,tx,y+48);d.setDrawColor(190);d.line(tx+tw/2,y+14,tx+tw/2,y+48)});
+    const vv={in:v.in!=null?v.in:v.edge,mid:v.mid,out:v.out!=null?v.out:v.edge};
+    [["in","In"],["mid","Mid"],["out","Out"]].forEach(([s,sl],j)=>{const sw=tw/3,sx=tx+j*sw;lab(sl,sx+sw/2,y+21,"center");
+      const f=tf(vv[s]);if(f){d.setFillColor(...f);d.rect(sx+2,y+25,sw-4,18,"F")}
+      val(vv[s]===""||vv[s]==null?"-":vv[s],sx+sw/2,y+38,10,"center");
+      if(j){d.setDrawColor(190);d.line(sx,y+14,sx,y+48)}});
+    d.setDrawColor(30);d.setLineWidth(.5);if(i)d.line(tx,y,tx,y+48)});
   y+=48;box(y0);y+=12;
 
   /* recommendations */
@@ -1886,12 +1912,13 @@ $("pdf").onclick=async()=>{
 $("export").onclick=async()=>{
   const cust=[];const seenC=new Set(ITEMS.map(i=>i[1].toLowerCase()));
   records.forEach(r=>recordItems(r).filter(i=>i[3]).forEach(([k,n])=>{if(!seenC.has(n.toLowerCase())){seenC.add(n.toLowerCase());cust.push([k,n])}}));
-  const cols=["Date","RO","Tag","VIN","Miles","Tech","Flagged hrs","Work performed","Maint reset",...ITEMS.map(i=>i[1]),...cust.map(c=>c[1]),"Front brakes mm","Rear brakes mm",...TIRES.flatMap(([,n])=>[n+" mid",n+" edge"]),"Recommendations","Job lines","Year/Make/Model","Engine/drive","Advisor","Advisor #","Color","Stock","Time in","Promised","Customer pay hrs","Warranty hrs","Internal hrs","Warranty multiplier","Warranty bonus hrs","Approved repairs $","Declined repairs $","Entry","RO Log data"];
+  const cols=["Date","RO","Tag","VIN","Miles","Tech","Flagged hrs","Work performed","Maint reset",...ITEMS.map(i=>i[1]),...cust.map(c=>c[1]),"Front brakes L mm","Front brakes R mm","Rear brakes L mm","Rear brakes R mm",...TIRES.flatMap(([,n])=>[n+" inside",n+" middle",n+" outside"]),"Recommendations","Job lines","Year/Make/Model","Engine/drive","Advisor","Advisor #","Color","Stock","Time in","Promised","Customer pay hrs","Warranty hrs","Internal hrs","Warranty multiplier","Warranty bonus hrs","Approved repairs $","Declined repairs $","Entry","RO Log data"];
   const q=v=>`"${String(v==null?"":v).replace(/"/g,'""')}"`;
   const rows=records.slice().sort((a,b)=>(a.date||"").localeCompare(b.date||"")).map(r=>{const i=r.inspection||{},t=r.tires||{};
     return[r.date,r.ro,r.tag,r.vin,r.miles,r.tech,h1(r.hours),r.work,r.maintReset?"Yes":"",
-      ...[...ITEMS,...cust].map(([k])=>{const v=i[k]||{};return v.s?(v.s==="fail"?"FAIL"+(v.note?": "+v.note:""):"Pass"):""}),
-      (i.frontBrakes||{}).mm,(i.rearBrakes||{}).mm,...TIRES.flatMap(([k])=>[(t[k]||{}).mid,(t[k]||{}).edge]),
+      ...[...ITEMS,...cust].map(([k])=>{const v=i[k]||{};return v.s==="fail"?"FAIL"+(v.note?": "+v.note:""):v.s==="attn"?"ATTN"+(v.note?": "+v.note:""):v.s==="pass"?"Pass":""}),
+      ...["frontBrakes","rearBrakes"].flatMap(k=>{const v=i[k]||{};return[v.mmL!=null?v.mmL:v.mm,v.mmR!=null?v.mmR:v.mm]}),
+      ...TIRES.flatMap(([k])=>{const v=t[k]||{};return[v.in!=null?v.in:v.edge,v.mid,v.out!=null?v.out:v.edge]}),
       (r.recs||[]).map(x=>[x.qt&&x.qt+"x",x.desc,x.part,x.price&&"$"+x.price,x.hrs&&x.hrs+"h",x.status&&"["+x.status+"]"].filter(Boolean).join(" ")).join(" | "),
       (r.jobs||[]).map(j=>[j.type,j.op,j.desc,j.hrs&&j.hrs+"h",j.type==="W"&&!jobGetsMult(j)?"(no mult)":""].filter(Boolean).join(" ")).join(" | "),
       r.ymm,r.engine,r.advisor,r.advisorNo,r.color,r.stock,r.timein,r.promised,...(()=>{const h=splitHours(r),b=bonusFor(r);return[h1(h.C),h1(h.W),h1(h.I),b.m>1&&b.w?b.m:"",b.b?h1(b.b):""]})(),...(()=>{const T=recTotals(r.recs);return[T.approved.n?T.approved.$.toFixed(2):"",T.declined.n?T.declined.$.toFixed(2):""]})(),r.kind==="hours"?(r.span==="week"?"Week total (no RO)":"Hours only (no RO)"):"RO",JSON.stringify(r)].map(q).join(",")});
