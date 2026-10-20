@@ -391,6 +391,12 @@ body.has-photo .daygroup h3{justify-self:stretch}
 .ro.manual::before{background:var(--warn)}
 .ro.manual .id{font-family:var(--f-body);font-weight:700;font-size:1rem}
 .cd u{text-decoration:none;font-size:.55rem;font-weight:700;color:var(--warn);line-height:1}
+.stcheck{display:grid;gap:6px;border-top:1px solid var(--line);padding-top:10px}
+.st-row{display:flex;justify-content:space-between;gap:10px;font-size:.85rem}
+.st-row.small{font-size:.75rem;color:var(--muted)}
+.st-row b.ok{color:var(--pass)} .st-row b.bad{color:var(--fail)}
+.st-bar{height:8px;border-radius:999px;background:var(--sunk);overflow:hidden;border:1px solid var(--line)}
+.st-bar i{display:block;height:100%;background:var(--pass)} .st-bar i.warn{background:var(--warn)} .st-bar i.bad{background:var(--fail)}
 .toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-top:1px solid var(--line);font-weight:500}
 .toggle input{width:22px;height:22px;accent-color:var(--accent)}
 
@@ -562,6 +568,14 @@ body.has-photo .daygroup h3{justify-self:stretch}
   </section>
 
   <section class="view" id="view-set" hidden>
+    <div class="sec">
+      <h2>Backup &amp; restore <small id="bk-where"></small></h2>
+      <div class="body">
+        <p class="hint" style="margin:0">Back up saves your ROs, past hours, advisors, pay settings, inspection items, colors and photos in one file. Restore brings all of it back, for example after you install an updated copy of the app.</p>
+        <div class="tools"><button type="button" class="btn primary" id="set-backup">Back up everything</button><button type="button" class="btn" id="set-restore">Restore from file</button></div>
+        <div class="stcheck" id="st-check"></div>
+      </div>
+    </div>
     <div class="sec">
       <h2>Advisors <small>Tap one on an RO to fill it in</small></h2>
       <div class="body">
@@ -746,7 +760,29 @@ const $=s=>document.getElementById(s);
 const ITEMS=[["battery","Battery"],["suspension","Suspension"],["exhaust","Exhaust"],["ballJoints","Ball joints"],["driveBelts","Drive belts"],["lights","Lights"],["leaks","Leaks"],["frontBrakes","Front brakes",1],["rearBrakes","Rear brakes",1]];
 const TIRES=[["lf","Left front"],["rf","Right front"],["lr","Left rear"],["rr","Right rear"],["spare","Spare"]];
 const DOW=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-const LS={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const LS={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){storageWarn();return false}}};
+/* photos live in IndexedDB (big quota); localStorage is a small 5 MB space shared by every app on this web address */
+const PH={bg:null,hero:null};
+const IDB={p:null,open(){if(!this.p)this.p=new Promise((res,rej)=>{try{const r=indexedDB.open("rolog",1);r.onupgradeneeded=()=>r.result.createObjectStore("kv");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}});return this.p},
+  async tx(mode,fn){const db=await this.open();return new Promise((res,rej)=>{const t=db.transaction("kv",mode),st=t.objectStore("kv"),q=fn(st);t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)})},
+  get(k){return this.tx("readonly",s=>s.get(k))},set(k,v){return this.tx("readwrite",s=>s.put(v,k))},del(k){return this.tx("readwrite",s=>s.delete(k))}};
+const PKEY={bg:"ro-bgphoto",hero:"ro-herophoto"};
+async function photoSet(k,url){PH[k]=url;
+  try{await IDB.set(PKEY[k],url);if(await IDB.get(PKEY[k])===url){try{localStorage.removeItem(PKEY[k])}catch(e){}return true}}catch(e){}
+  return LS.set(PKEY[k],url)}
+async function photoDel(k){PH[k]=null;try{await IDB.del(PKEY[k])}catch(e){}try{localStorage.removeItem(PKEY[k])}catch(e){}}
+async function loadPhotos(){
+  for(const k of ["bg","hero"]){let v=null;
+    try{v=await IDB.get(PKEY[k])}catch(e){}
+    const old=LS.get(PKEY[k]);
+    if(!v&&old){v=old;try{await IDB.set(PKEY[k],old);if(await IDB.get(PKEY[k])===old)localStorage.removeItem(PKEY[k])}catch(e){}}
+    else if(v&&old){try{localStorage.removeItem(PKEY[k])}catch(e){}}
+    PH[k]=v||null}
+  applyLook();if(!$("view-set").hidden)fillLookForm();
+}
+function lsUsage(){let n=0,mine=0;try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i),sz=(k.length+(localStorage.getItem(k)||"").length)*2;n+=sz;if(/^ro-/.test(k))mine+=sz}}catch(e){}return{n,mine}}
+function canSave(){try{localStorage.setItem("ro-probe","1");localStorage.removeItem("ro-probe");return true}catch(e){return false}}
+let warnT=0;function storageWarn(){const n=Date.now();if(n-warnT<8000)return;warnT=n;setTimeout(()=>{try{toast("This device didn't save that. Storage may be full or blocked. Tap Back up now.")}catch(e){}},50)}
 const PREF0={weekStart:1,payRate:"",shopRate:"",mults:[]};
 let prefs=Object.assign({},PREF0,(()=>{const o=LS.get("ro-prefs")||{};const w=LS.get("ro-weekstart");if(o.weekStart==null&&Number.isInteger(w))o.weekStart=w;return o})());
 let startDow=Number.isInteger(prefs.weekStart)?prefs.weekStart:1;
@@ -774,6 +810,7 @@ async function boot(){
   if(!downloads&&!inClaude)downloads={save:async({filename,data})=>{const blob=new Blob([data],{type:/\.pdf$/.test(filename)?"application/pdf":/\.json$/.test(filename)?"application/json":"text/csv"});
     const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}};
   $("export").hidden=!downloads;$("pdf").hidden=!downloads;$("backup").hidden=!downloads;
+  try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist().catch(()=>{})}catch(e){}
   if(!db){mode="local";records=LS.get("ro-local")||[];setSync("local","Saved on this device only");render();return}
   mode="cloud";col=db.collection("ros");
   prefsDoc=db.doc("settings/prefs");
@@ -790,7 +827,8 @@ async function boot(){
 }
 async function persist(rec){
   if(mode==="cloud"){await col.doc(rec.id).set(rec)}
-  else{const i=records.findIndex(r=>r.id===rec.id);if(i>-1)records[i]=rec;else records.push(rec);LS.set("ro-local",records);render()}
+  else{const next=records.slice(),i=next.findIndex(r=>r.id===rec.id);if(i>-1)next[i]=rec;else next.push(rec);
+    if(!LS.set("ro-local",next))throw{code:"storage"};records=next;render()}
 }
 async function remove(id){
   if(mode==="cloud"){await col.doc(id).delete()}
@@ -1068,7 +1106,7 @@ async function save(){
     if(curView==="log"){const ws=weekStart(0);weekOffset=Math.floor((parse(rec.date)-ws)/(7*864e5));if(weekOffset>0)weekOffset=0}
     if(curView==="cal")calSel=rec.date;
     back();
-  }catch(e){toast(e&&e.code==="quota_exceeded"?"Storage is full. Delete old ROs, then save again.":"Couldn't save. Check your connection and tap Save again.")}
+  }catch(e){toast(e&&e.code==="quota_exceeded"?"Storage is full. Delete old ROs, then save again.":e&&e.code==="storage"?"This device couldn't save the RO. Remove a background photo in Settings, then try again.":"Couldn't save. Check your connection and tap Save again.")}
   finally{b.disabled=false;b.textContent="Save RO"}
 }
 let armT;
@@ -1273,14 +1311,14 @@ function applyLook(){
     Object.entries(T).forEach(([k,v])=>rs.setProperty("--"+k,v));rs.setProperty("color-scheme",dark?"dark":"light");
   }
   const b=$("bgfix");BGS.forEach(([k])=>{b.classList.remove("pat-"+k);document.body.classList.remove("pat-"+k)});b.classList.remove("has-photo");b.style.backgroundImage="";document.body.style.backgroundImage="";
-  const photo=L.bg==="photo"?LS.get("ro-bgphoto"):null;
+  const photo=L.bg==="photo"?PH.bg:null;
   if(photo){const c=hexRgb(dark?DARK.bg:LIGHT.bg),v=`rgba(${c.join(",")},${(+L.dim||70)/100})`;
     b.classList.add("has-photo");b.style.backgroundImage=`linear-gradient(${v},${v}),url("${photo}")`}
   else if(L.bg!=="plain"&&L.bg!=="photo")b.classList.add("pat-"+L.bg);
   document.body.classList.toggle("has-photo",!!photo);
   const h=document.querySelector(".hero");
   if(h){HEROS.forEach(([k])=>h.classList.remove("h-"+k));h.style.backgroundImage="";
-    const hp=L.hero==="photo"?LS.get("ro-herophoto"):null;
+    const hp=L.hero==="photo"?PH.hero:null;
     if(hp){const a=(+L.heroDim||55)/100;h.classList.add("h-photo");h.style.backgroundImage=`linear-gradient(rgba(6,10,14,${a}),rgba(6,10,14,${Math.min(.95,a+.15)})),url("${hp}")`}
     else if(L.hero&&L.hero!=="midnight"&&L.hero!=="photo")h.classList.add("h-"+L.hero);
     if(L.hero==="color"){const c=darkEnough(L.heroHex||"#2A4A6B");h.style.backgroundImage=`radial-gradient(120% 95% at 50% 0%,${mix(c,"#000000",.15)},${mix(c,"#000000",.72)} 88%)`}
@@ -1298,16 +1336,21 @@ $("swatches").innerHTML=Object.entries(ACCENTS).map(([k,[n,l]])=>`<input type="r
   `<input type="radio" name="look-accent" id="la-custom" value="custom"><label for="la-custom" class="cpick"><i></i>Custom</label>`;
 $("bgtiles").innerHTML=BGS.map(([k,n])=>`<input type="radio" name="look-bg" id="lb-${k}" value="${k}"><label for="lb-${k}"${k==="photo"?' class="phototile"':""}><b class="${k==="photo"?"":"pat-"+k}" id="lbp-${k}">${k==="photo"?"+":""}</b>${n}</label>`).join("");
 $("herotiles").innerHTML=HEROS.map(([k,n])=>`<input type="radio" name="look-hero" id="lh-${k}" value="${k}"><label for="lh-${k}"${k==="photo"?' class="phototile"':""}><b class="${k==="photo"?"":"h-"+k}" id="hbp-${k}">${k==="photo"?"+":""}</b>${n}</label>`).join("");
-function fillLookForm(){const L=look();
+function renderStorage(){const u=lsUsage(),ok=canSave(),pct=Math.min(100,Math.round(u.n/5e6*100));
+  $("st-check").innerHTML=`<div class="st-row"><span>Saving on this device</span><b class="${ok?"ok":"bad"}">${ok?"Working":"Blocked"}</b></div>
+  <div class="st-bar" aria-hidden="true"><i style="width:${pct}%" class="${pct>85?"bad":pct>60?"warn":""}"></i></div>
+  <div class="st-row small"><span>Small storage space: ${(u.n/1e6).toFixed(2)} MB of about 5 MB used${u.n-u.mine>50000?`, ${((u.n-u.mine)/1e6).toFixed(2)} MB by other apps on this web address`:""}</span></div>
+  <div class="st-row small"><span>Photos are kept in the phone's larger app storage.</span></div>`}
+function fillLookForm(){const L=look();renderStorage();$("bk-where").textContent=mode==="cloud"?"Also synced to your account":"Settings live on this device";
   $("accent-row").hidden=L.accent!=="custom";$("accent-hex").value=L.accentHex;
   $("bgtint-row").hidden=L.bg!=="tint";$("bg-hex").value=L.bgHex;
   $("herohex-row").hidden=L.hero!=="color";$("hero-hex").value=L.heroHex;
   $("glass-f").hidden=L.hero!=="glass";$("glass-clear").value=L.glass;$("glass-val").textContent=L.glass+"%";
-  ($("lh-"+L.hero)||$("lh-midnight")).checked=true;const hp=LS.get("ro-herophoto"),ht=$("hbp-photo");
+  ($("lh-"+L.hero)||$("lh-midnight")).checked=true;const hp=PH.hero,ht=$("hbp-photo");
   ht.style.backgroundImage=hp?`url("${hp}")`:"";ht.textContent=hp?"":"+";
   $("hdim-f").hidden=!(L.hero==="photo"&&hp);$("hero-dim").value=L.heroDim;$("hdim-val").textContent=L.heroDim+"%";$("look-where").textContent=mode==="cloud"?"Synced to your account":"Saved on this device";
   ($("lt-"+L.theme)||$("lt-system")).checked=true;($("la-"+L.accent)||$("la-blue")).checked=true;
-  const photo=LS.get("ro-bgphoto");($("lb-"+L.bg)||$("lb-plain")).checked=true;
+  const photo=PH.bg;($("lb-"+L.bg)||$("lb-plain")).checked=true;
   const pt=$("lbp-photo");pt.style.backgroundImage=photo?`url("${photo}")`:"";pt.textContent=photo?"":"+";
   $("dim-f").hidden=!(L.bg==="photo"&&photo);$("bg-dim").value=L.dim;$("dim-val").textContent=L.dim+"%"}
 let lookT;
@@ -1316,20 +1359,19 @@ function setLook(patch,saveNow){prefs=Object.assign({},prefs,{look:Object.assign
 document.getElementsByName("look-theme").forEach(i=>i.addEventListener("change",()=>setLook({theme:i.value},true)));
 document.getElementsByName("look-accent").forEach(i=>i.addEventListener("change",()=>setLook({accent:i.value},true)));
 document.getElementsByName("look-bg").forEach(i=>i.addEventListener("change",()=>{
-  if(i.value==="photo"&&!LS.get("ro-bgphoto")){fillLookForm();$("bg-file").click();return}
+  if(i.value==="photo"&&!PH.bg){fillLookForm();$("bg-file").click();return}
   setLook({bg:i.value},true)}));
 $("bg-dim").addEventListener("input",()=>setLook({dim:+$("bg-dim").value}));
 $("bg-change").onclick=()=>$("bg-file").click();
-$("bg-remove").onclick=()=>{try{localStorage.removeItem("ro-bgphoto")}catch(e){}setLook({bg:"plain"},true);toast("Photo removed")};
+$("bg-remove").onclick=async()=>{await photoDel("bg");setLook({bg:"plain"},true);toast("Photo removed")};
 $("bg-file").addEventListener("change",async e=>{const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
   try{const c=await shrink(f,1400);let url=c.toDataURL("image/jpeg",.72);
     if(url.length>1.6e6){const c2=await shrink(f,1000);url=c2.toDataURL("image/jpeg",.65)}
-    LS.set("ro-bgphoto",url);
-    if(LS.get("ro-bgphoto")!==url){toast("Couldn't keep that photo on this device. Try a smaller one.");fillLookForm();return}
+    if(!await photoSet("bg",url)){PH.bg=null;toast("Couldn't keep that photo on this device. Try a smaller one.");fillLookForm();return}
     setLook({bg:"photo"},true);toast("Background photo set")}
   catch(err){toast("Couldn't open that photo. Try another.");fillLookForm()}});
 document.getElementsByName("look-hero").forEach(i=>i.addEventListener("change",()=>{
-  if(i.value==="photo"&&!LS.get("ro-herophoto")){fillLookForm();$("hero-file").click();return}
+  if(i.value==="photo"&&!PH.hero){fillLookForm();$("hero-file").click();return}
   setLook({hero:i.value},true)}));
 $("accent-hex").addEventListener("input",()=>setLook({accent:"custom",accentHex:$("accent-hex").value}));
 $("bg-hex").addEventListener("input",()=>setLook({bg:"tint",bgHex:$("bg-hex").value}));
@@ -1337,11 +1379,10 @@ $("hero-hex").addEventListener("input",()=>setLook({hero:"color",heroHex:$("hero
 $("glass-clear").addEventListener("input",()=>setLook({glass:+$("glass-clear").value}));
 $("hero-dim").addEventListener("input",()=>setLook({heroDim:+$("hero-dim").value}));
 $("hero-change").onclick=()=>$("hero-file").click();
-$("hero-remove").onclick=()=>{try{localStorage.removeItem("ro-herophoto")}catch(e){}setLook({hero:"midnight"},true);toast("Card photo removed")};
+$("hero-remove").onclick=async()=>{await photoDel("hero");setLook({hero:"midnight"},true);toast("Card photo removed")};
 $("hero-file").addEventListener("change",async e=>{const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
   try{const c=await shrink(f,1000);let url=c.toDataURL("image/jpeg",.72);
-    LS.set("ro-herophoto",url);
-    if(LS.get("ro-herophoto")!==url){toast("Couldn't keep that photo on this device. Try a smaller one.");fillLookForm();return}
+    if(!await photoSet("hero",url)){PH.hero=null;toast("Couldn't keep that photo on this device. Try a smaller one.");fillLookForm();return}
     setLook({hero:"photo"},true);toast("Card photo set")}
   catch(err){toast("Couldn't open that photo. Try another.");fillLookForm()}});
 $("hero-customize").onclick=()=>{show("set");fillLookForm();setTimeout(()=>{$("herotiles").scrollIntoView({block:"center",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"})},50)};
@@ -1436,7 +1477,7 @@ function fillPrefsForm(){
   $("mults").innerHTML="";multN=0;(prefs.mults&&prefs.mults.length?prefs.mults:[{from:today()}]).forEach(addMult)}
 $("add-mult").onclick=()=>{addMult({});$(`m${multN-1}-from`).focus()};
 async function savePrefs(patch,quiet){
-  prefs=Object.assign({},prefs,patch);LS.set("ro-prefs",prefs);
+  prefs=Object.assign({},prefs,patch);const ok=LS.set("ro-prefs",prefs);if(!ok&&!prefsDoc)return false;
   if(prefsDoc){try{await prefsDoc.set(prefs)}catch(e){if(!quiet)toast("Saved on this device. Cloud sync failed; try again.")}}
 }
 $("save-prefs").onclick=async()=>{
@@ -1452,36 +1493,56 @@ $("save-prefs").onclick=async()=>{
 
 /* ---------- backup / restore ---------- */
 $("backup").onclick=async()=>{
-  if(!records.length){toast("Nothing to back up yet");return}
-  const data=JSON.stringify({app:"ro-log",version:1,exported:new Date().toISOString(),records});
-  try{await downloads.save({filename:`ro-log-backup-${today()}.json`,data});LS.set("ro-lastbackup",Date.now());renderBackup();toast(`Backed up ${records.length} RO${records.length>1?"s":""}`)}
+  const photos={bg:PH.bg||null,hero:PH.hero||null};
+  const data=JSON.stringify({app:"ro-log",version:2,exported:new Date().toISOString(),records,prefs,photos});
+  try{await downloads.save({filename:`ro-log-backup-${today()}.json`,data});LS.set("ro-lastbackup",Date.now());renderBackup();toast(`Backed up ${records.length} RO${records.length===1?"":"s"} and your settings`)}
   catch(e){}
 };
 $("restore").onclick=()=>$("restore-file").click();
+$("set-restore").onclick=()=>$("restore-file").click();
+$("set-backup").onclick=()=>{if(!downloads){toast("Saving files isn't available here.");return}$("backup").onclick()};
 $("restore-file").addEventListener("change",async e=>{
   const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
   let incoming,text;
   try{text=await f.text()}catch(err){toast("Couldn't open that file");return}
   const t=text.replace(/^\uFEFF/,"").trim();
+  let setMsg="";
   if(/^[\[{]/.test(t)){
-    try{const j=JSON.parse(t);incoming=(Array.isArray(j)?j:j.records||[]).filter(r=>r&&typeof r==="object"&&r.id&&(r.ro||r.kind==="hours"))}
+    let j;try{j=JSON.parse(t);incoming=(Array.isArray(j)?j:j.records||[]).filter(r=>r&&typeof r==="object"&&r.id&&(r.ro||r.kind==="hours"))}
     catch(err){toast("That file isn't an RO Log backup");return}
+    if(j&&!Array.isArray(j)&&(j.prefs||j.photos)){await restoreSettings(j);setMsg="settings"}
   }else{
     incoming=csvToRecords(t);
     if(incoming===null){toast("That CSV doesn't have an RO column. Use a file from Export CSV.");return}
   }
-  if(!incoming.length){toast("No repair orders found in that file");return}
+  if(!incoming.length){toast(setMsg?"Settings restored":"No repair orders found in that file");return}
   const have=new Map(records.map(r=>[r.id,r]));
   const roDate=new Set(records.map(r=>r.ro+"|"+r.date));
   const todo=incoming.filter(r=>{const h=have.get(r.id);if(h)return!r._csv&&(r.updatedAt||0)>(h.updatedAt||0);return!(r.ro&&roDate.has(r.ro+"|"+r.date))})
     .map(r=>{const c=Object.assign({},r);delete c._csv;return c});
-  if(!todo.length){toast("Everything in that backup is already here");return}
+  if(!todo.length){toast(setMsg?"Settings restored. Your ROs were already here.":"Everything in that backup is already here");return}
   try{
     if(mode==="cloud"){for(const r of todo)await col.doc(String(r.id)).set(r)}
     else{todo.forEach(r=>have.set(r.id,r));records=[...have.values()];LS.set("ro-local",records);render()}
-    toast(`Restored ${todo.length} RO${todo.length>1?"s":""}`);
+    toast(`Restored ${todo.length} RO${todo.length>1?"s":""}${setMsg?" and your settings":""}`);
   }catch(err){toast("Restore stopped partway. Try again; finished ROs are kept.")}
 });
+
+async function restoreSettings(j){
+  const bp=j.prefs||{},cur=prefs;
+  const uniq=(arr,key)=>{const m=new Map();arr.forEach(x=>{if(x&&key(x))m.set(key(x),x)});return[...m.values()]};
+  const merged=Object.assign({},cur,bp,{
+    advisors:uniq([...(cur.advisors||[]),...(bp.advisors||[])],a=>String(a.name||"").toLowerCase()).sort((a,b)=>String(a.name).localeCompare(String(b.name))),
+    customItems:uniq([...(cur.customItems||[]),...(bp.customItems||[])],c=>c.k),
+    mults:(bp.mults&&bp.mults.length)?bp.mults:(cur.mults||[]),
+    look:Object.assign({},cur.look||{},bp.look||{})});
+  const ph=j.photos||{};
+  if(ph.bg&&!await photoSet("bg",ph.bg))merged.look.bg=merged.look.bg==="photo"?"plain":merged.look.bg;
+  if(ph.hero&&!await photoSet("hero",ph.hero))merged.look.hero=merged.look.hero==="photo"?"midnight":merged.look.hero;
+  await savePrefs(merged);
+  if(Number.isInteger(prefs.weekStart)){startDow=prefs.weekStart;$("wk-start").value=String(startDow);weekOffset=0}
+  applyLook();fillPrefsForm();if(!$("view-set").hidden){fillLookForm();renderAdvList()}render();
+}
 
 /* ---------- CSV import ---------- */
 function parseCSV(t){const rows=[];let row=[],f="",q=false;
@@ -1779,7 +1840,7 @@ $("export").onclick=async()=>{
   try{await downloads.save({filename:`ro-log-${today()}.csv`,data:[cols.map(q).join(","),...rows].join("\n")});}catch(e){}
 };
 
-buildTicks();fillPrefsForm();render();boot();
+buildTicks();fillPrefsForm();render();boot();loadPhotos();
 })();
 </script>
 
