@@ -25,16 +25,19 @@
   --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
   --r:10px;
+  --pat:rgba(21,25,29,.07); --sheen:rgba(255,255,255,.6);
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#101316; --surface:#191D21; --sunk:#14181B; --ink:#E7EAEC; --muted:#97A1AB; --line:#2B3238;
   --accent:#78A6E8; --accent-ink:#0C1828; --accent-soft:#1C2A3C;
   --pass:#5BC98D; --pass-bg:#15301F; --warn:#E5B456; --warn-bg:#33280F; --fail:#F2786A; --fail-bg:#3A1916;
+  --pat:rgba(231,234,236,.06); --sheen:rgba(255,255,255,.035);
   color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#101316; --surface:#191D21; --sunk:#14181B; --ink:#E7EAEC; --muted:#97A1AB; --line:#2B3238;
   --accent:#78A6E8; --accent-ink:#0C1828; --accent-soft:#1C2A3C;
   --pass:#5BC98D; --pass-bg:#15301F; --warn:#E5B456; --warn-bg:#33280F; --fail:#F2786A; --fail-bg:#3A1916;
+  --pat:rgba(231,234,236,.06); --sheen:rgba(255,255,255,.035);
   color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font:15px/1.45 var(--f-body);-webkit-text-size-adjust:100%}
@@ -53,6 +56,10 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var
 .sync{font-size:.75rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sync::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--muted);margin-right:6px;vertical-align:1px}
 .sync.ok::before{background:var(--pass)} .sync.local::before{background:var(--warn)}
+.hbar .right{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.gear{width:38px;height:38px;border-radius:999px;border:1px solid var(--line);background:var(--sunk);color:var(--muted);display:grid;place-items:center;flex-shrink:0}
+.gear[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+@media (max-width:420px){.tabs .wide{display:none} .sync{font-size:0;width:9px;flex-shrink:0} .sync::before{margin-right:0}}
 .tabs{display:flex;background:var(--sunk);border:1px solid var(--line);border-radius:999px;padding:3px;flex-shrink:0}
 .tabs button{border:0;background:none;padding:6px 12px;border-radius:999px;font:600 .95rem var(--f-display);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
@@ -186,6 +193,34 @@ main{padding-block:16px 120px}
 .chip{height:40px;padding:0 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);font-size:.78rem;font-weight:600;color:var(--muted)}
 .chip.on{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
 .chip.del{width:40px;padding:0;font-size:1.1rem}
+.seg.lookseg input.p:checked+label{background:var(--accent);color:var(--accent-ink)}
+.lookseg{justify-self:start}
+.swatches{display:flex;flex-wrap:wrap;gap:10px}
+.swatches input{position:absolute;opacity:0;pointer-events:none}
+.swatches label{display:grid;justify-items:center;gap:4px;font-size:.72rem;color:var(--muted);cursor:pointer;width:62px;text-align:center}
+.swatches label i{width:38px;height:38px;border-radius:50%;border:3px solid var(--surface);box-shadow:0 0 0 1px var(--line)}
+.swatches input:checked+label i{box-shadow:0 0 0 2px var(--ink)}
+.swatches input:checked+label{color:var(--ink);font-weight:600}
+.swatches input:focus-visible+label i{outline:2px solid var(--accent);outline-offset:3px}
+.bgtiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.bgtiles input{position:absolute;opacity:0;pointer-events:none}
+.bgtiles label{display:grid;gap:4px;font-size:.75rem;color:var(--muted);cursor:pointer}
+.bgtiles label b{display:block;height:58px;border-radius:8px;border:1px solid var(--line);background-color:var(--bg)}
+#lbp-photo{background-size:cover;background-position:center}
+.bgtiles input:checked+label{color:var(--ink);font-weight:600}
+.bgtiles input:checked+label b{box-shadow:0 0 0 2px var(--accent);border-color:var(--accent)}
+.bgtiles input:focus-visible+label b{outline:2px solid var(--accent);outline-offset:2px}
+.bgtiles .phototile b{display:grid;place-items:center;font-size:1.4rem;color:var(--muted)}
+.dimrow{display:flex;gap:16px;flex-wrap:wrap}
+#bg-dim{width:100%;accent-color:var(--accent)}
+.pat-steel{background-image:linear-gradient(165deg,var(--sheen) 0%,transparent 45%,var(--pat) 100%)}
+.pat-grid{background-image:linear-gradient(var(--pat) 1px,transparent 1px),linear-gradient(90deg,var(--pat) 1px,transparent 1px);background-size:22px 22px}
+.pat-tread{background-image:linear-gradient(135deg,var(--sheen) 25%,transparent 25%),linear-gradient(225deg,var(--sheen) 25%,transparent 25%),linear-gradient(315deg,var(--pat) 25%,transparent 25%),linear-gradient(45deg,var(--pat) 25%,transparent 25%);background-size:16px 16px}
+.pat-carbon{background-image:linear-gradient(27deg,var(--pat) 5px,transparent 5px),linear-gradient(207deg,var(--pat) 5px,transparent 5px),linear-gradient(27deg,var(--sheen) 5px,transparent 5px),linear-gradient(207deg,var(--sheen) 5px,transparent 5px),linear-gradient(90deg,var(--pat) 10px,transparent 10px),linear-gradient(var(--pat) 25%,transparent 25%,transparent 50%,var(--pat) 50%,var(--pat) 75%,transparent 75%);background-size:20px 20px}
+body.pat-steel{background-attachment:fixed}
+body.has-photo .backupnote,body.has-photo .daygroup h3,body.has-photo .wkhint{background:var(--surface);padding:4px 8px;border-radius:6px;justify-self:start}
+body.has-photo .daygroup h3{justify-self:stretch}
+body.has-photo{background-size:cover;background-position:center;background-attachment:fixed}
 .toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-top:1px solid var(--line);font-weight:500}
 .toggle input{width:22px;height:22px;accent-color:var(--accent)}
 
@@ -242,11 +277,12 @@ main{padding-block:16px 120px}
 <header>
   <div class="wrap hbar">
     <div class="brand"><h1>RO Log</h1><span class="sync" id="sync">Connecting…</span></div>
-    <div class="tabs" role="tablist">
+    <div class="right"><div class="tabs" role="tablist">
       <button role="tab" id="tab-log" aria-selected="true">Log</button>
       <button role="tab" id="tab-pay" aria-selected="false">Pay</button>
-      <button role="tab" id="tab-new" aria-selected="false">+ New RO</button>
+      <button role="tab" id="tab-new" aria-selected="false">+ New<span class="wide"> RO</span></button>
     </div>
+    <button class="gear" id="tab-set" aria-label="Settings" aria-pressed="false"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.6 7.6 0 0 0 0-2l2-1.6a.5.5 0 0 0 .1-.6l-1.9-3.3a.5.5 0 0 0-.6-.2l-2.4 1a7.3 7.3 0 0 0-1.7-1L14.5 2.8a.5.5 0 0 0-.5-.4h-3.8a.5.5 0 0 0-.5.4L9.4 5.3a7.3 7.3 0 0 0-1.7 1l-2.4-1a.5.5 0 0 0-.6.2L2.8 8.8a.5.5 0 0 0 .1.6l2 1.6a7.6 7.6 0 0 0 0 2l-2 1.6a.5.5 0 0 0-.1.6l1.9 3.3a.5.5 0 0 0 .6.2l2.4-1a7.3 7.3 0 0 0 1.7 1l.4 2.5a.5.5 0 0 0 .5.4h3.8a.5.5 0 0 0 .5-.4l.4-2.5a7.3 7.3 0 0 0 1.7-1l2.4 1a.5.5 0 0 0 .6-.2l1.9-3.3a.5.5 0 0 0-.1-.6zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg></button></div>
   </div>
 </header>
 
@@ -328,6 +364,32 @@ main{padding-block:16px 120px}
         <div class="f"><label for="set-noops">Warranty op codes with no multiplier</label><input id="set-noops" class="mono" placeholder="31LEZ"><span class="hint">Separate with commas. Jobs described as PDI or pre-delivery are also excluded. You can change any job with its checkbox.</span></div>
         <span class="hint">Bonus hours = warranty hours × (multiplier − 1). Leave the end date empty if it's still running.</span>
         <button type="button" class="btn primary" id="save-prefs">Save settings</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="view-set" hidden>
+    <div class="sec">
+      <h2>Appearance <small id="look-where"></small></h2>
+      <div class="body">
+        <div class="flabel">Theme</div>
+        <span class="seg lookseg" role="radiogroup" aria-label="Theme">
+          <input type="radio" class="p" name="look-theme" id="lt-system" value="system"><label for="lt-system">System</label>
+          <input type="radio" class="p" name="look-theme" id="lt-light" value="light"><label for="lt-light">Light</label>
+          <input type="radio" class="p" name="look-theme" id="lt-dark" value="dark"><label for="lt-dark">Dark</label>
+        </span>
+        <div class="flabel">Accent color</div>
+        <div class="swatches" id="swatches" role="radiogroup" aria-label="Accent color"></div>
+        <div class="flabel">Background</div>
+        <div class="bgtiles" id="bgtiles" role="radiogroup" aria-label="Background"></div>
+        <input type="file" id="bg-file" accept="image/*" hidden>
+        <div class="f" id="dim-f" hidden>
+          <label for="bg-dim">Photo dimming <span id="dim-val"></span></label>
+          <input type="range" id="bg-dim" min="30" max="90" step="5">
+          <div class="dimrow"><button type="button" class="linkbtn" id="bg-change">Choose another photo</button><button type="button" class="linkbtn" id="bg-remove">Remove photo</button></div>
+          <span class="hint">Your photo stays on this device only.</span>
+        </div>
+        <button type="button" class="btn" id="look-reset">Reset to default look</button>
       </div>
     </div>
   </section>
@@ -449,7 +511,7 @@ const fmt=(d,o)=>d.toLocaleDateString(undefined,o);
 const h1=n=>(Math.round((+n||0)*10)/10).toFixed(1);
 
 /* ---------- storage ---------- */
-function setSync(kind,text){const s=$("sync");s.className="sync "+kind;s.textContent=text}
+function setSync(kind,text){const s=$("sync");s.className="sync "+kind;s.textContent=text;s.title=text;s.setAttribute("aria-label",text)}
 async function boot(){
   setSync("",records.length?"Loading…":"Connecting…");
   let db=null;
@@ -464,7 +526,7 @@ async function boot(){
   prefsDoc.onSnapshot(sn=>{if(!sn.exists)return;
     prefs=Object.assign({},PREF0,sn.data()||{});LS.set("ro-prefs",prefs);
     if(Number.isInteger(prefs.weekStart)&&prefs.weekStart!==startDow){startDow=prefs.weekStart;weekOffset=0}
-    $("wk-start").value=String(startDow);fillPrefsForm();render();renderPay()},()=>{});
+    $("wk-start").value=String(startDow);fillPrefsForm();applyLook();if(!$("view-set").hidden)fillLookForm();render();renderPay()},()=>{});
   col.onSnapshot(snap=>{
     records=snap.docs.map(d=>Object.assign({id:d.id},d.data()));
     LS.set("ro-cache",records);
@@ -738,11 +800,12 @@ $("del").onclick=async()=>{const d=$("del");
 
 /* ---------- nav ---------- */
 function show(v){
-  $("view-log").hidden=v!=="log";$("view-form").hidden=v!=="form";$("savebar").hidden=v!=="form";$("view-pay").hidden=v!=="pay";
+  $("view-log").hidden=v!=="log";$("view-form").hidden=v!=="form";$("savebar").hidden=v!=="form";$("view-pay").hidden=v!=="pay";$("view-set").hidden=v!=="set";$("tab-set").setAttribute("aria-pressed",v==="set");
   $("tab-log").setAttribute("aria-selected",v==="log");$("tab-pay").setAttribute("aria-selected",v==="pay");$("tab-new").setAttribute("aria-selected",v==="form"&&!editingId);
 }
 $("tab-log").onclick=()=>{show("log");render()};
 $("tab-new").onclick=()=>openForm(null);
+$("tab-set").onclick=()=>{show("set");fillLookForm();window.scrollTo(0,0)};
 $("tab-pay").onclick=()=>{show("pay");renderPay();window.scrollTo(0,0)};
 $("cancel").onclick=()=>{show("log");render()};
 $("save").onclick=save;
@@ -757,6 +820,64 @@ $("q").addEventListener("input",render);
 $("list").addEventListener("click",e=>{const b=e.target.closest(".ro");if(b)openForm(records.find(r=>r.id===b.dataset.id))});
 
 let toastT;function toast(m){const t=$("toast");t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,2600)}
+
+/* ---------- appearance ---------- */
+const LIGHT={bg:"#EDF0EF",surface:"#FFFFFF",sunk:"#F5F7F6",ink:"#15191D",muted:"#5B6570",line:"#D3D9D7",accent:"#1D4F91","accent-ink":"#FFFFFF","accent-soft":"#E2EAF5",
+  pass:"#1D7444","pass-bg":"#E1F1E7",warn:"#9A6514","warn-bg":"#FAEED5",fail:"#B42318","fail-bg":"#FBE3DF",pat:"rgba(21,25,29,.07)",sheen:"rgba(255,255,255,.6)"};
+const DARK={bg:"#101316",surface:"#191D21",sunk:"#14181B",ink:"#E7EAEC",muted:"#97A1AB",line:"#2B3238",accent:"#78A6E8","accent-ink":"#0C1828","accent-soft":"#1C2A3C",
+  pass:"#5BC98D","pass-bg":"#15301F",warn:"#E5B456","warn-bg":"#33280F",fail:"#F2786A","fail-bg":"#3A1916",pat:"rgba(231,234,236,.06)",sheen:"rgba(255,255,255,.035)"};
+const ACCENTS={blue:["Lexus blue","#1D4F91","#78A6E8"],red:["Red","#B42318","#F2786A"],teal:["Teal","#0F6873","#5CC8D2"],orange:["Orange","#A8500B","#F0A35E"],purple:["Purple","#5B3FA8","#AE9BF0"],graphite:["Graphite","#3B4450","#B7C0CA"]};
+const BGS=[["plain","Plain"],["steel","Brushed steel"],["tread","Tread plate"],["carbon","Carbon fiber"],["grid","Blueprint grid"],["photo","Your photo"]];
+const LOOK0={theme:"system",accent:"blue",bg:"plain",dim:70};
+const mq=window.matchMedia?matchMedia("(prefers-color-scheme: dark)"):{matches:false};
+function look(){return Object.assign({},LOOK0,prefs.look||{})}
+function hexRgb(h){h=h.replace("#","");return[0,2,4].map(i=>parseInt(h.slice(i,i+2),16))}
+function mix(a,b,t){const A=hexRgb(a),B=hexRgb(b);return"#"+A.map((v,i)=>Math.round(v*(1-t)+B[i]*t).toString(16).padStart(2,"0")).join("")}
+function isDarkNow(L){const h=document.documentElement.getAttribute("data-theme");
+  return L.theme==="dark"||(L.theme==="system"&&(h==="dark"||(h!=="light"&&mq.matches)))}
+function applyLook(){
+  const L=look(),dark=isDarkNow(L),rs=document.documentElement.style;
+  Object.keys(LIGHT).forEach(k=>rs.removeProperty("--"+k));rs.removeProperty("color-scheme");
+  if(L.theme!=="system"||L.accent!=="blue"){
+    const T=Object.assign({},dark?DARK:LIGHT),a=ACCENTS[L.accent]||ACCENTS.blue;
+    if(L.accent!=="blue"){T.accent=dark?a[2]:a[1];T["accent-soft"]=dark?mix(T.accent,T.surface,.8):mix(T.accent,"#FFFFFF",.87);T["accent-ink"]=dark?"#0E1114":"#FFFFFF"}
+    Object.entries(T).forEach(([k,v])=>rs.setProperty("--"+k,v));rs.setProperty("color-scheme",dark?"dark":"light");
+  }
+  const b=document.body;BGS.forEach(([k])=>b.classList.remove("pat-"+k));b.classList.remove("has-photo");b.style.backgroundImage="";
+  const photo=L.bg==="photo"?LS.get("ro-bgphoto"):null;
+  if(photo){const c=hexRgb(dark?DARK.bg:LIGHT.bg),v=`rgba(${c.join(",")},${(+L.dim||70)/100})`;
+    b.classList.add("has-photo");b.style.backgroundImage=`linear-gradient(${v},${v}),url("${photo}")`}
+  else if(L.bg!=="plain"&&L.bg!=="photo")b.classList.add("pat-"+L.bg);
+}
+mq.addEventListener&&mq.addEventListener("change",applyLook);
+try{new MutationObserver(applyLook).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]})}catch(e){}
+$("swatches").innerHTML=Object.entries(ACCENTS).map(([k,[n,l]])=>`<input type="radio" name="look-accent" id="la-${k}" value="${k}"><label for="la-${k}"><i style="background:${l}"></i>${n}</label>`).join("");
+$("bgtiles").innerHTML=BGS.map(([k,n])=>`<input type="radio" name="look-bg" id="lb-${k}" value="${k}"><label for="lb-${k}"${k==="photo"?' class="phototile"':""}><b class="${k==="photo"?"":"pat-"+k}" id="lbp-${k}">${k==="photo"?"+":""}</b>${n}</label>`).join("");
+function fillLookForm(){const L=look();$("look-where").textContent=mode==="cloud"?"Synced to your account":"Saved on this device";
+  ($("lt-"+L.theme)||$("lt-system")).checked=true;($("la-"+L.accent)||$("la-blue")).checked=true;
+  const photo=LS.get("ro-bgphoto");($("lb-"+L.bg)||$("lb-plain")).checked=true;
+  const pt=$("lbp-photo");pt.style.backgroundImage=photo?`url("${photo}")`:"";pt.textContent=photo?"":"+";
+  $("dim-f").hidden=!(L.bg==="photo"&&photo);$("bg-dim").value=L.dim;$("dim-val").textContent=L.dim+"%"}
+let lookT;
+function setLook(patch,saveNow){prefs=Object.assign({},prefs,{look:Object.assign(look(),patch)});LS.set("ro-prefs",prefs);applyLook();fillLookForm();
+  clearTimeout(lookT);lookT=setTimeout(()=>savePrefs({},true),saveNow?0:600)}
+document.getElementsByName("look-theme").forEach(i=>i.addEventListener("change",()=>setLook({theme:i.value},true)));
+document.getElementsByName("look-accent").forEach(i=>i.addEventListener("change",()=>setLook({accent:i.value},true)));
+document.getElementsByName("look-bg").forEach(i=>i.addEventListener("change",()=>{
+  if(i.value==="photo"&&!LS.get("ro-bgphoto")){fillLookForm();$("bg-file").click();return}
+  setLook({bg:i.value},true)}));
+$("bg-dim").addEventListener("input",()=>setLook({dim:+$("bg-dim").value}));
+$("bg-change").onclick=()=>$("bg-file").click();
+$("bg-remove").onclick=()=>{try{localStorage.removeItem("ro-bgphoto")}catch(e){}setLook({bg:"plain"},true);toast("Photo removed")};
+$("bg-file").addEventListener("change",async e=>{const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
+  try{const c=await shrink(f,1400);let url=c.toDataURL("image/jpeg",.72);
+    if(url.length>1.6e6){const c2=await shrink(f,1000);url=c2.toDataURL("image/jpeg",.65)}
+    LS.set("ro-bgphoto",url);
+    if(LS.get("ro-bgphoto")!==url){toast("Couldn't keep that photo on this device. Try a smaller one.");fillLookForm();return}
+    setLook({bg:"photo"},true);toast("Background photo set")}
+  catch(err){toast("Couldn't open that photo. Try another.");fillLookForm()}});
+$("look-reset").onclick=()=>{prefs=Object.assign({},prefs,{look:Object.assign({},LOOK0)});LS.set("ro-prefs",prefs);applyLook();fillLookForm();savePrefs({},true);toast("Default look restored")};
+applyLook();
 
 /* ---------- pay ---------- */
 const money=n=>"$"+(+n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
