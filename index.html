@@ -205,6 +205,9 @@ main{padding-block:16px 120px}
 .job label{font-size:.68rem;color:var(--muted);display:block;margin-bottom:2px}
 .job select{height:40px;width:100%;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);font:600 .95rem var(--f-mono);padding:0 6px}
 .job .desc{grid-column:1/-1}
+.multchk{grid-column:1/-1;display:flex;align-items:center;gap:8px;font-size:.85rem;font-weight:500;padding-top:2px}
+.multchk input{width:20px;height:20px;accent-color:var(--pass)}
+.multchk em{font-style:normal;font-size:.75rem;color:var(--warn);font-weight:600}
 .rectotal{display:flex;justify-content:space-between;font-weight:600;font-variant-numeric:tabular-nums;padding-top:4px;border-top:1px solid var(--line)}
 @media (max-width:420px){.rec .cells{grid-template-columns:56px minmax(0,1fr) minmax(0,1fr)} .rec .cells .pn{grid-column:2/4} .stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
@@ -289,6 +292,7 @@ main{padding-block:16px 120px}
           <div class="f hours"><label for="calc-hrs">Labor hours</label><input id="calc-hrs" type="number" step="0.1" min="0" inputmode="decimal" placeholder="0.0"></div>
           <div class="f" id="calc-mult-f" hidden><label for="calc-mult">Multiplier</label><input id="calc-mult" type="number" step="0.1" min="1" inputmode="decimal"></div>
         </div>
+        <label class="multchk" id="calc-pdi-w" hidden><input type="checkbox" id="calc-pdi"><span>PDI or other job with no multiplier</span></label>
         <div class="paylines calcout" id="calc-out"></div>
       </div>
     </div>
@@ -303,6 +307,7 @@ main{padding-block:16px 120px}
         <div class="flabel">Warranty multiplier</div>
         <div class="recs" id="mults"></div>
         <button type="button" class="btn" id="add-mult">+ Add multiplier range</button>
+        <div class="f"><label for="set-noops">Warranty op codes with no multiplier</label><input id="set-noops" class="mono" placeholder="31LEZ"><span class="hint">Separate with commas. Jobs described as PDI or pre-delivery are also excluded. You can change any job with its checkbox.</span></div>
         <span class="hint">Bonus hours = warranty hours × (multiplier − 1). Leave the end date empty if it's still running.</span>
         <button type="button" class="btn primary" id="save-prefs">Save settings</button>
       </div>
@@ -566,13 +571,26 @@ function addJob(j){
     <div><label for="j${n}-op">Op code</label><input id="j${n}-op" class="mono" value="${esc(j.op)}" placeholder="31LEZ"></div>
     <div><label for="j${n}-hrs">Hours</label><input id="j${n}-hrs" type="number" step="0.1" min="0" inputmode="decimal" value="${esc(j.hrs)}"></div>
     <button type="button" class="x" aria-label="Remove job line">×</button>
-    <div class="desc"><label for="j${n}-desc">Description</label><input id="j${n}-desc" value="${esc(j.desc)}" placeholder="Pre-delivery inspection"></div></div>`;
+    <div class="desc"><label for="j${n}-desc">Description</label><input id="j${n}-desc" value="${esc(j.desc)}" placeholder="Pre-delivery inspection"></div>
+    <label class="multchk" id="j${n}-mwrap" hidden><input type="checkbox" id="j${n}-mult"><span>Gets warranty multiplier</span><em id="j${n}-mwhy"></em></label></div>`;
   d.querySelector(".x").onclick=()=>{d.remove();syncHours();updateBar()};
   $("jobs").appendChild(d);
+  const cb=$(`j${n}-mult`);
+  if(j.noMult!=null){cb.checked=!j.noMult;d.dataset.touched="1"}
+  cb.addEventListener("change",()=>{d.dataset.touched="1";jobMultUI(n)});
+  ["type","op","desc"].forEach(k=>$(`j${n}-${k}`).addEventListener(k==="type"?"change":"input",()=>jobMultUI(n)));
+  jobMultUI(n);
+}
+function jobMultUI(n){
+  const d=$(`j${n}-mult`).closest(".rec"),w=$(`j${n}-type`).value==="W",cb=$(`j${n}-mult`);
+  $(`j${n}-mwrap`).hidden=!w;
+  const ex=isNoMult({op:$(`j${n}-op`).value,desc:$(`j${n}-desc`).value});
+  if(!d.dataset.touched)cb.checked=!ex;
+  $(`j${n}-mwhy`).textContent=!cb.checked?(ex?"PDI / excluded op code":"Off for this job"):"";
 }
 $("add-job").onclick=()=>{addJob();$(`j${jobN-1}-op`).focus()};
 function readJobs(){return[...$("jobs").children].map(d=>{const n=d.dataset.n,v=k=>$(`j${n}-${k}`).value.trim();
-  return{type:v("type"),op:v("op").toUpperCase(),desc:v("desc"),hrs:v("hrs")}}).filter(j=>j.op||j.desc||j.hrs)}
+  const o={type:v("type"),op:v("op").toUpperCase(),desc:v("desc"),hrs:v("hrs")};if(o.type==="W")o.noMult=!$(`j${n}-mult`).checked;return o}).filter(j=>j.op||j.desc||j.hrs)}
 const jobSum=js=>(js||[]).reduce((a,j)=>a+(+j.hrs||0),0);
 function syncHours(){const s=jobSum(readJobs());
   $("hours-hint").textContent=s?`Job lines total ${h1(s)}`:"";
@@ -677,7 +695,13 @@ function splitHours(r){const o={C:0,W:0,I:0};
 function multFor(date){let best=null;
   (prefs.mults||[]).forEach(m=>{if(!m.m||!m.from||date<m.from||(m.to&&date>m.to))return;if(!best||m.from>best.from)best=m});
   return best?+best.m:1}
-function bonusFor(r){const w=splitHours(r).W,m=multFor(r.date);return{w,m,b:m>1?w*(m-1):0}}
+function noMultOps(){return String(prefs.noMultOps==null?"31LEZ":prefs.noMultOps).toUpperCase().split(/[\s,]+/).filter(Boolean)}
+function isNoMult(j){const op=String(j.op||"").toUpperCase().trim();
+  return(!!op&&noMultOps().includes(op))||/\bPDI\b|pre[\s-]?delivery/i.test(String(j.desc||""))}
+function jobGetsMult(j){return j.noMult!=null?!j.noMult:!isNoMult(j)}
+function bonusFor(r){const w=splitHours(r).W,m=multFor(r.date);
+  const q=(r.jobs||[]).filter(j=>j.type==="W"&&jobGetsMult(j)).reduce((a,j)=>a+(+j.hrs||0),0);
+  return{w,q,x:Math.max(0,w-q),m,b:m>1?q*(m-1):0}}
 let payOffset=0,bonusOffset=0;
 function line(label,val,cls,key){return`<div class="pl ${cls||""}"><span>${key?`<i class="${key}"></i>`:""}${label}</span><b>${val}</b></div>`}
 function renderPay(){
@@ -699,11 +723,12 @@ function renderPay(){
   const md=new Date();md.setDate(1);md.setMonth(md.getMonth()+bonusOffset);
   const mk=iso(md).slice(0,7),nx=new Date(md);nx.setMonth(nx.getMonth()+1);const pv=new Date(md);pv.setMonth(pv.getMonth()-1);
   $("b-month").textContent=fmt(md,{month:"long",year:"numeric"});$("b-next").disabled=bonusOffset>=0;
-  const mon=records.filter(r=>(r.date||"").slice(0,7)===mk);let wh=0,bh=0;const used=new Set();
-  mon.forEach(r=>{const x=bonusFor(r);wh+=x.w;bh+=x.b;if(x.w&&x.m>1)used.add(fmtMult(x.m))});
+  const mon=records.filter(r=>(r.date||"").slice(0,7)===mk);let wh=0,qh=0,bh=0;const used=new Set();
+  mon.forEach(r=>{const x=bonusFor(r);wh+=x.w;qh+=x.q;bh+=x.b;if(x.q&&x.m>1)used.add(fmtMult(x.m))});
   const prevK=iso(pv).slice(0,7);const prevB=records.filter(r=>(r.date||"").slice(0,7)===prevK).reduce((s,r)=>s+bonusFor(r).b,0);
   const hasMult=(prefs.mults||[]).some(m=>m.m&&m.from);
   $("p-bonus").innerHTML=line("Warranty hours flagged",h1(wh)+" hrs","","k-w")+
+    (wh-qh>0.001?line("No multiplier (PDI etc.)","−"+h1(wh-qh)+" hrs")+line("Qualifying warranty hours",h1(qh)+" hrs"):"")+
     line("Multiplier",used.size?[...used].join(", "):hasMult?"None in effect":"Not set")+
     line(`Bonus hours · paid with the ${fmt(nx,{month:"long"})} bonus`,h1(bh)+" hrs","total bonus")+
     (rate&&bh?line(`Bonus at ${money(rate)}/hr`,money(bh*rate),"bonus"):"")+
@@ -713,7 +738,7 @@ function renderPay(){
 }
 function renderCalc(){
   const w=$("calc-w").checked,hrs=+$("calc-hrs").value||0,rate=+prefs.payRate||0,shop=+prefs.shopRate||0;
-  $("calc-mult-f").hidden=!w;
+  $("calc-mult-f").hidden=!w;$("calc-pdi-w").hidden=!w;
   if(w&&!$("calc-mult").value){const m=multFor(today());$("calc-mult").value=m>1?m:""}
   let html="";
   if(!w){
@@ -721,8 +746,8 @@ function renderCalc(){
       (shop?`<div class="pl note">${h1(hrs)} hrs × ${money(shop)}/hr shop labor rate</div>`:"")+
       line("You flag",h1(hrs)+" hrs")+(rate?line("Your pay",money(hrs*rate),"bonus"):"");
   }else{
-    const m=Math.max(1,+$("calc-mult").value||1),b=hrs*(m-1);
-    html=line("Job pays",h1(hrs)+" hrs")+line(`Warranty bonus (${fmtMult(m)})`,"+"+h1(b)+" hrs","bonus")+
+    const m=$("calc-pdi").checked?1:Math.max(1,+$("calc-mult").value||1),b=hrs*(m-1);
+    html=line("Job pays",h1(hrs)+" hrs")+line($("calc-pdi").checked?"Warranty bonus (no multiplier)":`Warranty bonus (${fmtMult(m)})`,"+"+h1(b)+" hrs","bonus")+
       line("Total hours",h1(hrs+b)+" hrs","total")+
       (rate?line("Paid this week",money(hrs*rate))+line("Added to next month's bonus",money(b*rate),"bonus"):"")+
       `<div class="pl note">Bonus = ${h1(hrs)} × (${(+m).toString()} − 1) = ${h1(b)} hrs, paid with the following month's bonus.</div>`;
@@ -730,7 +755,7 @@ function renderCalc(){
   $("calc-out").innerHTML=html;
 }
 ["calc-hrs","calc-mult"].forEach(id=>$(id).addEventListener("input",renderCalc));
-["calc-c","calc-w"].forEach(id=>$(id).addEventListener("change",renderCalc));
+["calc-c","calc-w","calc-pdi"].forEach(id=>$(id).addEventListener("change",renderCalc));
 $("p-prev").onclick=()=>{payOffset--;renderPay()};$("p-next").onclick=()=>{if(payOffset<0){payOffset++;renderPay()}};
 $("b-prev").onclick=()=>{bonusOffset--;renderPay()};$("b-next").onclick=()=>{if(bonusOffset<0){bonusOffset++;renderPay()}};
 
@@ -745,7 +770,7 @@ function addMult(m){m=m||{};const n=multN++;const d=document.createElement("div"
   $("mults").appendChild(d)}
 function fillPrefsForm(){
   if(document.activeElement&&$("view-pay").contains(document.activeElement)&&document.activeElement.closest(".sec:last-child"))return;
-  $("set-rate").value=prefs.payRate||"";$("set-shop").value=prefs.shopRate||"";
+  $("set-rate").value=prefs.payRate||"";$("set-shop").value=prefs.shopRate||"";$("set-noops").value=noMultOps().join(", ");
   $("mults").innerHTML="";multN=0;(prefs.mults&&prefs.mults.length?prefs.mults:[{from:today()}]).forEach(addMult)}
 $("add-mult").onclick=()=>{addMult({});$(`m${multN-1}-from`).focus()};
 async function savePrefs(patch,quiet){
@@ -759,7 +784,7 @@ $("save-prefs").onclick=async()=>{
   if(bad){toast(!bad.from?"Each multiplier range needs a start date":bad.m<1?"Multiplier must be 1 or more, like 2.2":"End date is before the start date");return}
   mults.sort((a,b)=>a.from.localeCompare(b.from));
   const v=x=>{const n=parseFloat(x);return n>0?n:""};
-  await savePrefs({payRate:v($("set-rate").value),shopRate:v($("set-shop").value),mults});
+  await savePrefs({payRate:v($("set-rate").value),shopRate:v($("set-shop").value),mults,noMultOps:$("set-noops").value.toUpperCase().split(/[\s,]+/).filter(Boolean).join(", ")});
   $("calc-mult").value="";fillPrefsForm();renderPay();toast("Pay settings saved");
 };
 
@@ -837,11 +862,12 @@ function csvToRecords(text){
       w=w.filter(t=>{if(/^\$[\d.,]+$/.test(t)){r.price=t.slice(1).replace(/,/g,"");return false}return true});
       r.desc=w.join(" ");rec.recs.push(r)});
     g("Job lines").split(" | ").filter(x=>x.trim()).forEach(line=>{
+      let nm=/\(no mult\)\s*$/i.test(line);line=line.replace(/\(no mult\)\s*$/i,"");
       let w=line.trim().split(/\s+/),j={type:"C",op:"",desc:"",hrs:""};
       if(/^[CWI]$/.test(w[0]))j.type=w.shift();
       if(w.length&&/^[\d.]+h$/i.test(w[w.length-1]))j.hrs=w.pop().slice(0,-1);
       if(w.length&&/^[A-Z0-9]{3,}$/.test(w[0]))j.op=w.shift();
-      j.desc=w.join(" ");rec.jobs.push(j)});
+      j.desc=w.join(" ");if(j.type==="W"&&nm)j.noMult=true;rec.jobs.push(j)});
     return rec}).filter(Boolean)}
 
 /* ---------- VIN check digit + scan ---------- */
@@ -1077,7 +1103,7 @@ $("export").onclick=async()=>{
       ...ITEMS.map(([k])=>{const v=i[k]||{};return v.s?(v.s==="fail"?"FAIL"+(v.note?": "+v.note:""):"Pass"):""}),
       (i.frontBrakes||{}).mm,(i.rearBrakes||{}).mm,...TIRES.flatMap(([k])=>[(t[k]||{}).mid,(t[k]||{}).edge]),
       (r.recs||[]).map(x=>[x.qt&&x.qt+"x",x.desc,x.part,x.price&&"$"+x.price,x.hrs&&x.hrs+"h"].filter(Boolean).join(" ")).join(" | "),
-      (r.jobs||[]).map(j=>[j.type,j.op,j.desc,j.hrs&&j.hrs+"h"].filter(Boolean).join(" ")).join(" | "),
+      (r.jobs||[]).map(j=>[j.type,j.op,j.desc,j.hrs&&j.hrs+"h",j.type==="W"&&!jobGetsMult(j)?"(no mult)":""].filter(Boolean).join(" ")).join(" | "),
       r.ymm,r.engine,r.advisor,r.color,r.stock,r.timein,r.promised,...(()=>{const h=splitHours(r),b=bonusFor(r);return[h1(h.C),h1(h.W),h1(h.I),b.m>1&&b.w?b.m:"",b.b?h1(b.b):""]})(),JSON.stringify(r)].map(q).join(",")});
   try{await downloads.save({filename:`ro-log-${today()}.csv`,data:[cols.map(q).join(","),...rows].join("\n")});}catch(e){}
 };
