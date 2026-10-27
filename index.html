@@ -4137,8 +4137,18 @@ function inkIn(c,x0,y0,x1,y1){x0=Math.max(0,Math.round(x0));y0=Math.max(0,Math.r
   const skipC=lineC.map((v,xx)=>v||lineC[xx-1]||lineC[xx+1]||lineC[xx-2]||lineC[xx+2]);
   let dark=0,tot=0;for(let yy=0;yy<h;yy++){if(skipR[yy])continue;for(let xx=0;xx<w;xx++){if(skipC[xx])continue;tot++;if(isD(lum[yy*w+xx]))dark++}}
   return tot?dark/tot:0}
+const DIGFIX={O:"0",o:"0",Q:"0",D:"0",I:"1",l:"1","|":"1","!":"1",L:"1",i:"1",Z:"2",z:"2",S:"5",s:"5",b:"6",G:"6",B:"8",g:"9",q:"9"};
+function sheetChars(w){const fix=c=>DIGFIX[c]||c;
+  if(Array.isArray(w.s)&&w.s.length)return w.s.map(c=>({c:fix(String(c.t)),x:c.x,y:c.y,w:c.w,h:c.h,cx:c.x+c.w/2,cy:c.y+c.h/2}));
+  const ch=[...String(w.t)],n=ch.length||1;return ch.map((c,i)=>({c:fix(c),x:w.x+w.w*i/n,y:w.y,w:w.w/n,h:w.h,cx:w.x+w.w*(i+.5)/n,cy:w.y+w.h/2}))}
+/* digits written in one box -> tread or pad values: "10" stays ten, "654" becomes 6, 5, 4 */
+function depthVals(chars){const d=chars.filter(c=>/[0-9]/.test(c.c));const out=[];
+  for(let i=0;i<d.length;i++){const a=d[i],b=d[i+1];
+    if(a.c==="1"&&b&&/[0-2]/.test(b.c)&&Math.abs(b.cy-a.cy)<Math.max(a.h,b.h)*.5&&b.cx>a.cx){out.push({v:a.c+b.c,cx:(a.cx+b.cx)/2,cy:(a.cy+b.cy)/2});i++}
+    else out.push({v:a.c,cx:a.cx,cy:a.cy})}
+  return out}
 function parseSheetWords(words,canvas){
-  const W=words.map(w=>({t:String(w.t),u:String(w.t).toUpperCase().replace(/[^A-Z0-9.#/+$-]/g,""),x:w.x,y:w.y,w:w.w,h:w.h,cx:w.x+w.w/2,cy:w.y+w.h/2})).filter(w=>w.u);
+  const W=words.map(w=>({t:String(w.t),u:String(w.t).toUpperCase().replace(/[^A-Z0-9.#/+$-]/g,""),x:w.x,y:w.y,w:w.w,h:w.h,cx:w.x+w.w/2,cy:w.y+w.h/2,s:w.s})).filter(w=>w.u);
   const used=new Set();
   const find=(re,f)=>W.filter(w=>re.test(w.u)&&(!f||f(w))).sort((a,b)=>a.cy-b.cy);
   const one=(re,f)=>find(re,f)[0]||null;
@@ -4160,8 +4170,9 @@ function parseSheetWords(words,canvas){
   const rows=ITEMS.map(([k])=>[k,L[k]]).filter(([,w])=>w).sort((a,b)=>a[1].cy-b[1].cy);
   const items={},hand=w=>!used.has(w);
   const mmW=find(/^MM$/);mmW.forEach(w=>used.add(w));
+  const tireTop=Math.min(1e9,...W.filter(w=>/^(MIDDLE|EDGES)$/.test(w.u)).map(w=>w.y-w.h*1.6));
   rows.forEach(([k,lab],i)=>{const prev=rows[i-1],next=rows[i+1];
-    const top=prev?(prev[1].cy+lab.cy)/2:lab.cy-lab.h*1.6,bot=next?(lab.cy+next[1].cy)/2:lab.cy+lab.h*1.6;
+    const top=prev?(prev[1].cy+lab.cy)/2:lab.cy-lab.h*1.6,bot=next?(lab.cy+next[1].cy)/2:Math.min(lab.cy+lab.h*1.6,tireTop);
     const pad=(bot-top)*.18,y0=top+pad,y1=bot-pad;
     const pi=inkIn(canvas,colX(passL,lab.cy)+6,y0,colX(passR,lab.cy)-6,y1),fi=inkIn(canvas,colX(failL,lab.cy)+6,y0,colX(failR,lab.cy)-6,y1);
     const toks=W.filter(w=>hand(w)&&w.cy>top&&w.cy<bot);
@@ -4169,9 +4180,15 @@ function parseSheetWords(words,canvas){
     let s="";if(markF||fi>.02&&fi>pi*1.6)s="fail";else if(markP||pi>.02&&pi>fi*1.6)s="pass";
     const rest=toks.filter(w=>w.cx>colX(failR,w.cy)).sort((a,b)=>a.x-b.x);
     const it={s,note:""};
-    if(k==="frontBrakes"||k==="rearBrakes"){const mm=mmW.find(m=>m.cy>top&&m.cy<bot);
+    if(k==="frontBrakes"||k==="rearBrakes"){const mm=mmW.filter(m=>Math.abs(m.cy-lab.cy)<(bot-top)).sort((a,b)=>Math.abs(a.cy-lab.cy)-Math.abs(b.cy-lab.cy))[0];
       const before=rest.filter(w=>!mm||w.cx<mm.cx),after=rest.filter(w=>mm&&w.cx>mm.cx);
-      const n=before.map(w=>w.t).join("").match(/\d+(\.\d)?/);it.mm=n?n[0]:"";it.note=after.map(w=>w.t).join(" ")}
+      // the pad number sits just left of "mm"; it is often written large and pokes into the row above
+      const numy=w=>/^[0-9OoQDIl|!.+]{1,5}$/.test(String(w.t).trim());
+      const near=mm?W.filter(w=>hand(w)&&w!==mm&&numy(w)&&w.cx<mm.cx&&w.cx>colX(failR,w.cy)-10&&Math.abs(w.cy-mm.cy)<(bot-top)*.75&&w.x+w.w<mm.x+mm.w*.6):before.filter(numy);
+      let pick=near.slice();if(mm&&pick.length){pick.sort((a,b)=>Math.abs(a.cy-mm.cy)-Math.abs(b.cy-mm.cy));const f=pick[0];
+        pick=[f,...pick.slice(1).filter(w=>Math.abs(w.cy-f.cy)<Math.max(w.h,f.h)*.6&&Math.min(Math.abs(w.x-(f.x+f.w)),Math.abs(f.x-(w.x+w.w)))<f.h)].sort((a,b)=>a.x-b.x)}
+      let n=pick.flatMap(sheetChars).map(c=>c.c).join("").replace(/[^0-9.]/g,"").match(/\d+(\.\d)?/);let v=n?n[0]:"";if(+v>20)v=v.slice(0,2);if(+v>20)v=v.slice(0,1);
+      it.mm=v;pick.forEach(w=>used.add(w));it.note=after.filter(w=>!pick.includes(w)).map(w=>w.t).join(" ")}
     else it.note=rest.map(w=>w.t).join(" ");
     it.note=it.note.replace(/^[-–—\s]+/,"").trim();items[k]=it;rest.forEach(w=>used.add(w))});
   // maintenance light mark
@@ -4187,15 +4204,22 @@ function parseSheetWords(words,canvas){
   const techH=one(/^TECHNICIAN$/),qtH=one(/^QT$/),hrsH=one(/^HRS.?$/)||one(/^LABOR/),partH=one(/^PART$/),priceH=one(/^\$$/);
   [techH,qtH,hrsH,partH,priceH].forEach(w=>w&&used.add(w));find(/^(RECOMMENDATIONS:?|LABOR,?|STK.?|PDC|#)$/).forEach(w=>used.add(w));
   const tires={},keys=["lf","rf","lr","rr","spare"];
-  if(mids.length>=4&&edgs.length>=4){const hy=Math.max(...mids.map(m=>m.y+m.h)),by=techH?techH.y:hy+220;
-    const cols=[];mids.forEach((m,i)=>{cols.push({k:keys[i],f:"mid",x:m.cx,y:m.cy});if(edgs[i])cols.push({k:keys[i],f:"edge",x:edgs[i].cx,y:edgs[i].cy})});
-    const toks=W.filter(w=>hand(w)&&w.cy>hy+4&&w.cy<by&&/[0-9]/.test(w.u));
-    const bin={};toks.forEach(w=>{let best=null;cols.forEach(c=>{const d=Math.abs(colX(c.x,w.cy,c.y)-w.cx);if(!best||d<best.d)best={c,d}});
-      if(best){const id=best.c.k+"-"+best.c.f;(bin[id]=bin[id]||[]).push(w);used.add(w)}});
-    keys.forEach(k=>{const m=(bin[k+"-mid"]||[]).map(w=>w.u.replace(/[^0-9]/g,"")).join("");
-      let e=(bin[k+"-edge"]||[]).sort((a,b)=>a.cy-b.cy||a.cx-b.cx).flatMap(w=>w.u.split("/")).map(v=>v.replace(/[^0-9]/g,"")).filter(Boolean);
-      if(e.length===1&&e[0].length===2&&+e[0]>12)e=[e[0][0],e[0][1]];
-      tires[k]={mid:m.length<=2?m:"",edge1:e[0]||"",edge2:e[1]||e[0]||""}})}
+  if(mids.length>=4&&edgs.length>=4){const hy=Math.max(...mids.map(m=>m.y+m.h)),by=techH?techH.y:hy+220,ref=mids[0].cy;
+    const n=Math.min(mids.length,keys.length),bx=x=>x;
+    const box=mids.slice(0,n).map((m,i)=>{const e=edgs[i]||{cx:m.cx+m.w*1.6,x:m.x+m.w*1.2,w:m.w};
+      const left=i===0?m.x-m.w*.7:((edgs[i-1]?edgs[i-1].cx:mids[i-1].cx)+m.cx)/2,right=i<n-1?(e.cx+mids[i+1].cx)/2:e.x+e.w*1.9;
+      return{k:keys[i],left,right,split:(m.cx+e.cx)/2}});
+    const numTok=w=>/^[0-9OoQDIl|!\/\\.+-]{1,6}$/.test(String(w.t).trim())&&/[0-9]/.test(String(w.t));
+    let chars=W.filter(w=>hand(w)&&w.cy>hy+2&&w.cy<by&&numTok(w)).flatMap(sheetChars).filter(c=>/[0-9]/.test(c.c));
+    const hs=chars.map(c=>c.h).sort((a,b)=>a-b),medH=hs[Math.floor(hs.length/2)]||40;chars=chars.filter(c=>c.h<medH*2.2);
+    const at=c=>c.cx-slope*(c.cy-ref);
+    W.filter(w=>hand(w)&&w.cy>hy+2&&w.cy<by).forEach(w=>used.add(w));
+    box.forEach(b=>{const mine=chars.filter(c=>{const x=at(c);return x>=b.left&&x<b.right});
+      const mid=depthVals(mine.filter(c=>at(c)<b.split).sort((a,b2)=>a.cx-b2.cx));
+      let ed=depthVals(mine.filter(c=>at(c)>=b.split).sort((a,b2)=>(a.cy-b2.cy)||(a.cx-b2.cx)));
+      if(ed.length>=3)ed=[ed[0],ed[ed.length-1]];
+      const ok=v=>v&&+v.v<=20?v.v:"";
+      tires[b.k]={mid:ok(mid[0]),edge1:ok(ed[0]),edge2:ok(ed[1])||ok(ed[0])}})}
   // recommendations: handwritten lines under Technician Recommendations
   const recs=[];if(techH){const top=techH.y+techH.h*.6,qx=qtH?qtH.cx:canvas.width*.5;
     const toks=W.filter(w=>hand(w)&&w.cy>top&&!/^[-–—_.]+$/.test(w.u));
