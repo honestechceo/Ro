@@ -4110,14 +4110,16 @@ $("sheet-file").addEventListener("change",async e=>{
 });
 
 /* ---------- handwriting reader: Google Vision through your relay ---------- */
-const DEFAULT_RELAY="https://rolog-reader-honestech.netlify.app/api/vision";
-function hwUrl(){const u=String(prefs.hwUrl||"").trim();return u||(String(prefs.hwToken||"").trim()?DEFAULT_RELAY:"")}
-function fillHW(){$("hw-url").value=prefs.hwUrl&&prefs.hwUrl!==DEFAULT_RELAY?prefs.hwUrl:"";$("hw-token").value=prefs.hwToken||"";$("hw-status").textContent=hwUrl()?"":"Not set up yet"}
+const DEFAULT_RELAY="https://rolog-reader.honestechceo.workers.dev/api/vision";
+const OLD_RELAY=/rolog-reader-honestech\.netlify\.app/i;
+function savedRelay(){const u=String(prefs.hwUrl||"").trim();return OLD_RELAY.test(u)?"":u}
+function hwUrl(){const u=savedRelay();return u||(String(prefs.hwToken||"").trim()?DEFAULT_RELAY:"")}
+function fillHW(){$("hw-url").value=savedRelay()&&savedRelay()!==DEFAULT_RELAY?savedRelay():"";$("hw-token").value=prefs.hwToken||"";$("hw-status").textContent=hwUrl()?"":"Not set up yet"}
 let hwT;const saveHW=()=>{clearTimeout(hwT);const u=$("hw-url").value.trim(),t=$("hw-token").value.trim();if(u===(prefs.hwUrl||"")&&t===(prefs.hwToken||""))return;return savePrefs({hwUrl:u,hwToken:t},true)};
 ["hw-url","hw-token"].forEach(id=>{$(id).addEventListener("input",()=>{clearTimeout(hwT);hwT=setTimeout(saveHW,250)});["change","blur"].forEach(ev=>$(id).addEventListener(ev,saveHW))});
 window.addEventListener("pagehide",saveHW);document.addEventListener("visibilitychange",()=>{if(document.hidden)saveHW()});
 function relayURL(u){u=String(u||"").trim();try{const x=new URL(u);if(x.pathname==="/"||x.pathname==="")return x.origin+"/api/vision"}catch(e){}return u}
-async function hwCall(body){const tk=$("hw-token").value.trim()||prefs.hwToken||"";const u=relayURL($("hw-url").value.trim()||String(prefs.hwUrl||"").trim()||(tk?DEFAULT_RELAY:""));if(!u)throw{msg:"Enter your passphrase first"};if(!/^https:\/\//.test(u))throw{msg:"Relay address must start with https://"};
+async function hwCall(body){const tk=$("hw-token").value.trim()||prefs.hwToken||"";const u=relayURL((OLD_RELAY.test($("hw-url").value)?"":$("hw-url").value.trim())||savedRelay()||(tk?DEFAULT_RELAY:""));if(!u)throw{msg:"Enter your passphrase first"};if(!/^https:\/\//.test(u))throw{msg:"Relay address must start with https://"};
   const r=await fetch(u,{method:"POST",headers:Object.assign({"Content-Type":"application/json"},(prefs.hwToken||$("hw-token").value.trim())?{"X-App-Token":$("hw-token").value.trim()||prefs.hwToken}:{}),body:JSON.stringify(body)});
   const j=await r.json().catch(()=>({}));if(!r.ok||j.error)throw{msg:j.error||`Relay error ${r.status}`};return j}
 $("hw-test").onclick=async()=>{const st=$("hw-status");st.textContent="Testing…";
