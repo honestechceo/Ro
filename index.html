@@ -3633,7 +3633,8 @@ async function cloudUpload(){
   catch(e){cloudStatus(e&&e.msg);return false}
   finally{CLOUD.busy=false;if(CLOUD.pending){CLOUD.pending=false;scheduleCloud(3000)}}}
 function scheduleCloud(ms){if(!cloudOn()||!LS.get("ro-cloud-ok"))return;clearTimeout(CLOUD.t);CLOUD.t=setTimeout(cloudUpload,ms||6000)}
-async function cloudDownload(){const j=await hwCall({cloud:"load"});if(!j||j.none)return null;
+async function cloudDownload(){let j;try{j=await hwCall({cloud:"load"})}catch(e){if(e&&/image missing|too large|unknown cloud/i.test(e.msg||""))throw{msg:"Your reader needs its latest update before cloud backup can work. Your ROs are still saved on this phone."};throw e}
+  if(!j||j.none)return null;if(!j.blob)throw{msg:"Your reader needs its latest update before cloud backup can work. Your ROs are still saved on this phone."};
   const key=await cloudKey(cloudPass(),b64d(j.salt));
   try{const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64d(j.iv)},key,b64d(j.blob));return JSON.parse(new TextDecoder().decode(pt))}
   catch(e){throw{msg:"Cloud backup was made with a different passphrase."}}}
