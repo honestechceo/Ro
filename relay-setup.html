@@ -1,0 +1,83 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<title>RO Log reader setup</title>
+<style>body{margin:0;font:16px/1.5 -apple-system,system-ui,sans-serif;background:#07142f;color:#e8eef6}main{max-width:720px;margin:auto;padding:20px 16px 60px}
+h1{font-size:1.4rem;margin:.2em 0 .6em}ol{padding-left:1.2em}li{margin:.45em 0}code{background:#14254a;padding:1px 6px;border-radius:4px}
+button{font:600 1.05rem system-ui;background:#4a9bff;color:#05122a;border:0;border-radius:12px;padding:14px 18px;width:100%;margin:12px 0}
+pre{background:#0d1b38;border:1px solid #23406f;border-radius:10px;padding:12px;overflow:auto;font-size:12px;max-height:260px;white-space:pre}</style></head>
+<body><main><h1>RO Log reader on Cloudflare</h1>
+<button id="copy">Copy the reader code</button><span id="ok"></span>
+<pre id="code">// RO Log reader + cloud backup (Cloudflare Worker)
+// Settings &gt; Variables and Secrets:  GOOGLE_API_KEY (secret), APP_TOKEN (secret), ALLOWED_ORIGINS (text)
+// Settings &gt; Bindings: KV namespace, variable name BACKUPS
+export default {
+  async fetch(req, env) {
+    const origin = req.headers.get(&quot;origin&quot;) || &quot;&quot;;
+    const norm = (u) =&gt; { u = String(u || &quot;&quot;).trim(); if (!u) return &quot;&quot;; if (!/^https?:\/\//i.test(u)) u = &quot;https://&quot; + u; try { return new URL(u).origin.toLowerCase(); } catch { return &quot;&quot;; } };
+    const allowed = String(env.ALLOWED_ORIGINS || &quot;&quot;).split(/[,\s]+/).map(norm).filter(Boolean);
+    const originOk = !allowed.length || allowed.includes(norm(origin));
+    const cors = { &quot;Access-Control-Allow-Origin&quot;: origin || &quot;*&quot;, &quot;Access-Control-Allow-Methods&quot;: &quot;POST, OPTIONS&quot;, &quot;Access-Control-Allow-Headers&quot;: &quot;Content-Type, X-App-Token&quot;, &quot;Access-Control-Max-Age&quot;: &quot;86400&quot;, Vary: &quot;Origin&quot; };
+    const json = (o, s = 200) =&gt; new Response(JSON.stringify(o), { status: s, headers: { ...cors, &quot;Content-Type&quot;: &quot;application/json&quot; } });
+    if (req.method === &quot;OPTIONS&quot;) return new Response(null, { status: 204, headers: cors });
+    if (!originOk) return json({ error: `${origin || &quot;This site&quot;} isn&#x27;t in ALLOWED_ORIGINS.` }, 403);
+    const token = String(env.APP_TOKEN || &quot;&quot;).trim();
+    if (token &amp;&amp; (req.headers.get(&quot;x-app-token&quot;) || &quot;&quot;).trim() !== token) return json({ error: &quot;Wrong passphrase.&quot; }, 401);
+    if (req.method !== &quot;POST&quot;) return json({ ok: true, message: &quot;RO Log reader is running.&quot; });
+    const key = env.GOOGLE_API_KEY;
+    if (!key) return json({ error: &quot;GOOGLE_API_KEY isn&#x27;t set on Cloudflare.&quot; }, 500);
+    let body;
+    try { body = await req.json(); } catch { return json({ error: &#x27;Send JSON: {&quot;image&quot;: &quot;&lt;base64 jpeg&gt;&quot;}&#x27; }, 400); }
+    const vision = (requests) =&gt; fetch(`https://vision.googleapis.com/v1/images:annotate?key=${encodeURIComponent(key)}`, { method: &quot;POST&quot;, headers: { &quot;Content-Type&quot;: &quot;application/json&quot; }, body: JSON.stringify({ requests }) });
+
+    if (body &amp;&amp; body.cloud) return cloud(body, token, env, json);
+    if (body &amp;&amp; body.ping) {
+      const px = &quot;iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==&quot;;
+      const t = await vision([{ image: { content: px }, features: [{ type: &quot;TEXT_DETECTION&quot;, maxResults: 1 }] }]).catch(() =&gt; null);
+      if (!t) return json({ error: &quot;Couldn&#x27;t reach Google Vision.&quot; }, 502);
+      const d = await t.json().catch(() =&gt; ({}));
+      if (!t.ok || d.error) return json({ error: &quot;Google key problem: &quot; + ((d.error &amp;&amp; d.error.message) || `error ${t.status}`) }, 502);
+      return json({ ok: true, cloud: !!env.BACKUPS });
+    }
+    const image = String((body &amp;&amp; body.image) || &quot;&quot;).replace(/^data:image\/\w+;base64,/, &quot;&quot;);
+    if (!image || image.length &gt; 9_000_000) return json({ error: &quot;Image missing or too large.&quot; }, 400);
+    const g = await vision([{ image: { content: image }, features: [{ type: &quot;DOCUMENT_TEXT_DETECTION&quot; }], imageContext: { languageHints: [&quot;en-t-i0-handwrit&quot;] } }]);
+    const data = await g.json().catch(() =&gt; ({}));
+    if (!g.ok || data.error) return json({ error: (data.error &amp;&amp; data.error.message) || `Google Vision error ${g.status}` }, 502);
+    const res = (data.responses &amp;&amp; data.responses[0]) || {};
+    if (res.error) return json({ error: res.error.message }, 502);
+    const box = (b) =&gt; { const v = ((b &amp;&amp; b.vertices) || []).map((p) =&gt; ({ x: p.x || 0, y: p.y || 0 })); if (v.length &lt; 4) return null; const xs = v.map((p) =&gt; p.x), ys = v.map((p) =&gt; p.y), x = Math.min(...xs), y = Math.min(...ys); return { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y }; };
+    const words = [];
+    for (const page of (res.fullTextAnnotation &amp;&amp; res.fullTextAnnotation.pages) || [])
+      for (const block of page.blocks || [])
+        for (const para of block.paragraphs || [])
+          for (const word of para.words || []) {
+            const t = (word.symbols || []).map((s) =&gt; s.text).join(&quot;&quot;), b = box(word.boundingBox);
+            if (!t || !b) continue;
+            const s = (word.symbols || []).map((sy) =&gt; { const sb = box(sy.boundingBox); return sb ? { t: sy.text, ...sb } : null; }).filter(Boolean);
+            words.push({ t, ...b, c: word.confidence || 0, s });
+          }
+    return json({ words, text: (res.fullTextAnnotation &amp;&amp; res.fullTextAnnotation.text) || &quot;&quot; });
+  },
+};
+
+// Encrypted RO Log backups. The phone locks the data with your passphrase before sending; this only stores the locked copy.
+async function cloud(body, token, env, json) {
+  if (!token) return json({ error: &quot;Set APP_TOKEN on Cloudflare to use cloud backup.&quot; }, 400);
+  if (!env.BACKUPS) return json({ error: &quot;Add the BACKUPS storage binding on Cloudflare to use cloud backup.&quot; }, 400);
+  const hash = await crypto.subtle.digest(&quot;SHA-256&quot;, new TextEncoder().encode(&quot;rolog|&quot; + token));
+  const id = [...new Uint8Array(hash)].map((b) =&gt; b.toString(16).padStart(2, &quot;0&quot;)).join(&quot;&quot;).slice(0, 32);
+  if (body.cloud === &quot;save&quot;) {
+    const { blob, iv, salt } = body;
+    if (typeof blob !== &quot;string&quot; || typeof iv !== &quot;string&quot; || typeof salt !== &quot;string&quot;) return json({ error: &quot;Bad backup.&quot; }, 400);
+    if (blob.length &gt; 20_000_000) return json({ error: &quot;Backup is too large.&quot; }, 413);
+    const prevRaw = await env.BACKUPS.get(id + &quot;/latest&quot;);
+    if (prevRaw) { try { const p = JSON.parse(prevRaw); const keep = await env.BACKUPS.get(id + &quot;/prev-ts&quot;); if (!keep || Date.now() - +keep &gt; 6 * 3600e3) { await env.BACKUPS.put(id + &quot;/prev&quot;, prevRaw); await env.BACKUPS.put(id + &quot;/prev-ts&quot;, String(Date.now())); } } catch {} }
+    const ts = Date.now();
+    await env.BACKUPS.put(id + &quot;/latest&quot;, JSON.stringify({ blob, iv, salt, ts, n: +body.n || 0 }));
+    return json({ ok: true, ts });
+  }
+  if (body.cloud === &quot;load&quot;) { const v = await env.BACKUPS.get(id + &quot;/latest&quot;); return json(v ? JSON.parse(v) : { none: true }); }
+  return json({ error: &quot;Unknown cloud request.&quot; }, 400);
+}
+</pre>
+<script>document.getElementById("copy").onclick=async()=>{const t=document.getElementById("code").textContent;try{await navigator.clipboard.writeText(t);document.getElementById("copy").textContent="✓ Copied. Now paste it in Cloudflare"}catch(e){const r=document.createRange();r.selectNodeContents(document.getElementById("code"));const s=getSelection();s.removeAllRanges();s.addRange(r);document.getElementById("copy").textContent="Selected. Tap Copy"}}</script>
+</main></body></html>
