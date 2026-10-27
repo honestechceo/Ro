@@ -1,7 +1,7 @@
 /* RO Log offline support. The app page loads fresh when there's signal and from this cache when there isn't.
    Scanner and PDF libraries are kept after their first use. Your ROs are not stored here; they stay in the app's own storage. */
-const CACHE="rolog-v1";
-const CORE=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png"];
+const CACHE="rolog-v2";
+const CORE=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./apple-touch-icon.png"];
 const LIBS=/^https:\/\/(cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|unpkg\.com|fonts\.googleapis\.com|fonts\.gstatic\.com|tessdata\.projectnaptha\.com)\//;
 self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).catch(()=>{}).then(()=>self.skipWaiting()))});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
