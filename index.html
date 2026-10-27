@@ -4129,7 +4129,25 @@ async function readSheetWithGoogle(file){
   const c=await shrink(file,2000),b64=c.toDataURL("image/jpeg",.9).split(",")[1];
   let j;try{j=await hwCall({image:b64})}catch(e){return{err:"failed",msg:e&&e.msg?"Handwriting reader: "+e.msg:"Couldn't reach the handwriting reader. Check your connection."}}
   try{LS.set("ro-lastscan",{at:Date.now(),w:c.width,h:c.height,words:j.words||[],text:j.text||""})}catch(e){}
-  const x=parseSheetWords(j.words||[],c);return x||{err:"none",msg:"Couldn't find the repair sheet's labels in that photo. Take a straight photo of the whole page."}}
+  let x=parseSheetWords(j.words||[],c);if(!x)return{err:"none",msg:"Couldn't find the repair sheet's labels in that photo. Take a straight photo of the whole page."};
+  // second look: if a tire box came back blank, zoom in on the tire row and read just that strip
+  const miss=k=>{const t=(x.tires||{})[k]||{};return!t.mid||!t.edge1};
+  if(["lf","rf","lr","rr"].some(miss)){try{
+    const hd=(j.words||[]).filter(w=>/^(middle|edges)$/i.test(String(w.t).trim()));
+    if(hd.length>=6){const tech=(j.words||[]).find(w=>/^technician/i.test(String(w.t)));const hh=Math.max(...hd.map(w=>w.h));
+      const x0=Math.max(0,Math.min(...hd.map(w=>w.x))-hh*2),x1=Math.min(c.width,Math.max(...hd.map(w=>w.x+w.w))+hh*2),y0=Math.max(0,Math.min(...hd.map(w=>w.y))-hh*.5),
+        y1=Math.min(c.height,tech?tech.y+tech.h*.2:Math.max(...hd.map(w=>w.y+w.h))+hh*7);
+      const k=Math.min(2.5,1800/(x1-x0)),cc=document.createElement("canvas");cc.width=Math.round((x1-x0)*k);cc.height=Math.round((y1-y0)*k);
+      cc.getContext("2d").drawImage(c,x0,y0,x1-x0,y1-y0,0,0,cc.width,cc.height);
+      const j2=await hwCall({image:cc.toDataURL("image/jpeg",.92).split(",")[1]});
+      const back=v=>({t:v.t,x:x0+v.x/k,y:y0+v.y/k,w:v.w/k,h:v.h/k});
+      const extra=(j2.words||[]).filter(w=>/[0-9%]/.test(String(w.t))).map(w=>Object.assign(back(w),Array.isArray(w.s)?{s:w.s.map(back)}:{}));
+      const inBand=w=>w.y+w.h/2>y0+hh*1.2&&w.y+w.h/2<y1&&w.x+w.w/2>x0&&w.x+w.w/2<x1;
+      const x2=parseSheetWords((j.words||[]).filter(w=>!(inBand(w)&&/[0-9%]/.test(String(w.t)))).concat(extra),c);
+      if(x2&&x2.tires)["lf","rf","lr","rr"].forEach(t=>{const a=x.tires[t]||(x.tires[t]={}),b=x2.tires[t]||{};["mid","edge1","edge2"].forEach(f=>{if(!a[f]&&b[f])a[f]=b[f]})});
+      try{const ls=LS.get("ro-lastscan")||{};ls.zoom={x0,y0,k,words:j2.words||[]};LS.set("ro-lastscan",ls)}catch(e){}}
+  }catch(e){}}
+  return x}
 function inkIn(c,x0,y0,x1,y1){x0=Math.max(0,Math.round(x0));y0=Math.max(0,Math.round(y0));x1=Math.min(c.width,Math.round(x1));y1=Math.min(c.height,Math.round(y1));
   const w=x1-x0,h=y1-y0;if(w<4||h<4)return 0;const d=c.getContext("2d").getImageData(x0,y0,w,h).data,lum=[];
   for(let i=0;i<d.length;i+=4)lum.push(d[i]*.299+d[i+1]*.587+d[i+2]*.114);
@@ -4161,7 +4179,14 @@ function depthVals(chars){const d=chars.filter(c=>/[0-9]/.test(c.c));const out=[
     else out.push({v:a.c,cx:a.cx,cy:a.cy})}
   return out}
 function parseSheetWords(words,canvas){
-  const W=words.map(w=>({t:String(w.t),u:String(w.t).toUpperCase().replace(/[^A-Z0-9.#/+$-]/g,""),x:w.x,y:w.y,w:w.w,h:w.h,cx:w.x+w.w/2,cy:w.y+w.h/2,s:w.s})).filter(w=>w.u);
+  const W0=[];(words||[]).forEach(w=>{const t=String(w.t),m=t.match(/^([0-9.\/\\]+)\s*(mm)$/i),g=t.match(/^([0-9A-Z]*?\d[0-9A-Z]*?)(TECH|DATE|MILES|VIN|TAG)(#?)$/i)||t.match(/^(RO#?|TECH#?|TAG#?|VIN#?)(\d[0-9A-Z]*)$/i);
+    if(g&&!m){const a=g[1],b=g[2]+(g[3]||""),k=a.length/t.length;W0.push({t:a,x:w.x,y:w.y,w:w.w*k,h:w.h});W0.push({t:b,x:w.x+w.w*k,y:w.y,w:w.w*(1-k),h:w.h});return}
+    if(m){const k=m[1].length/t.length,s1=Array.isArray(w.s)?w.s.slice(0,m[1].length):undefined;W0.push({t:m[1],x:w.x,y:w.y,w:w.w*k,h:w.h,s:s1});W0.push({t:"mm",x:w.x+w.w*k,y:w.y,w:w.w*(1-k),h:w.h})}
+    else W0.push(w)});
+  const isNum=w=>/^[0-9%\/\\.]+$/.test(String(w.t))&&/[0-9]/.test(String(w.t));
+  const ovl=(a,b)=>{const ix=Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x),iy=Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y);return ix>0&&iy>0?ix*iy/Math.min(a.w*a.h,b.w*b.h):0};
+  const W1=W0.filter(a=>!(isNum(a)&&W0.some(b=>b!==a&&isNum(b)&&String(b.t).length>String(a.t).length&&String(b.t).includes(String(a.t))&&ovl(a,b)>.35)));
+  const W=W1.map(w=>({t:String(w.t),u:String(w.t).toUpperCase().replace(/[^A-Z0-9.#/+$%-]/g,""),x:w.x,y:w.y,w:w.w,h:w.h,cx:w.x+w.w/2,cy:w.y+w.h/2,s:w.s})).filter(w=>w.u);
   const used=new Set();
   const find=(re,f)=>W.filter(w=>re.test(w.u)&&(!f||f(w))).sort((a,b)=>a.cy-b.cy);
   const one=(re,f)=>find(re,f)[0]||null;
@@ -4198,8 +4223,9 @@ function parseSheetWords(words,canvas){
       // the pad number sits just left of "mm"; it is often written large and pokes into the row above
       const numy=w=>/^[0-9OoQDIl|!.+\/\\-]{1,7}$/.test(String(w.t).trim())&&/[0-9OoIl]/.test(String(w.t));
       const near=mm?W.filter(w=>hand(w)&&w!==mm&&numy(w)&&w.cx<mm.cx&&w.cx>colX(failR,w.cy)-10&&Math.abs(w.cy-mm.cy)<(bot-top)*.75&&w.x+w.w<mm.x+mm.w*.6):before.filter(numy);
-      let pick=near.slice();if(mm&&pick.length){pick.sort((a,b)=>Math.abs(a.cy-mm.cy)-Math.abs(b.cy-mm.cy));const f=pick[0];
-        pick=[f,...pick.slice(1).filter(w=>Math.abs(w.cy-f.cy)<Math.max(w.h,f.h)*.6&&Math.min(Math.abs(w.x-(f.x+f.w)),Math.abs(f.x-(w.x+w.w)))<f.h)].sort((a,b)=>a.x-b.x)}
+      let pick=near.slice();if(mm&&pick.length){const row=pick.filter(w=>Math.abs(w.cy-mm.cy)<Math.max(w.h,mm.h)*.8).sort((a,b)=>b.x-a.x);
+        const chain=[];let edge=mm.x;for(const w of row){if(edge-(w.x+w.w)<Math.max(w.h,mm.h)*1.3){chain.push(w);edge=w.x}else break}
+        pick=(chain.length?chain:[pick.sort((a,b)=>Math.abs(a.cy-mm.cy)-Math.abs(b.cy-mm.cy))[0]]).sort((a,b)=>a.x-b.x)}
       const pr=padLR(pick.flatMap(sheetChars).sort((a,b)=>a.cx-b.cx));it.mm=pr.L;it.mmL=pr.L;it.mmR=pr.R;pick.forEach(w=>used.add(w));it.note=after.filter(w=>!pick.includes(w)).map(w=>w.t).join(" ")}
     else it.note=rest.map(w=>w.t).join(" ");
     it.note=it.note.replace(/^[-–—\s]+/,"").trim();items[k]=it;rest.forEach(w=>used.add(w))});
@@ -4208,8 +4234,9 @@ function parseSheetWords(words,canvas){
   // header line: Tag # / VIN # / RO# / TECH # / Miles
   const hdr={tag:one(/^TAG/),vin:one(/^VIN/),ro:one(/^RO#?$/,w=>w.cy<pass.cy),tech:one(/^TECH/),date:one(/^DATE$/,w=>w.cy<pass.cy),miles:one(/^MILES/)};
   Object.values(hdr).forEach(w=>w&&used.add(w));find(/^(VEHICLE|REPAIR|SHEET|#)$/,w=>w.cy<pass.cy).forEach(w=>used.add(w));
-  const after=(a,stops)=>{if(!a)return"";const right=Math.min(...stops.filter(s=>s&&s.cx>a.cx&&Math.abs(s.cy-a.cy)<a.h*2.5).map(s=>s.x),1e9);
-    return W.filter(w=>hand(w)&&w.cx>a.x+a.w&&w.cx<right&&w.cy>a.cy-a.h*2.2&&w.cy<a.cy+a.h*1.4).sort((p,q)=>p.x-q.x).map(w=>w.t).join("")};
+  const after=(a,stops,digits)=>{if(!a)return"";const right=Math.min(...stops.filter(s=>s&&s!==a&&s.x>a.x+a.w*.8&&Math.abs(s.cy-a.cy)<a.h*1.2).map(s=>s.x),1e9);
+    const v=W.filter(w=>hand(w)&&w.cx>a.x+a.w&&w.cx<right&&w.cy>a.cy-a.h*2.2&&w.cy<a.cy+a.h*.9&&/[0-9A-Za-z]/.test(w.t)).sort((p,q)=>p.x-q.x).map(w=>w.t).join("");
+    return digits?v.replace(/[OoQD]/g,"0").replace(/[Il|]/g,"1").replace(/[^0-9]/g,""):v.replace(/[^0-9A-Za-z]/g,"")};
   const allStops=[...Object.values(hdr),...find(/^(VEHICLE|REPAIR|SHEET)$/)];
   // tires: five Middle/Edges header pairs, left to right
   const mids=find(/^MIDDLE$/).sort((a,b)=>a.cx-b.cx),edgs=find(/^EDGES$/).sort((a,b)=>a.cx-b.cx);[...mids,...edgs].forEach(w=>used.add(w));
@@ -4219,9 +4246,9 @@ function parseSheetWords(words,canvas){
   if(mids.length>=4&&edgs.length>=4){const hy=Math.max(...mids.map(m=>m.y+m.h)),by=techH?techH.y:hy+220,ref=mids[0].cy;
     const n=Math.min(mids.length,keys.length),bx=x=>x;
     const box=mids.slice(0,n).map((m,i)=>{const e=edgs[i]||{cx:m.cx+m.w*1.6,x:m.x+m.w*1.2,w:m.w};
-      const left=i===0?m.x-m.w*.7:((edgs[i-1]?edgs[i-1].cx:mids[i-1].cx)+m.cx)/2,right=i<n-1?(e.cx+mids[i+1].cx)/2:e.x+e.w*1.9;
+      const left=i===0?m.x-m.w*.7:Math.max(((edgs[i-1]?edgs[i-1].cx:mids[i-1].cx)+m.cx)/2,m.x-m.w*.25),right=i<n-1?Math.max((e.cx+mids[i+1].cx)/2,mids[i+1].x-mids[i+1].w*.25):e.x+e.w*1.9;
       return{k:keys[i],left,right,split:(m.cx+e.cx)/2}});
-    const numTok=w=>/^[0-9OoQDIl|!\/\\.+-]{1,6}$/.test(String(w.t).trim())&&/[0-9]/.test(String(w.t));
+    const numTok=w=>/^[0-9OoQDIl|!%\/\\.+-]{1,12}$/.test(String(w.t).trim())&&/[0-9]/.test(String(w.t));
     let chars=W.filter(w=>hand(w)&&w.cy>hy+2&&w.cy<by&&numTok(w)).flatMap(sheetChars).filter(c=>/[0-9]/.test(c.c));
     const hs=chars.map(c=>c.h).sort((a,b)=>a-b),medH=hs[Math.floor(hs.length/2)]||40;chars=chars.filter(c=>c.h<medH*2.2);
     const at=c=>c.cx-slope*(c.cy-ref);
@@ -4246,7 +4273,7 @@ function parseSheetWords(words,canvas){
       return lines.map(l=>{const w=t.filter(o=>!taken.has(o)&&o.cy>l.cy-70).sort((a,b)=>Math.abs(a.cy-l.cy)-Math.abs(b.cy-l.cy))[0];if(w&&Math.abs(w.cy-l.cy)<60){taken.add(w);return w.t}return""})};
     const qv=colVals(qtH),pv=colVals(partH),$v=colVals(priceH),hv=colVals(hrsH);
     lines.forEach((l,i)=>recs.push({desc:l.w.sort((a,b)=>a.x-b.x).map(w=>w.t).join(" ").replace(/^[-–—•\s]+/,""),qty:qv[i]||"",part:pv[i]||"",price:$v[i]||"",hrs:hv[i]||""}))}
-  return{tag:after(hdr.tag,allStops),vin:after(hdr.vin,allStops),ro:after(hdr.ro,allStops),tech:after(hdr.tech,allStops),miles:after(hdr.miles,allStops),items,maintReset,tires,recs}}
+  return{tag:after(hdr.tag,allStops),vin:after(hdr.vin,allStops),ro:after(hdr.ro,allStops,1),tech:after(hdr.tech,allStops,1),miles:after(hdr.miles,allStops,1),items,maintReset,tires,recs}}
 
 /* ---------- PDF (printed-RO layout) ---------- */
 function mdy(s){if(!s)return"";const[y,m,d]=s.slice(0,10).split("-");return`${m}/${d}/${y.slice(2)}`}
