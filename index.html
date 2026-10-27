@@ -3987,6 +3987,29 @@ function parseROWords(words,out){
     const c=Object.entries(g).filter(([u,a])=>a.length>=2&&a.some(w=>w.h>medH*2.2)).sort((a,b)=>b[1].length-a[1].length)[0];if(c)out.tag=c[0]}
   if(!out.color){const lab=W.filter(w=>w.u==="COLOR").pop();if(lab){const v=W.filter(w=>w!==lab&&w.y>lab.y&&w.y<lab.y+lab.h*4&&w.x>lab.x-lab.h*2&&w.x<lab.x+lab.h*22&&/^[A-Z\/]{3,}$/.test(w.u)&&!/^(CONTRACT|NO\.?|TURBO|DATE)$/.test(w.u)).sort((a,b)=>a.x-b.x);
     if(v.length)out.color=v.slice(0,3).map(w=>w.u).join(" ")}}
+  // boxes on the RO: read the value printed under (or beside) each small label
+  const isLab=w=>w.h<=medH*1.15;
+  const cell=(re,opt)=>{opt=opt||{};const labs=W.filter(w=>re.test(w.u)&&isLab(w));let best="";
+    for(const lab of labs){const row=W.filter(w=>w!==lab&&isLab(w)&&Math.abs((w.y+w.h/2)-(lab.y+lab.h/2))<lab.h*.9&&w.x>lab.x+lab.w+4&&!/^(NO\.?|#|DATE|MILES|NO\.,?)$/.test(w.u));
+      const right=Math.min(lab.x+(opt.maxW||lab.h*30),...row.map(w=>w.x-4));
+      const vals=W.filter(w=>w!==lab&&!isLab(w)&&w.x+w.w/2>lab.x-lab.h*1.2&&w.x+w.w/2<right&&w.y+w.h/2>lab.y+lab.h*.25&&w.y<lab.y+lab.h*4.2).sort((a,b)=>(Math.round((a.y-b.y)/(medH*1.2)))||(a.x-b.x));
+      const v=vals.filter(w=>Math.abs(w.y-vals[0].y)<vals[0].h*.7).map(w=>w.t).join(" ").trim();if(v&&(!opt.test||opt.test(v))){best=v;break}}
+    return best};
+  const stock=cell(/^STOCK$/,{test:v=>/[0-9A-Z]{3,}/i.test(v)});if(stock)out.stock=stock.replace(/\s+/g,"").toUpperCase();
+  const tag=cell(/^TAG$/,{test:v=>/^[A-Z0-9-]{2,8}$/i.test(v.replace(/\s/g,""))});if(tag)out.tag=tag.replace(/\s+/g,"").toUpperCase();
+  const col=cell(/^COLOR$/,{test:v=>/[A-Z]{3,}/i.test(v)});if(col)out.color=col.toUpperCase();
+  const mi=cell(/^MILEAGE$/,{test:v=>/^[\d,]+$/.test(v.replace(/\s/g,"")),maxW:medH*14});if(mi!=="")out.mileage=mi.replace(/[^0-9]/g,"");
+  // job lines: "1  W  31LEZ" with the service written on the line under it
+  const jobs=[];W.forEach(t=>{if(!/^[CWI]$/.test(t.u))return;const cy=t.y+t.h/2;
+    const op=W.filter(w=>w!==t&&/^\d\d[A-Z0-9]{2,12}$/.test(w.u.replace(/O/g,"0"))&&Math.abs((w.y+w.h/2)-cy)<t.h*.8&&w.x>t.x+t.w&&w.x<t.x+t.h*8).sort((a,b)=>a.x-b.x)[0];
+    const num=W.find(w=>/^\d{1,2}$/.test(w.u)&&Math.abs((w.y+w.h/2)-cy)<t.h*.8&&w.x<t.x&&t.x-(w.x+w.w)<t.h*5);
+    if(!op||!num)return;
+    const below=W.filter(w=>w.y+w.h/2>cy+t.h*.35&&w.y>op.y+op.h*.5&&w.y+w.h/2<cy+t.h*2.4&&w.x>=num.x-t.h&&w.x<op.x+t.h*28&&/[A-Z]/.test(w.u)).sort((a,b)=>a.x-b.x);
+    const line=below.filter(w=>Math.abs(w.y-below[0].y)<t.h*.7);
+    const right=W.filter(w=>w.x>op.x+op.w&&Math.abs((w.y+w.h/2)-cy)<t.h*1.1&&w.x<op.x+t.h*30&&/[A-Z]/.test(w.u)).sort((a,b)=>a.x-b.x);
+    jobs.push({n:+num.u,type:t.u,op:op.u.replace(/^(\d\d)/,m=>m),desc:(line.length?line:right).map(w=>w.t).join(" ").trim()})});
+  if(jobs.length){jobs.sort((a,b)=>a.n-b.n);const have=out.jobs||[];
+    jobs.forEach(j=>{const h=have.find(x=>x.op===j.op);if(h){if(j.desc)h.desc=j.desc;h.type=j.type}else have.push({type:j.type,op:j.op,desc:j.desc})});out.jobs=have}
   // fix op codes the line read smudged: same length, mostly the same characters, starts with 2 digits
   (out.jobs||[]).forEach(j=>{if(/^\d\d/.test(j.op))return;const n=j.op.length;
     const cand=W.map(w=>w.u.replace(/O/g,"0")).filter(u=>/^\d\d[A-Z0-9]{2,10}$/.test(u)&&Math.abs(u.length-n)<=1);
@@ -4019,6 +4042,7 @@ async function readROWithOCR(file,progress){
   return best}
 async function readROWithGoogle(file){
   try{const c=await shrink(file,2400),j=await hwCall({image:c.toDataURL("image/jpeg",.9).split(",")[1]});
+    try{LS.set("ro-lastscan",{kind:"ro",at:Date.now(),w:c.width,h:c.height,words:j.words||[],text:j.text||""})}catch(e){}
     const x=parseROText(j.text||"","",vinFromText,advisors());parseROWords(j.words||[],x);
     return x.ro||x.vin||x.make||(x.jobs||[]).length?x:null}catch(e){return null}}
 function ocrWords(data){const out=[];const push=w=>{const b=w.bbox||{};if(w.text&&w.text.trim())out.push({t:w.text.trim(),x:b.x0,y:b.y0,w:b.x1-b.x0,h:b.y1-b.y0})};
@@ -4125,7 +4149,7 @@ async function hwCall(body){const tk=$("hw-token").value.trim()||prefs.hwToken||
 $("hw-test").onclick=async()=>{const st=$("hw-status");st.textContent="Testing…";
   try{await hwCall({ping:true});st.textContent="✓ Connected";await savePrefs({hwUrl:$("hw-url").value.trim(),hwToken:$("hw-token").value.trim()},true);cloudStatus();cloudSync()}
   catch(e){st.textContent="✗ "+(e&&e.msg||"Couldn't reach the relay. Check the address.")}};
-$("hw-share").onclick=async()=>{const d=LS.get("ro-lastscan");if(!d){toast("Scan a repair sheet first");return}
+$("hw-share").onclick=async()=>{const d=LS.get("ro-lastscan");if(!d){toast("Scan an RO or repair sheet first");return}
   if(!downloads){toast("Saving files isn't available here.");return}
   try{await downloads.save({filename:`ro-log-scan-${today()}.json`,data:JSON.stringify(d)})}catch(e){}};
 async function readSheetWithGoogle(file){
