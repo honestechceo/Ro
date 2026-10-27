@@ -3428,7 +3428,7 @@ async function restoreSettings(j){
     customItems:uniq([...(cur.customItems||[]),...(bp.customItems||[])],c=>c.k),
     mults:(bp.mults&&bp.mults.length)?bp.mults:(cur.mults||[]),
     favs:uniq([...(cur.favs||[]),...(bp.favs||[])],f=>(f.op+"|"+f.desc).toLowerCase()),
-    setupDone:cur.setupDone||bp.setupDone,clock:Object.assign({},cur.clock||{},bp.clock||{}),stubs:Object.assign({},cur.stubs||{},bp.stubs||{}),
+    setupDone:cur.setupDone||bp.setupDone,hwUrl:cur.hwUrl||bp.hwUrl||"",hwToken:cur.hwUrl?(cur.hwToken||""):(bp.hwToken||""),clock:Object.assign({},cur.clock||{},bp.clock||{}),stubs:Object.assign({},cur.stubs||{},bp.stubs||{}),
     look:Object.assign({},cur.look||{},bp.look||{})});
   const ph=j.photos||{};
   if(ph.bg&&!await photoSet("bg",ph.bg))merged.look.bg=merged.look.bg==="photo"?"plain":merged.look.bg;
@@ -3827,7 +3827,9 @@ $("sheet-file").addEventListener("change",async e=>{
 /* ---------- handwriting reader: Google Vision through your relay ---------- */
 function hwUrl(){return String(prefs.hwUrl||"").trim()}
 function fillHW(){$("hw-url").value=prefs.hwUrl||"";$("hw-token").value=prefs.hwToken||"";$("hw-status").textContent=prefs.hwUrl?"":"Not set up yet"}
-let hwT;["hw-url","hw-token"].forEach(id=>$(id).addEventListener("input",()=>{clearTimeout(hwT);hwT=setTimeout(()=>savePrefs({hwUrl:$("hw-url").value.trim(),hwToken:$("hw-token").value.trim()},true),400)}));
+let hwT;const saveHW=()=>{clearTimeout(hwT);const u=$("hw-url").value.trim(),t=$("hw-token").value.trim();if(u===(prefs.hwUrl||"")&&t===(prefs.hwToken||""))return;return savePrefs({hwUrl:u,hwToken:t},true)};
+["hw-url","hw-token"].forEach(id=>{$(id).addEventListener("input",()=>{clearTimeout(hwT);hwT=setTimeout(saveHW,250)});["change","blur"].forEach(ev=>$(id).addEventListener(ev,saveHW))});
+window.addEventListener("pagehide",saveHW);document.addEventListener("visibilitychange",()=>{if(document.hidden)saveHW()});
 function relayURL(u){u=String(u||"").trim();try{const x=new URL(u);if(x.pathname==="/"||x.pathname==="")return x.origin+"/api/vision"}catch(e){}return u}
 async function hwCall(body){const u=relayURL($("hw-url").value.trim()||hwUrl());if(!/^https:\/\//.test(u))throw{msg:"Relay address must start with https://"};
   const r=await fetch(u,{method:"POST",headers:Object.assign({"Content-Type":"application/json"},(prefs.hwToken||$("hw-token").value.trim())?{"X-App-Token":$("hw-token").value.trim()||prefs.hwToken}:{}),body:JSON.stringify(body)});
