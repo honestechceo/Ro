@@ -4138,9 +4138,11 @@ const DEFAULT_RELAY="https://rolog-reader.honestechceo.workers.dev/api/vision";
 const OLD_RELAY=/rolog-reader-honestech\.netlify\.app/i;
 function savedRelay(){const u=String(prefs.hwUrl||"").trim();return OLD_RELAY.test(u)?"":u}
 function hwUrl(){const u=savedRelay();return u||(String(prefs.hwToken||"").trim()?DEFAULT_RELAY:"")}
-function fillHW(){$("hw-url").value=savedRelay()&&savedRelay()!==DEFAULT_RELAY?savedRelay():"";$("hw-token").value=prefs.hwToken||"";$("hw-status").textContent=hwUrl()?"":"Not set up yet"}
-let hwT;const saveHW=()=>{clearTimeout(hwT);const u=$("hw-url").value.trim(),t=$("hw-token").value.trim();if(u===(prefs.hwUrl||"")&&t===(prefs.hwToken||""))return;return savePrefs({hwUrl:u,hwToken:t},true)};
-["hw-url","hw-token"].forEach(id=>{$(id).addEventListener("input",()=>{clearTimeout(hwT);hwT=setTimeout(saveHW,250)});["change","blur"].forEach(ev=>$(id).addEventListener(ev,saveHW))});
+function fillHW(){hwDirty=false;$("hw-url").value=savedRelay()&&savedRelay()!==DEFAULT_RELAY?savedRelay():"";$("hw-token").value=prefs.hwToken||"";$("hw-status").textContent=hwUrl()?"":"Not set up yet"}
+/* only save what you actually typed in these boxes; leaving the app never touches a saved passphrase */
+let hwT,hwDirty=false;const saveHW=()=>{clearTimeout(hwT);if(!hwDirty)return;hwDirty=false;const u=$("hw-url").value.trim(),t=$("hw-token").value.trim();
+  const patch={};if(u!==(prefs.hwUrl||""))patch.hwUrl=u;if(t!==(prefs.hwToken||"")&&t)patch.hwToken=t;if(!Object.keys(patch).length)return;return savePrefs(patch,true)};
+["hw-url","hw-token"].forEach(id=>{$(id).addEventListener("input",()=>{hwDirty=true;clearTimeout(hwT);hwT=setTimeout(saveHW,250)});["change","blur"].forEach(ev=>$(id).addEventListener(ev,saveHW))});
 window.addEventListener("pagehide",saveHW);document.addEventListener("visibilitychange",()=>{if(document.hidden)saveHW()});
 function relayURL(u){u=String(u||"").trim();try{const x=new URL(u);if(x.pathname==="/"||x.pathname==="")return x.origin+"/api/vision"}catch(e){}return u}
 async function hwCall(body){const tk=$("hw-token").value.trim()||prefs.hwToken||"";const u=relayURL((OLD_RELAY.test($("hw-url").value)?"":$("hw-url").value.trim())||savedRelay()||(tk?DEFAULT_RELAY:""));if(!u)throw{msg:"Enter your passphrase first"};if(!/^https:\/\//.test(u))throw{msg:"Relay address must start with https://"};
