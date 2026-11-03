@@ -727,6 +727,45 @@ body.has-photo .ltitle h2{text-shadow:0 2px 10px rgba(0,0,0,.6)}
 .hwadv[open] summary{margin-bottom:8px}
 .hint.good{color:var(--pass)}.hint.bad{color:var(--fail)}
 #cloud-sec{border-top:1px solid var(--line)}
+
+/* customize + files */
+[data-fld][hidden],.sec[data-sec][hidden]{display:none!important}
+details.sec>summary{list-style:none;cursor:pointer}details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary>h2{margin:0;padding:10px 16px;background:var(--sunk);display:flex;align-items:center;gap:8px;font:700 1.05rem var(--f-display);letter-spacing:.08em;text-transform:uppercase}
+details.sec>summary>h2::after{content:"›";margin-left:8px;font-size:1.3rem;transition:transform .2s;color:var(--muted)}details.sec[open]>summary>h2::after{transform:rotate(90deg)}
+details.sec[open]>summary>h2{border-bottom:1px solid var(--line)}
+details.sec>summary>h2 small{margin-left:auto;font:500 .75rem var(--f-body);letter-spacing:0;text-transform:none;color:var(--muted)}
+.cfglist{display:grid;gap:6px}
+.cfgrow{display:flex;align-items:center;gap:6px;min-height:44px;padding:4px 8px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.cfgname{flex:1;min-width:0;display:flex;align-items:center;gap:8px;font-weight:600}.cfgname small{font-weight:400}
+.cfgname input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent)}.cfglock{color:var(--muted);width:22px;text-align:center}
+.cfgrow .mv,.cfgrow .x{min-width:40px;height:40px;border:1px solid var(--line);border-radius:9px;background:var(--sunk);color:inherit;font-size:1.05rem;cursor:pointer}
+.cfgrow .mv:disabled{opacity:.3}.cfgrow .x.armed{background:var(--fail,#c62828);color:#fff;border-color:transparent}
+.cfgrow .iiname{flex:1 1 0;width:0;min-width:0;height:40px}
+.cfgrow{min-width:0;overflow:hidden}#cfg-sec .addrow{display:flex;gap:6px;align-items:center}#cfg-sec .addrow input[type=text],#cfg-sec .addrow input:not([type]){flex:1 1 0;width:0;min-width:0}
+.cfgrow .ck,.addrow .ck{display:flex;align-items:center;gap:4px;font-size:.85rem;white-space:nowrap}
+.cfgchips{display:flex;flex-wrap:wrap;gap:6px}
+.cfgchip{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:4px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font-size:.9rem;cursor:pointer}
+.cfgchip input{width:18px;height:18px;accent-color:var(--accent)}
+.cfgchip:has(input:not(:checked)){opacity:.55;text-decoration:line-through}
+#cfg-sec .addrow select{height:44px;max-width:7.5rem}
+#cfg-sec .ck input{width:20px;height:20px;flex:none;margin:0;accent-color:var(--accent)}#insp-preset{width:100%;height:44px;border:1px solid var(--line);border-radius:10px;padding:0 10px;background:var(--surface);color:var(--ink);font:inherit}
+.cfgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.cfgrid .cfcheck{grid-column:1/-1}
+.attgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px}
+.att{position:relative;aspect-ratio:1;border:1px solid var(--line);border-radius:10px;overflow:hidden;padding:0;background:var(--sunk);cursor:pointer;color:inherit}
+.att img{width:100%;height:100%;object-fit:cover;display:block}
+.att small{position:absolute;left:0;right:0;bottom:0;padding:2px 4px;background:rgba(0,0,0,.55);color:#fff;font-size:.68rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.attdoc{display:flex;align-items:center;justify-content:center;height:100%;font:700 1.1rem var(--f-display);color:var(--accent)}
+.attgrid .hint{grid-column:1/-1}
+.btn.wide{width:100%}
+.attview{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:16px}
+.attview[hidden]{display:none}
+.attcard{background:var(--surface);color:var(--ink);border-radius:16px;max-width:640px;width:100%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden}
+.atthead{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line)}
+.atthead .x{width:40px;height:40px;border:0;background:none;color:inherit;font-size:1.6rem;cursor:pointer}
+.attbody{flex:1;min-height:0;overflow:auto;display:flex;align-items:center;justify-content:center;padding:10px}
+.attbody img{max-width:100%;max-height:70vh;border-radius:8px}
+.attcard .tools{padding:10px 14px}
 </style>
 
 </head>
@@ -885,6 +924,24 @@ body.has-photo .ltitle h2{text-shadow:0 2px 10px rgba(0,0,0,.6)}
 
   <section class="view" id="view-set" hidden>
     <div class="ltitle"><h2>Settings</h2></div>
+    <details class="sec" id="cfg-sec">
+      <summary><h2>Customize RO form <small>Sections, fields, inspection list</small></h2></summary>
+      <div class="body">
+        <div class="flabel">Sections <small>Uncheck to hide · arrows to reorder</small></div>
+        <div class="cfglist" id="cfg-secs"></div>
+        <div class="flabel">Fields <small>Uncheck the ones you never fill in</small></div>
+        <div class="cfgchips" id="cfg-flds"></div>
+        <div class="flabel">Your own fields <small>Show up under “Your fields” on every RO</small></div>
+        <div class="cfglist" id="cfg-custom"></div>
+        <div class="addrow"><input id="cf-name" placeholder="Field name, e.g. Loaner #" autocomplete="off" aria-label="New field name"><select id="cf-type" aria-label="Field type"><option value="text">Text</option><option value="number">Number</option><option value="date">Date</option><option value="check">Yes / no</option></select><button type="button" class="btn" id="cf-add">+ Add</button></div>
+        <div class="flabel">Inspection list <small>Used on new ROs</small></div>
+        <div class="f"><label for="insp-preset">Start from a preset</label><select id="insp-preset"><option value="">Choose a preset…</option><option value="sheet">Lexus / Toyota repair sheet</option><option value="standard">Standard multipoint (any brand)</option><option value="quick">Quick check</option></select></div>
+        <div class="cfglist" id="cfg-insp"></div>
+        <div class="addrow"><input id="ii-name" placeholder="Add item, e.g. Wiper blades" autocomplete="off" aria-label="New inspection item"><label class="ck"><input type="checkbox" id="ii-mm">mm</label><button type="button" class="btn" id="ii-add">+ Add</button></div>
+        <span class="hint">Check “mm” for items you measure left and right, like brake pads. Changes apply to new ROs; saved ROs keep what they had.</span>
+        <div class="tools"><button type="button" class="btn" id="cfg-reset">Reset sections &amp; fields</button></div>
+      </div>
+    </details>
     <div class="sec">
       <h2>Language &amp; buttons</h2>
       <div class="body">
@@ -915,6 +972,7 @@ body.has-photo .ltitle h2{text-shadow:0 2px 10px rgba(0,0,0,.6)}
         <p class="hint" style="margin:0">Back up saves your ROs, past hours, advisors, pay settings, inspection items, colors and photos in one file. Restore brings all of it back, for example after you install an updated copy of the app.</p>
         <div class="tools"><button type="button" class="btn primary" id="backup" hidden>Back up everything</button><button type="button" class="btn" id="restore">Restore from file</button><button type="button" class="btn" id="export" hidden>Export CSV</button>
           <input type="file" id="restore-file" accept=".json,.csv,application/json,text/csv,text/comma-separated-values" hidden></div>
+        <label class="keep" for="bk-files"><input type="checkbox" id="bk-files" checked> Include RO photos &amp; files <small class="hint" id="bk-files-n"></small></label>
         <div class="stcheck" id="st-check"></div>
       </div>
       <div id="cloud-sec">
@@ -998,17 +1056,17 @@ body.has-photo .ltitle h2{text-shadow:0 2px 10px rgba(0,0,0,.6)}
 
   <form class="view" id="view-form" hidden autocomplete="off">
     <button type="button" class="grab" id="grab" aria-label="Close"><i></i></button>
-    <div class="sec">
+    <div class="sec" data-sec="main">
       <h2><span id="form-title">New repair order</span><small id="form-sub"></small></h2>
       <div class="body">
         <div class="grid">
           <div class="scanro"><button type="button" class="btn scan" id="ro-scan">Scan RO page</button><button type="button" class="btn scan" id="sheet-scan">Scan repair sheet</button><input type="file" id="sheet-file" accept="image/*" capture="environment" hidden><span class="hint">RO page: RO #, VIN, vehicle and job lines. Repair sheet: your handwritten inspection, tire and brake readings, and recommendations. Tip: on iPhone, tap any box twice and choose Scan Text to read one handwritten number.</span><input type="file" id="ro-file" accept="image/*" capture="environment" hidden></div>
           <div class="f"><label for="ro">RO #</label><input id="ro" class="mono" inputmode="numeric" required></div>
-          <div class="f"><label for="tag">Tag #</label><input id="tag" class="mono"></div>
+          <div class="f" data-fld="tag"><label for="tag">Tag #</label><input id="tag" class="mono"></div>
           <div class="f"><label for="date">Date</label><input id="date" type="date" required></div>
           <div class="f hours"><label for="hours">Flagged hours</label><input id="hours" type="number" step="0.1" min="0" inputmode="decimal" placeholder="0.0"><span class="hint" id="hours-hint"></span></div>
         </div>
-        <div class="f"><label for="vin">VIN #</label>
+        <div class="f" data-fld="vin"><label for="vin">VIN #</label>
           <div class="vinrow"><input id="vin" class="mono" maxlength="17" spellcheck="false"><button type="button" class="btn scan" id="vin-scan">Scan</button></div>
           <input type="file" id="vin-file" accept="image/*" capture="environment" hidden>
           <span class="hint" id="vin-hint">17 characters</span>
@@ -1016,14 +1074,14 @@ body.has-photo .ltitle h2{text-shadow:0 2px 10px rgba(0,0,0,.6)}
           <div class="vinfo" id="vinfo" hidden><div class="vinfo-main" id="vinfo-main"></div><div class="vinfo-sub" id="vinfo-sub"></div></div>
           <button type="button" class="linkbtn" id="vin-decode" hidden>Look up vehicle from VIN</button></div>
         <div class="grid">
-          <div class="f"><label for="miles">Miles</label><input id="miles" type="number" inputmode="numeric" min="0"></div>
-          <div class="f"><label for="tech">Tech #</label><input id="tech" class="mono"></div>
+          <div class="f" data-fld="miles"><label for="miles">Miles</label><input id="miles" type="number" inputmode="numeric" min="0"></div>
+          <div class="f" data-fld="tech"><label for="tech">Tech #</label><input id="tech" class="mono"></div>
         </div>
-        <div class="f"><label for="work">Work performed / test &amp; trouble codes</label><textarea id="work" rows="3" placeholder="e.g. 30K service, replaced cabin filter, P0420 stored"></textarea></div>
+        <div class="f" data-fld="work"><label for="work">Work performed / test &amp; trouble codes</label><textarea id="work" rows="3" placeholder="e.g. 30K service, replaced cabin filter, P0420 stored"></textarea></div>
       </div>
     </div>
 
-    <div class="sec">
+    <div class="sec" data-sec="jobs">
       <h2>Job lines <small>C customer · W warranty · I internal</small></h2>
       <div class="body">
         <div class="favwrap"><div class="flabel">Favorites <small>tap to add</small></div><div class="advchips favchips" id="favchips"></div><span class="hint" id="fav-tip">Tap ☆ Save as favorite on a job line to reuse it with one tap.</span></div>
@@ -1032,30 +1090,30 @@ body.has-photo .ltitle h2{text-shadow:0 2px 10px rgba(0,0,0,.6)}
       </div>
     </div>
 
-    <div class="sec">
+    <div class="sec" data-sec="vehicle">
       <h2>Advisor &amp; vehicle <small>Prints on the PDF</small></h2>
       <div class="body">
-        <div class="f advf"><label for="advisor">Advisor</label>
+        <div class="f advf" data-fld="advisor"><label for="advisor">Advisor</label>
           <div class="advpair"><input id="advisor" placeholder="Name" autocomplete="off"><input id="advisorNo" class="mono" placeholder="Adv #" inputmode="numeric" autocomplete="off" aria-label="Advisor number"></div>
           <div class="advchips" id="advchips"></div>
         </div>
         <div class="grid">
-          <div class="f"><label for="ymm">Year / make / model</label><input id="ymm" placeholder="26 Lexus ES 500e"></div>
-          <div class="f"><label for="engine">Engine / drive</label><input id="engine" placeholder="2.5L hybrid · AWD"></div>
+          <div class="f" data-fld="ymm"><label for="ymm">Year / make / model</label><input id="ymm" placeholder="26 Lexus ES 500e"></div>
+          <div class="f" data-fld="engine"><label for="engine">Engine / drive</label><input id="engine" placeholder="2.5L hybrid · AWD"></div>
         </div>
         <div class="grid">
-          <div class="f"><label for="color">Color</label><input id="color"></div>
-          <div class="f"><label for="stock">Stock #</label><input id="stock" class="mono"></div>
+          <div class="f" data-fld="color"><label for="color">Color</label><input id="color"></div>
+          <div class="f" data-fld="stock"><label for="stock">Stock #</label><input id="stock" class="mono"></div>
 
         </div>
         <div class="grid">
-          <div class="f"><label for="timein">Time received</label><input id="timein" type="time"></div>
-          <div class="f"><label for="promised">Promised</label><input id="promised" type="datetime-local"></div>
+          <div class="f" data-fld="timein"><label for="timein">Time received</label><input id="timein" type="time"></div>
+          <div class="f" data-fld="promised"><label for="promised">Promised</label><input id="promised" type="datetime-local"></div>
         </div>
       </div>
     </div>
 
-    <div class="sec">
+    <div class="sec" data-sec="insp">
       <h2>Multipoint inspection <small id="insp-sum"></small></h2>
       <div class="allpass"><button type="button" class="btn" id="all-pass">✓ Mark the rest Pass</button></div>
       <div class="insp" id="insp"></div>
@@ -1063,10 +1121,10 @@ body.has-photo .ltitle h2{text-shadow:0 2px 10px rgba(0,0,0,.6)}
         <div class="addrow"><input id="new-item" placeholder="Add item, e.g. Wiper blades" autocomplete="off" aria-label="New inspection item"><button type="button" class="btn" id="add-item">+ Add</button></div>
         <label class="keep" for="new-item-keep"><input type="checkbox" id="new-item-keep" checked> Add to every new RO</label>
       </div>
-      <label class="toggle" for="maint">Reset maintenance light<input type="checkbox" id="maint"></label>
+      <label class="toggle" for="maint" data-fld="maint">Reset maintenance light<input type="checkbox" id="maint"></label>
     </div>
 
-    <div class="sec">
+    <div class="sec" data-sec="tires">
       <h2>Tire tread before service <small>32nds</small></h2>
       <div class="body">
         <div class="tires" id="tires"></div>
@@ -1074,7 +1132,7 @@ body.has-photo .ltitle h2{text-shadow:0 2px 10px rgba(0,0,0,.6)}
       </div>
     </div>
 
-    <div class="sec">
+    <div class="sec" data-sec="recs">
       <h2>Recommended repairs <small>Tap Approved or Declined</small></h2>
       <div class="body">
         <div class="recs" id="recs"></div>
@@ -1083,7 +1141,7 @@ body.has-photo .ltitle h2{text-shadow:0 2px 10px rgba(0,0,0,.6)}
       </div>
     </div>
 
-    <div class="sec">
+    <div class="sec" data-sec="pay">
       <h2>Pay tracking <small>For checking your paycheck</small></h2>
       <label class="toggle" for="paid">Paid on my paycheck<input type="checkbox" id="paid"></label>
       <div class="body">
@@ -1102,9 +1160,31 @@ body.has-photo .ltitle h2{text-shadow:0 2px 10px rgba(0,0,0,.6)}
       </div>
     </div>
 
+    <div class="sec" data-sec="files">
+      <h2>Files &amp; photos <small id="files-count"></small></h2>
+      <div class="body">
+        <div class="attgrid" id="ro-files"></div>
+        <div class="tools jobtools"><button type="button" class="btn" id="files-cam">📷 Take photo</button><button type="button" class="btn" id="files-add">+ Add photo or file</button></div>
+        <input type="file" id="files-cam-in" accept="image/*" capture="environment" hidden><input type="file" id="files-add-in" accept="image/*,application/pdf" multiple hidden>
+        <button type="button" class="btn primary wide" id="files-save">Save all to Files</button>
+        <span class="hint">Saves this RO's PDF and photos together. On iPhone pick <b>Save to Files</b>, then your <b>RO Log</b> folder (make it once with the folder button; the iPhone remembers it).</span>
+        <label class="keep" for="auto-attach"><input type="checkbox" id="auto-attach" checked> Keep scanned RO and repair-sheet photos here</label>
+      </div>
+    </div>
+
+    <div class="sec" data-sec="custom">
+      <h2>Your fields <small>Set up in Settings</small></h2>
+      <div class="body"><div class="cfgrid" id="cf-fields"></div></div>
+    </div>
+
     <div class="tools"><button type="button" class="btn danger" id="del" hidden>Delete this RO</button></div>
   </form>
 </main>
+<div class="attview" id="attview" hidden role="dialog" aria-modal="true" aria-labelledby="attview-title">
+  <div class="attcard"><div class="atthead"><b id="attview-title">File</b><button type="button" class="x" id="att-x" aria-label="Close">×</button></div>
+    <div class="attbody" id="attview-body"></div>
+    <div class="tools"><button type="button" class="btn primary" id="att-share">Share / Save</button><button type="button" class="btn danger" id="att-del">Delete</button></div></div>
+</div>
 
 <div class="savebar" id="savebar" hidden>
   <div class="wrap">
@@ -1169,6 +1249,8 @@ body.has-photo .ltitle h2{text-shadow:0 2px 10px rgba(0,0,0,.6)}
       <div class="f"><label for="wz-make">Manufacturer</label><select id="wz-make"></select></div>
       <div class="f"><label for="wz-dealer">Dealership name (optional)</label><input id="wz-dealer" autocomplete="off"></div>
       <div class="f"><label for="wz-tech">Your tech #</label><input id="wz-tech" class="mono" inputmode="numeric" autocomplete="off"></div>
+      <div class="f"><label for="wz-insp">Inspection checklist</label><select id="wz-insp"><option value="keep">Keep my current list</option><option value="sheet">Lexus / Toyota repair sheet</option><option value="standard">Standard multipoint (any brand)</option><option value="quick">Quick check</option></select>
+        <span class="hint">You can add, remove and rename items any time in Settings → Customize RO form.</span></div>
     </div>
     <div class="wzstep" data-step="2" hidden>
       <h2>Your pay</h2>
@@ -1290,6 +1372,7 @@ async function persist(rec){
     if(!LS.set("ro-local",next))throw{code:"storage"};records=next;render();scheduleCloud()}
 }
 async function remove(id){
+  attDelAll(id);
   if(mode==="cloud"){await col.doc(id).delete()}
   else{records=records.filter(r=>r.id!==id);LS.set("ro-local",records);const tb=LS.get("ro-tomb")||{};tb[id]=Date.now();LS.set("ro-tomb",tb);render();scheduleCloud()}
 }
@@ -1349,7 +1432,7 @@ function render(){
   const weekMode=$("lv-week").checked;$("daypanel").hidden=!!$("q").value.trim();
 
   const q=$("q").value.trim().toLowerCase();
-  let list=q?records.filter(r=>[r.ro,r.tag,r.vin,r.work,r.ymm,r.engine,r.advisor,r.advisorNo,r.note,(r.jobs||[]).map(j=>j.op+" "+j.desc).join(" ")].join(" ").toLowerCase().includes(q)):weekMode?inWeek:dRecs;
+  let list=q?records.filter(r=>[r.ro,r.tag,r.vin,r.work,r.ymm,r.engine,r.advisor,r.advisorNo,r.note,r.color,r.stock,Object.values(r.custom||{}).join(" "),(r.jobs||[]).map(j=>j.op+" "+j.desc).join(" ")].join(" ").toLowerCase().includes(q)):weekMode?inWeek:dRecs;
   list=list.slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.updatedAt||0)-(a.updatedAt||0));
   const L=$("list");
   if(!list.length){
@@ -1386,6 +1469,7 @@ function roCard(r){
         if(T.declined.n)pills.push(`<span class="pill fail">${T.declined.n} declined</span>`);
         if(T[""].n)pills.push(`<span class="pill">${T[""].n} rec${T[""].n>1?"s":""} waiting</span>`);}
       if(r.maintReset)pills.push(`<span class="pill">Maint reset</span>`);
+      if(r.nfiles)pills.push(`<span class="pill">📎 ${r.nfiles}</span>`);
       if(r.claim==="rejected")pills.push(`<span class="pill fail">Claim rejected</span>`);else if(r.claim==="pending")pills.push(`<span class="pill warn">Claim pending</span>`);
       if(r.cb&&+r.cb.hrs)pills.push(`<span class="pill fail">−${h1(r.cb.hrs)} chargeback</span>`);
       if(r.paid)pills.push(`<span class="pill pass">Paid</span>`);
@@ -1397,29 +1481,29 @@ function roCard(r){
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 
 /* ---------- form build ---------- */
-const BASE=ITEMS.map(([k,n,b])=>[k,n,!!b,false]);
+const ITEMNAME=Object.fromEntries(ITEMS.map(([k,n])=>[k,n]));
+function baseList(){return inspList().map(i=>[i.k,i.n,!!i.b,false])}
 const slug=n=>"c_"+String(n).toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"").slice(0,40);
 function customPrefs(){return(prefs.customItems||[]).filter(c=>c&&c.k&&c.n)}
-function isPinned(k){return customPrefs().some(c=>c.k===k)}
-function itemsFor(r){const list=r?recordItems(r):BASE.slice(),have=new Set(list.map(i=>i[0]));
-  if(!r||!r.id)customPrefs().forEach(c=>{if(!have.has(c.k)){list.push([c.k,c.n,false,true]);have.add(c.k)}});
+function isPinned(k){return inspList().some(c=>c.k===k)}
+function itemsFor(r){return r?recordItems(r):baseList()}
+const hasInsp=v=>v&&(v.s||v.note||(v.mm!=null&&v.mm!=="")||(v.mmL!=null&&v.mmL!=="")||(v.mmR!=null&&v.mmR!==""));
+function recordItems(r){const ins=(r&&r.inspection)||{},list=baseList().map(i=>ins[i[0]]&&ins[i[0]].name?[i[0],ins[i[0]].name,i[2],false]:i),have=new Set(list.map(i=>i[0]));
+  Object.keys(ins).forEach(k=>{if(have.has(k))return;const v=ins[k];if(!hasInsp(v)&&!k.startsWith("c_"))return;
+    const isB=/^(front|rear)Brakes$/.test(k)||v.mmL!=null||v.mmR!=null;list.push([k,v.name||ITEMNAME[k]||k.slice(2).replace(/_/g," "),isB,true]);have.add(k)});
   return list}
-function recordItems(r){const list=BASE.slice(),ins=(r&&r.inspection)||{};
-  Object.keys(ins).filter(k=>k.startsWith("c_")).forEach(k=>list.push([k,ins[k].name||k.slice(2).replace(/_/g," "),false,true]));
-  return list}
-let curItems=BASE.slice();
+let curItems=[];
 function rowHTML([k,n,b,c]){return`<div class="irow" id="row-${k}">
   <span class="name"><span class="dot"></span>${esc(n)}${c?" <small>Added</small>":""}</span>
   <span class="seg"><input type="radio" class="p" name="i-${k}" id="i-${k}-pass" value="pass"><label for="i-${k}-pass">Pass</label><input type="radio" class="a" name="i-${k}" id="i-${k}-attn" value="attn"><label for="i-${k}-attn">Attn</label><input type="radio" class="x" name="i-${k}" id="i-${k}-fail" value="fail"><label for="i-${k}-fail">Fail</label></span>
   <span class="extra">${b?`<span class="mm"><label for="i-${k}-mmL">L</label><input id="i-${k}-mmL" type="number" step="0.5" min="0" inputmode="decimal" placeholder="–" aria-label="${esc(n)} left pad in mm"><label for="i-${k}-mmR">R</label><input id="i-${k}-mmR" type="number" step="0.5" min="0" inputmode="decimal" placeholder="–" aria-label="${esc(n)} right pad in mm"><span>mm</span></span>`:""}<input id="i-${k}-note" placeholder="${b?"Notes":"What's wrong"}" ${b?"":"hidden"}>${c?`<span class="ctl"><button type="button" class="chip${isPinned(k)?" on":""}" data-pin="${k}" aria-pressed="${isPinned(k)}">${isPinned(k)?"✓ Every RO":"This RO only"}</button><button type="button" class="chip del" data-del="${k}" aria-label="Remove ${esc(n)} from this RO">×</button></span>`:""}</span></div>`}
 function buildInsp(list){curItems=list;$("insp").innerHTML=list.map(rowHTML).join("")}
-buildInsp(itemsFor(null));
 function addItem(){
   const n=$("new-item").value.trim().replace(/\s+/g," ");if(!n){$("new-item").focus();return}
   const k=slug(n);if(k==="c_"){toast("Use letters or numbers in the name");return}
   if(curItems.some(i=>i[0]===k||i[1].toLowerCase()===n.toLowerCase())){toast(`${n} is already on the list`);return}
   const it=[k,n,false,true];curItems.push(it);
-  if($("new-item-keep").checked&&!isPinned(k))savePrefs({customItems:[...customPrefs(),{k,n}]},true);
+  if($("new-item-keep").checked&&!isPinned(k))setInsp([...inspList(),{k,n,b:false}]);
   $("insp").insertAdjacentHTML("beforeend",rowHTML(it));$("new-item").value="";refreshInsp();
   toast($("new-item-keep").checked?`${n} added to every new RO`:`${n} added to this RO`)}
 $("add-item").onclick=addItem;
@@ -1427,7 +1511,7 @@ $("new-item").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefaul
 $("insp").addEventListener("click",e=>{
   const pin=e.target.closest("[data-pin]"),del=e.target.closest("[data-del]");
   if(pin){const k=pin.dataset.pin,it=curItems.find(i=>i[0]===k);const on=!isPinned(k);
-    savePrefs({customItems:on?[...customPrefs(),{k,n:it[1]}]:customPrefs().filter(c=>c.k!==k)},true);
+    setInsp(on?[...inspList(),{k,n:it[1],b:!!it[2]}]:inspList().filter(c=>c.k!==k));
     pin.classList.toggle("on",on);pin.setAttribute("aria-pressed",on);pin.textContent=on?"✓ Every RO":"This RO only";
     toast(on?`${it[1]} will be on every new RO`:`${it[1]} removed from new ROs`)}
   if(del){const k=del.dataset.del;curItems=curItems.filter(i=>i[0]!==k);$("row-"+k).remove();refreshInsp();
@@ -1558,11 +1642,122 @@ function updateBar(){
   if(v!==decodedVin&&!$("vinfo").hidden&&v!==shownVin)$("vinfo").hidden=true;
 }
 
+/* ---------- customize the RO form: sections, fields, your own fields, inspection list ---------- */
+const FORM_SECS=[["main","RO basics"],["jobs","Job lines"],["vehicle","Advisor & vehicle"],["insp","Multipoint inspection"],["tires","Tire tread"],["recs","Recommended repairs"],["files","Files & photos"],["custom","Your fields"],["pay","Pay tracking"]];
+const FORM_FLDS=[["tag","Tag #"],["vin","VIN #"],["miles","Miles"],["tech","Tech #"],["work","Work performed"],["advisor","Advisor"],["ymm","Year / make / model"],["engine","Engine / drive"],["color","Color"],["stock","Stock #"],["timein","Time received"],["promised","Promised"],["maint","Reset maintenance light"]];
+function formCfg(){const f=prefs.form||{},ids=FORM_SECS.map(s=>s[0]);let order=(f.order||[]).filter(k=>ids.includes(k));
+  ids.forEach(k=>{if(!order.includes(k))order.push(k)});order=["main",...order.filter(k=>k!=="main")];return{order,hide:f.hide||{},hideFld:f.hideFld||{}}}
+function applyForm(){const c=formCfg(),F=$("view-form"),tail=$("del").closest(".tools");
+  c.order.forEach(k=>{const s=F.querySelector(`.sec[data-sec="${k}"]`);if(!s)return;F.insertBefore(s,tail);s.hidden=k!=="main"&&!!c.hide[k]});
+  FORM_FLDS.forEach(([k])=>F.querySelectorAll(`[data-fld="${k}"]`).forEach(el=>el.hidden=!!c.hideFld[k]));
+  const cs=F.querySelector('.sec[data-sec="custom"]');if(cs&&!customFields().length)cs.hidden=true}
+async function saveForm(patch){const c=formCfg();await savePrefs({form:Object.assign({order:c.order,hide:c.hide,hideFld:c.hideFld},patch)},true);applyForm();renderFormCfg()}
+function customFields(){return(prefs.customFields||[]).filter(f=>f&&f.id&&f.n)}
+function readCustom(){const o={};customFields().forEach(f=>{const el=$("cf-"+f.id);if(!el)return;if(f.t==="check")o[f.id]=el.checked;else{const v=el.value.trim();if(v!=="")o[f.id]=f.t==="number"?+v:v}});return o}
+function renderCustomInputs(vals){$("cf-fields").innerHTML=customFields().map(f=>{const id="cf-"+f.id,v=(vals||{})[f.id];
+  if(f.t==="check")return`<label class="toggle cfcheck" for="${id}">${esc(f.n)}<input type="checkbox" id="${id}"${v?" checked":""}></label>`;
+  const type=f.t==="number"?'type="number" step="any" inputmode="decimal"':f.t==="date"?'type="date"':'type="text" autocomplete="off"';
+  return`<div class="f"><label for="${id}">${esc(f.n)}</label><input id="${id}" ${type} value="${esc(v==null?"":v)}"></div>`}).join("")}
+/* inspection list */
+const INSP_PRESETS={
+  sheet:()=>ITEMS.map(([k,n,b])=>({k,n,b:!!b})),
+  standard:()=>[["c_wipers_washer","Wipers & washer"],["lights","Lights"],["battery","Battery"],["c_belts_hoses","Belts & hoses"],["c_fluid_levels","Fluid levels"],["c_engine_air_filter","Engine air filter"],["c_cabin_air_filter","Cabin air filter"],["suspension","Suspension & steering"],["c_cv_boots_axles","CV boots / axles"],["exhaust","Exhaust"],["leaks","Leaks"],["frontBrakes","Front brakes",1],["rearBrakes","Rear brakes",1]].map(([k,n,b])=>({k,n,b:!!b})),
+  quick:()=>[["battery","Battery"],["lights","Lights"],["leaks","Leaks"],["frontBrakes","Front brakes",1],["rearBrakes","Rear brakes",1]].map(([k,n,b])=>({k,n,b:!!b}))};
+function inspList(){if(Array.isArray(prefs.inspList)&&prefs.inspList.length)return prefs.inspList.filter(i=>i&&i.k&&i.n);
+  return[...INSP_PRESETS.sheet(),...customPrefs().map(c=>({k:c.k,n:c.n,b:false}))]}
+async function setInsp(list){await savePrefs({inspList:list,customItems:[]},true);renderFormCfg()}
+function presetForMake(m){return/^(lexus|toyota|scion)$/i.test(String(m||""))||!m?"sheet":"standard"}
+/* settings screen */
+function renderFormCfg(){if(!$("cfg-secs"))return;const c=formCfg(),names=Object.fromEntries(FORM_SECS);
+  $("cfg-secs").innerHTML=c.order.map((k,i)=>`<div class="cfgrow"><label class="cfgname">${k==="main"?`<span class="cfglock">●</span>`:`<input type="checkbox" data-secon="${k}"${c.hide[k]?"":" checked"}>`}<span>${esc(names[k])}</span></label>${k==="main"?`<small class="hint">Always first</small>`:`<button type="button" class="mv" data-secmv="${k}" data-d="-1"${i<=1?" disabled":""} aria-label="Move ${esc(names[k])} up">↑</button><button type="button" class="mv" data-secmv="${k}" data-d="1"${i===c.order.length-1?" disabled":""} aria-label="Move ${esc(names[k])} down">↓</button>`}</div>`).join("");
+  $("cfg-flds").innerHTML=FORM_FLDS.map(([k,n])=>`<label class="cfgchip"><input type="checkbox" data-fldon="${k}"${c.hideFld[k]?"":" checked"}><span>${esc(n)}</span></label>`).join("");
+  const T={text:"Text",number:"Number",date:"Date",check:"Yes / no"},cf=customFields();
+  $("cfg-custom").innerHTML=cf.length?cf.map((f,i)=>`<div class="cfgrow"><span class="cfgname"><span>${esc(f.n)}</span><small class="hint">${T[f.t]||"Text"}</small></span><button type="button" class="mv" data-cfmv="${i}" data-d="-1"${i?"":" disabled"}>↑</button><button type="button" class="mv" data-cfmv="${i}" data-d="1"${i===cf.length-1?" disabled":""}>↓</button><button type="button" class="x" data-cfdel="${i}" aria-label="Remove ${esc(f.n)}">×</button></div>`).join(""):`<span class="hint">None yet. Add things like Loaner #, Key tag, Bay or Parts ordered.</span>`;
+  const L=inspList();
+  $("cfg-insp").innerHTML=L.map((it,i)=>`<div class="cfgrow"><input class="iiname" data-iin="${i}" value="${esc(it.n)}" aria-label="Item name"><label class="ck"><input type="checkbox" data-iimm="${i}"${it.b?" checked":""}>mm</label><button type="button" class="mv" data-iimv="${i}" data-d="-1"${i?"":" disabled"}>↑</button><button type="button" class="mv" data-iimv="${i}" data-d="1"${i===L.length-1?" disabled":""}>↓</button><button type="button" class="x" data-iidel="${i}" aria-label="Remove ${esc(it.n)}">×</button></div>`).join("")}
+$("cfg-secs").addEventListener("change",e=>{const k=e.target.dataset.secon;if(!k)return;const h=Object.assign({},formCfg().hide);if(e.target.checked)delete h[k];else h[k]=true;saveForm({hide:h})});
+$("cfg-secs").addEventListener("click",e=>{const b=e.target.closest("[data-secmv]");if(!b)return;const o=formCfg().order.slice(),i=o.indexOf(b.dataset.secmv),j=i+ +b.dataset.d;if(j<1||j>=o.length)return;[o[i],o[j]]=[o[j],o[i]];saveForm({order:o})});
+$("cfg-flds").addEventListener("change",e=>{const k=e.target.dataset.fldon;if(!k)return;const h=Object.assign({},formCfg().hideFld);if(e.target.checked)delete h[k];else h[k]=true;saveForm({hideFld:h})});
+$("cf-add").onclick=async()=>{const n=$("cf-name").value.trim().replace(/\s+/g," ");if(!n){$("cf-name").focus();return}
+  if(customFields().some(f=>f.n.toLowerCase()===n.toLowerCase())){toast(`${n} is already a field`);return}
+  const f={id:"f"+Date.now().toString(36),n,t:$("cf-type").value};await savePrefs({customFields:[...customFields(),f]},true);$("cf-name").value="";
+  applyForm();renderFormCfg();toast(`${n} added to the RO form`)};
+$("cfg-custom").addEventListener("click",async e=>{const cf=customFields().slice(),d=e.target.closest("[data-cfdel]"),m=e.target.closest("[data-cfmv]");
+  if(d){const i=+d.dataset.cfdel;if(!d.classList.contains("armed")){d.classList.add("armed");d.textContent="✓?";toast("Tap again to remove. Values on saved ROs are kept.");return}
+    const f=cf.splice(i,1)[0];await savePrefs({customFields:cf},true);applyForm();renderFormCfg();toast(`${f.n} removed from the form`)}
+  if(m){const i=+m.dataset.cfmv,j=i+ +m.dataset.d;if(j<0||j>=cf.length)return;[cf[i],cf[j]]=[cf[j],cf[i]];await savePrefs({customFields:cf},true);applyForm();renderFormCfg()}});
+$("cfg-insp").addEventListener("click",async e=>{const L=inspList().slice(),d=e.target.closest("[data-iidel]"),m=e.target.closest("[data-iimv]");
+  if(d){const i=+d.dataset.iidel;if(!d.classList.contains("armed")){d.classList.add("armed");d.textContent="✓?";return}const it=L.splice(i,1)[0];await setInsp(L);toast(`${it.n} removed from new ROs`)}
+  if(m){const i=+m.dataset.iimv,j=i+ +m.dataset.d;if(j<0||j>=L.length)return;[L[i],L[j]]=[L[j],L[i]];await setInsp(L)}});
+$("cfg-insp").addEventListener("change",async e=>{const L=inspList().slice();
+  if(e.target.dataset.iin!=null){const i=+e.target.dataset.iin,n=e.target.value.trim();if(n){L[i]=Object.assign({},L[i],{n});await setInsp(L)}}
+  if(e.target.dataset.iimm!=null){const i=+e.target.dataset.iimm;L[i]=Object.assign({},L[i],{b:e.target.checked});await setInsp(L)}});
+$("ii-add").onclick=async()=>{const n=$("ii-name").value.trim().replace(/\s+/g," ");if(!n){$("ii-name").focus();return}
+  const L=inspList(),k=slug(n);if(k==="c_"||L.some(i=>i.k===k||i.n.toLowerCase()===n.toLowerCase())){toast(`${n} is already on the list`);return}
+  await setInsp([...L,{k,n,b:$("ii-mm").checked}]);$("ii-name").value="";$("ii-mm").checked=false;toast(`${n} added to new ROs`)};
+$("insp-preset").addEventListener("change",async()=>{const p=$("insp-preset").value;if(!p||!INSP_PRESETS[p])return;
+  await setInsp(INSP_PRESETS[p]());$("insp-preset").value="";toast("Inspection list updated for new ROs")});
+$("cfg-reset").onclick=async()=>{await savePrefs({form:{}},true);applyForm();renderFormCfg();toast("RO form layout reset")};
+
+/* ---------- files & photos kept with each RO ---------- */
+let formNewId=null,attURLs=[],attCount=0;
+function formId(){return editingId||formNewId}
+async function idbKeys(prefix){const db=await IDB.open();return new Promise((res,rej)=>{const t=db.transaction("kv","readonly"),q=t.objectStore("kv").getAllKeys();q.onsuccess=()=>res((q.result||[]).map(String).filter(k=>k.startsWith(prefix)));q.onerror=()=>rej(q.error)})}
+async function attList(rid){if(!rid)return[];try{const out=[];for(const k of await idbKeys("att:"+rid+":")){const v=await IDB.get(k);if(v)out.push(v)}return out.sort((a,b)=>a.ts-b.ts)}catch(e){return[]}}
+async function attAdd(rid,file,kind){if(!rid||!file)return null;
+  let blob=file,type=file.type||"application/octet-stream",name=file.name||"photo.jpg",w=0,h=0;
+  try{if(/^image\//.test(type)&&!/gif|svg/.test(type)){const c=file instanceof HTMLCanvasElement?file:await shrink(file,1600);w=c.width;h=c.height;
+    blob=await new Promise(r=>c.toBlob(r,"image/jpeg",.82));type="image/jpeg";name=String(name).replace(/\.\w+$/,"")+".jpg"}}catch(e){}
+  if(blob.size>15e6){toast("That file is over 15 MB");return null}
+  const a={id:"a"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),rid,name,type,kind:kind||"",ts:Date.now(),size:blob.size,w,h,blob};
+  try{await IDB.set("att:"+rid+":"+a.id,a)}catch(e){toast("This phone couldn't store that file. Storage may be full.");return null}
+  return a}
+async function attDelAll(rid){try{for(const k of await idbKeys("att:"+rid+":"))await IDB.del(k)}catch(e){}}
+async function renderFiles(){const box=$("ro-files");if(!box)return;attURLs.forEach(u=>URL.revokeObjectURL(u));attURLs=[];
+  const L=await attList(formId());
+  box.innerHTML=L.length?L.map(a=>{let th;if(/^image\//.test(a.type)){const u=URL.createObjectURL(a.blob);attURLs.push(u);th=`<img alt="" src="${u}">`}else th=`<span class="attdoc">${esc((String(a.name).split(".").pop()||"file").toUpperCase().slice(0,4))}</span>`;
+    return`<button type="button" class="att" data-att="${esc(a.id)}">${th}<small>${esc(a.kind||a.name)}</small></button>`}).join(""):`<span class="hint">No files yet. Photos of the RO page and repair sheet you scan are kept here too.</span>`;
+  attCount=L.length;$("files-count").textContent=L.length?`${L.length} file${L.length>1?"s":""}`:"";$("files-save").disabled=!L.length&&!$("ro").value.trim()}
+$("files-cam").onclick=()=>$("files-cam-in").click();$("files-add").onclick=()=>$("files-add-in").click();
+["files-cam-in","files-add-in"].forEach(id=>$(id).addEventListener("change",async e=>{const fs=[...(e.target.files||[])];e.target.value="";if(!fs.length)return;
+  if(!editingId&&!formNewId)formNewId="r"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  let n=0;for(const f of fs)if(await attAdd(formId(),f,id==="files-cam-in"?"Photo":""))n++;await renderFiles();saveDraft();if(n)toast(`Added ${n} file${n>1?"s":""} to this RO`)}));
+function autoAttach(file,kind){if(prefs.autoAttach===false||!file)return;attAdd(formId(),file,kind).then(a=>{if(a)renderFiles()})}
+let attOpen=null;
+$("ro-files").addEventListener("click",async e=>{const b=e.target.closest("[data-att]");if(!b)return;const a=(await attList(formId())).find(x=>x.id===b.dataset.att);if(!a)return;attOpen=a;
+  const v=$("attview-body");if(v._u)URL.revokeObjectURL(v._u);v._u=URL.createObjectURL(a.blob);
+  v.innerHTML=/^image\//.test(a.type)?`<img alt="" src="${v._u}">`:`<a class="btn" href="${v._u}" target="_blank" rel="noopener">Open ${esc(a.name)}</a>`;
+  $("attview-title").textContent=a.kind||a.name;$("att-del").classList.remove("armed");$("att-del").textContent="Delete";$("attview").hidden=false});
+$("att-x").onclick=()=>{$("attview").hidden=true};$("attview").addEventListener("click",e=>{if(e.target.id==="attview")$("attview").hidden=true});
+$("att-del").onclick=async()=>{const b=$("att-del");if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="Tap again to delete";return}
+  if(attOpen)await IDB.del("att:"+attOpen.rid+":"+attOpen.id);$("attview").hidden=true;await renderFiles();toast("File deleted")};
+function roFileName(base,ext){const ro=$("ro").value.trim()||"RO",d=$("date").value||today();return`RO ${ro.replace(/[^\w-]/g,"")} ${d} ${base}`.trim().replace(/\s+/g," ")+ext}
+async function shareFiles(files,title){
+  try{if(navigator.canShare&&navigator.canShare({files})){await navigator.share({files,title});return true}}catch(e){if(e&&e.name==="AbortError")return false}
+  files.forEach(f=>{const u=URL.createObjectURL(f),x=document.createElement("a");x.href=u;x.download=f.name;document.body.appendChild(x);x.click();x.remove();setTimeout(()=>URL.revokeObjectURL(u),5000)});return true}
+$("att-share").onclick=async()=>{if(!attOpen)return;const ext=/^image\//.test(attOpen.type)?".jpg":(String(attOpen.name).match(/\.\w+$/)||[""])[0];
+  await shareFiles([new File([attOpen.blob],roFileName(attOpen.kind||"file",ext),{type:attOpen.type})],"RO file")};
+$("files-save").onclick=async()=>{const b=$("files-save");b.disabled=true;b.textContent="Getting files ready…";
+  try{const L=await attList(formId()),files=[];const cnt={};
+    if($("ro").value.trim()){if(!window.jspdf)await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js","jspdf");
+      if(window.jspdf){try{const doc=makePDF(collect());files.push(new File([doc.output("blob")],roFileName("",".pdf"),{type:"application/pdf"}))}catch(e){}}}
+    L.forEach(a=>{const base=a.kind||"file";cnt[base]=(cnt[base]||0)+1;const ext=/^image\//.test(a.type)?".jpg":(String(a.name).match(/\.\w+$/)||[""])[0];
+      files.push(new File([a.blob],roFileName(base+(cnt[base]>1?" "+cnt[base]:""),ext),{type:a.type}))});
+    if(!files.length){toast("Nothing to save yet");return}
+    await shareFiles(files,"RO "+$("ro").value.trim())}
+  finally{b.disabled=false;b.textContent="Save all to Files"}};
+$("auto-attach").addEventListener("change",()=>savePrefs({autoAttach:$("auto-attach").checked},true));
+/* backups: photos and files ride along in the backup file */
+const blobToDataURL=b=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(r.error);r.readAsDataURL(b)});
+async function exportFiles(){const out=[];try{for(const k of await idbKeys("att:")){const a=await IDB.get(k);if(a&&a.blob){const c=Object.assign({},a);delete c.blob;c.data=await blobToDataURL(a.blob);out.push(c)}}}catch(e){}return out}
+async function importFiles(list){let n=0;for(const a of list||[]){try{if(!a||!a.rid||!a.id||!a.data)continue;const k="att:"+a.rid+":"+a.id;if(await IDB.get(k))continue;
+  const blob=await (await fetch(a.data)).blob();const c=Object.assign({},a,{blob});delete c.data;await IDB.set(k,c);n++}catch(e){}}return n}
+
 /* ---------- open / save ---------- */
 function openForm(r){
   if(!window.jspdf&&!$("pdf").hidden)loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js","jspdf");
   if(r&&r.kind==="hours"){openHours(r);return}
-  editingId=r?r.id:null;
+  editingId=r?r.id:null;formNewId=editingId?null:"r"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
   $("view-form").reset();$("vinfo").hidden=true;
   decodedVin=shownVin=(r&&r.vin)||"";autoYmm=autoEng="";$("recs").innerHTML="";recN=0;$("jobs").innerHTML="";jobN=0;
   $("form-title").textContent=r?`Edit RO ${r.ro||""}`:"New repair order";setTimeout(formTitle,0);
@@ -1585,22 +1780,28 @@ function openForm(r){
   hoursTouched=!!(+r.hours)&&Math.abs(+r.hours-jobSum(r.jobs))>.001;
   syncHours();claimUI();
   $("del").hidden=!editingId;$("del").classList.remove("armed");$("del").textContent="Delete this RO";
+  renderCustomInputs(r.custom);applyForm();$("auto-attach").checked=prefs.autoAttach!==false;attCount=r.nfiles||0;renderFiles();
   refreshInsp();updateBar();show("form");window.scrollTo(0,0);setTimeout(()=>{formSnap=formSig()},0);
 }
 function collect(){
   const ro=$("ro").value.trim();
   const prev=records.find(r=>r.id===editingId);
-  const rec={id:editingId||("r"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)),
+  if(!editingId&&!formNewId)formNewId="r"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  const rec={id:editingId||formNewId,
     ro,tag:$("tag").value.trim().toUpperCase(),date:$("date").value,hours:+$("hours").value||0,
     vin:$("vin").value.trim().toUpperCase(),miles:$("miles").value?+$("miles").value:"",tech:$("tech").value.trim(),
     work:$("work").value.trim(),maintReset:$("maint").checked,inspection:{},tires:{},recs:readRecs(),
     createdAt:prev&&prev.createdAt||Date.now(),updatedAt:Date.now()};
   curItems.forEach(([k,n,b,c])=>{const s=$(`i-${k}-pass`).checked?"pass":$(`i-${k}-attn`).checked?"attn":$(`i-${k}-fail`).checked?"fail":"";const o={s,note:$(`i-${k}-note`).value.trim()};
-    if(b){o.mmL=$(`i-${k}-mmL`).value;o.mmR=$(`i-${k}-mmR`).value;const nums=[o.mmL,o.mmR].filter(x=>x!=="").map(Number);o.mm=nums.length?String(Math.min(...nums)):""}if(c)o.name=n;rec.inspection[k]=o});
+    if(b){o.mmL=$(`i-${k}-mmL`).value;o.mmR=$(`i-${k}-mmR`).value;const nums=[o.mmL,o.mmR].filter(x=>x!=="").map(Number);o.mm=nums.length?String(Math.min(...nums)):""}if(c||k.startsWith("c_")||n!==ITEMNAME[k])o.name=n;rec.inspection[k]=o});
   TIRES.forEach(([k])=>rec.tires[k]={in:$(`t-${k}-in`).value,mid:$(`t-${k}-mid`).value,out:$(`t-${k}-out`).value});
   rec.jobs=readJobs();
   ["ymm","engine","color","stock","advisor","advisorNo","timein","promised"].forEach(k=>rec[k]=$(k).value.trim());
   if(rec.stock)rec.stock=rec.stock.toUpperCase();
+  {const keep={},ids=new Set(customFields().map(f=>f.id));Object.entries((prev&&prev.custom)||{}).forEach(([k,v])=>{if(!ids.has(k))keep[k]=v});
+   const cv=Object.assign(keep,readCustom());if(Object.keys(cv).length)rec.custom=cv;
+   const cur=Object.fromEntries(customFields().map(f=>[f.id,f.n])),old=(prev&&prev.customNames)||{},nm={};Object.keys(cv).forEach(k=>nm[k]=cur[k]||old[k]||k);if(Object.keys(nm).length)rec.customNames=nm}
+  rec.nfiles=attCount;
   rec.paid=$("paid").checked;rec.claim=$("cl-pending").checked?"pending":$("cl-paid").checked?"paid":$("cl-rejected").checked?"rejected":"";
   const cbh=+$("cb-hrs").value||0;rec.cb=cbh?{hrs:cbh,date:$("cb-date").value||today(),note:$("cb-note").value.trim()}:null;
   return rec;
@@ -1639,7 +1840,7 @@ window.addEventListener("pagehide",()=>saveDraft(true));
 function restoreDraft(){const d=LS.get(DRAFT);if(!d||!d.rec)return;
   if(Date.now()-(d.ts||0)>7*864e5){clearDraft();return}
   curView=d.from&&d.from!=="form"?d.from:"log";openForm(d.rec);
-  if(d.isNew){editingId=null;$("del").hidden=true;$("form-title").textContent="New repair order"}
+  if(d.isNew){editingId=null;formNewId=d.rec.id;$("del").hidden=true;$("form-title").textContent="New repair order";renderFiles()}
   setTimeout(()=>{formSnap=""},5);toast("Picked up the RO you were working on")}
 
 /* ---------- nav ---------- */
@@ -1657,9 +1858,9 @@ function show(v){
 $("tab-log").onclick=()=>{show("log");render()};
 $("tab-new").onclick=()=>{const k=curView==="log"&&selDay&&selDay!==today()?selDay:null;openForm(null);if(k){$("date").value=k;formTitle()}};
 $("tab-cal").onclick=()=>{show("cal");renderCal();window.scrollTo(0,0)};
-$("tab-set").onclick=()=>{show("set");cloudStatus();fillLookForm();renderAdvList();renderFavList();fillGeneral();fillDealer();fillHW();window.scrollTo(0,0)};
+$("tab-set").onclick=()=>{show("set");cloudStatus();fillLookForm();renderAdvList();renderFavList();fillGeneral();fillDealer();fillHW();renderFormCfg();window.scrollTo(0,0)};
 $("tab-pay").onclick=()=>{show("pay");renderPay();window.scrollTo(0,0)};
-$("cancel").onclick=()=>{clearDraft();back()};
+$("cancel").onclick=()=>{const orphan=!editingId&&formNewId&&!records.some(r=>r.id===formNewId)?formNewId:null;clearDraft();back();if(orphan)attDelAll(orphan)};
 $("save").onclick=save;
 $("wk-start").value=String(startDow);
 $("wk-start").addEventListener("change",async()=>{
@@ -3317,6 +3518,7 @@ let wzStep=0;
 function openWizard(){const wm=document.querySelector('[data-mark]');if(wm&&!wm.src.startsWith('data:'))wm.src=document.querySelector('.brand .markimg').src;
   $("wz-make").innerHTML=$("set-make").innerHTML;$("wz-make").value=MAKES.includes(myMake())?myMake():myMake()?"__other":"";
   if($("wz-make").value==="__other")$("wz-make").value="";
+  {const has=(Array.isArray(prefs.inspList)&&prefs.inspList.length)||customPrefs().length||records.length;$("wz-insp").querySelector('[value="keep"]').hidden=!has;$("wz-insp").value=has?"keep":presetForMake($("wz-make").value)}
   $("wz-dealer").value=prefs.dealer||"";$("wz-tech").value=prefs.tech||LS.get("ro-tech")||"";$("wz-wk").value=String(startDow);
   $("wz-rate").value=prefs.payRate||"";$("wz-goal").value=prefs.weekGoal||"";$("wz-ot").checked=otDays().includes(6);
   $("wz-"+(prefs.lang==="es"?"es":"en")).checked=true;$("wz-big").checked=!!prefs.big;
@@ -3324,6 +3526,7 @@ function openWizard(){const wm=document.querySelector('[data-mark]');if(wm&&!wm.
 function wzShow(){document.querySelectorAll("#wiz .wzstep").forEach(el=>el.hidden=+el.dataset.step!==wzStep);
   document.querySelectorAll("#wz-dots i").forEach((d,i)=>d.classList.toggle("on",i===wzStep));
   $("wz-back").hidden=wzStep===0;$("wz-skip").hidden=wzStep===3;$("wz-next").textContent=wzStep===3?"Start logging":"Next"}
+$("wz-make").addEventListener("change",()=>{$("wz-insp").value=presetForMake($("wz-make").value)});
 $("wz-big").addEventListener("change",()=>document.documentElement.classList.toggle("big",$("wz-big").checked));
 $("wz-back").onclick=()=>{if(wzStep>0){wzStep--;wzShow()}};
 $("wz-skip").onclick=async()=>{$("wiz").hidden=true;await savePrefs({setupDone:true},true)};
@@ -3334,6 +3537,7 @@ $("wz-next").onclick=async()=>{
   const patch={setupDone:true,big:$("wz-big").checked,lang,make:$("wz-make").value==="__other"?"":$("wz-make").value,dealer:$("wz-dealer").value.trim(),tech:$("wz-tech").value.trim(),
     weekStart:wk,payRate:v($("wz-rate").value)||prefs.payRate||"",weekGoal:v($("wz-goal").value)||prefs.weekGoal||"",otDays:od};
   if(patch.tech)LS.set("ro-tech",patch.tech);
+  {const ip=$("wz-insp").value;if(ip!=="keep"&&INSP_PRESETS[ip]){patch.inspList=INSP_PRESETS[ip]();patch.customItems=[]}}
   const relang=lang!==(prefs.lang||"en");
   await savePrefs(patch);startDow=wk;$("wk-start").value=String(wk);weekOffset=0;selDay=null;
   $("wiz").hidden=true;applyBig();applyMake();fillPrefsForm();render();
@@ -3341,7 +3545,7 @@ $("wz-next").onclick=async()=>{
 $("run-setup").onclick=openWizard;
 function maybeWizard(){if(prefs.setupDone||records.length||prefs.payRate||prefs.make||!$("view-form").hidden)return;openWizard()}
 /* ---------- Spanish ---------- */
-const ES={"Share last scan": "Compartir último escaneo", "Scan a repair sheet first": "Primero escanea una hoja de reparación","Automatic cloud backup": "Respaldo automático en la nube", "Sync now": "Sincronizar ahora", "Syncing…": "Sincronizando…", "Every change is saved to your reader, locked with your passphrase. On a new phone or after reinstalling, enter the passphrase and your ROs and settings come back. Background photos over 2 MB stay on this phone.": "Cada cambio se guarda en tu lector, protegido con tu frase de acceso. En un teléfono nuevo o al reinstalar, escribe la frase y regresan tus RO y ajustes. Las fotos de fondo de más de 2 MB se quedan en este teléfono.", "Enter your passphrase in Handwriting reader below to turn this on.": "Escribe tu frase de acceso en el Lector de escritura abajo para activarlo.", "Off. Your ROs are only on this phone.": "Apagado. Tus RO están solo en este teléfono.", "Not backed up to the cloud yet.": "Aún sin respaldo en la nube.", "Cloud backup is up to date": "El respaldo en la nube está al día", "Synced with your cloud backup": "Sincronizado con tu respaldo en la nube", "Cloud backup was made with a different passphrase.": "El respaldo en la nube se hizo con otra frase de acceso.", "Couldn't reach the cloud backup.": "No se pudo llegar al respaldo en la nube.", "Couldn't reach the cloud backup. Try again.": "No se pudo llegar al respaldo en la nube. Intenta de nuevo.", "Enter your reader passphrase first": "Primero escribe tu frase de acceso","Enter your passphrase to turn on the reader. Your Google key stays on the relay, never in this app.": "Escribe tu frase de acceso para activar el lector. Tu clave de Google se queda en el relevo, nunca en esta app.", "Passphrase": "Frase de acceso", "Your reader passphrase": "Tu frase de acceso del lector", "Use a different relay": "Usar otro relevo", "Leave empty to use the built-in relay": "Déjalo vacío para usar el relevo incluido", "Enter your reader passphrase in Settings first": "Primero escribe tu frase de acceso en Ajustes", "Enter your passphrase first": "Primero escribe tu frase de acceso","Duplicate": "Duplicar", "Unpaid": "No pagada", "Confirm": "Confirmar", "Open": "Abrir", "Save PDF": "Guardar PDF", "Copy RO #": "Copiar RO #", "Mark paid": "Marcar pagada", "Mark not paid": "Marcar no pagada", "Tap again to delete": "Toca otra vez para borrar", "Icon badge: ROs not marked paid": "Globo del ícono: RO sin marcar pagadas", "RO blue": "Azul RO", "Calendar": "Calendario", "Unsaved changes. Tap Save RO, or Cancel to discard.": "Cambios sin guardar. Toca Guardar RO, o Cancelar para descartar.", "Saving files isn't available here.": "Guardar archivos no está disponible aquí.","Scan VIN": "Escanear VIN", "Take photo instead": "Tomar foto mejor", "Light": "Luz", "Close scanner": "Cerrar escáner", "Fit the VIN barcode or the printed VIN in the box": "Pon el código de barras del VIN o el VIN impreso dentro del cuadro", "Point at the VIN barcode on the door jamb or windshield": "Apunta al código de barras del VIN en el marco de la puerta o el parabrisas", "Still looking. Move closer so the VIN fills the box, and hold steady.": "Sigue buscando. Acércate para que el VIN llene el cuadro y no te muevas.", "No barcode yet. Tap Take photo and Claude will read the printed VIN.": "Aún sin código de barras. Toca Tomar foto y Claude leerá el VIN impreso.", "Got it once. Hold steady…": "Leído una vez. No te muevas…", "✓ Mark the rest Pass": "✓ Marcar el resto Bien", "Every item already has a result": "Todos los puntos ya tienen resultado", "Typing the last 6–8 of a car you've done before fills in the rest. On iPhone you can also tap the box and choose Scan Text.": "Si escribes los últimos 6–8 de un carro que ya hiciste, se llena lo demás. En iPhone también puedes tocar la casilla y elegir Escanear texto.", "Camera blocked. Taking a photo instead.": "Cámara bloqueada. Se tomará una foto.", "Camera not available. Taking a photo instead.": "Cámara no disponible. Se tomará una foto.","+ Add": "+ Agregar", "+ Add RO": "+ Agregar RO", "+ Add job line": "+ Agregar línea de trabajo", "+ Add multiplier range": "+ Agregar rango de multiplicador", "+ Add repair": "+ Agregar reparación", "+ Hours only": "+ Solo horas", "17 characters": "17 caracteres", "2 or less replace": "2 o menos: cambiar", "3–5 soon": "3–5 pronto", "6+ good": "6+ bien", "32nds": "32avos", "A coworker scans the code with the iPhone camera. Their RO Log starts empty and saves only on their phone, so nobody sees anyone else's ROs.": "Un compañero escanea el código con la cámara del iPhone. Su RO Log empieza vacío y guarda solo en su teléfono, así que nadie ve las RO de otros.", "Accent color": "Color de acento", "Accent glow": "Brillo de acento", "Access code (optional)": "Código de acceso (opcional)", "Add it to your home screen:": "Agrégala a tu pantalla de inicio:", "Add item, e.g. Wiper blades": "Agregar punto, ej. plumillas", "Add past hours": "Agregar horas pasadas", "Add to every new RO": "Agregar a cada RO nueva", "Add your advisors in Settings to pick them with one tap.": "Agrega tus asesores en Ajustes para elegirlos con un toque.", "Add your flat rate in Pay settings to see dollars.": "Agrega tu tarifa por hora en Ajustes de pago para ver dólares.", "Add your flat rate in Pay settings to see earnings.": "Agrega tu tarifa por hora en Ajustes de pago para ver ganancias.", "Adv #": "Asesor #", "Advisor": "Asesor", "Advisor & vehicle": "Asesor y vehículo", "Advisor name": "Nombre del asesor", "Advisor number": "Número del asesor", "Advisors": "Asesores", "Any day in the pay week": "Cualquier día de la semana de pago", "App link": "Enlace de la app", "Appearance": "Apariencia", "Approved": "Aprobada", "Attn": "Atención", "Average per week": "Promedio por semana", "Avg / day": "Prom. / día", "Avg hrs / RO": "Prom. h / RO", "Back": "Atrás", "Back up everything": "Respaldar todo", "Back up now": "Respaldar ahora", "Back up saves your ROs, past hours, advisors, pay settings, inspection items, colors and photos in one file. Restore brings all of it back, for example after you install an updated copy of the app.": "El respaldo guarda tus RO, horas pasadas, asesores, ajustes de pago, puntos de inspección, colores y fotos en un archivo. Restaurar lo recupera todo, por ejemplo después de instalar una copia nueva de la app.", "Back up weekly.": "Respalda cada semana.", "Background": "Fondo", "Backup & restore": "Respaldo y restauración", "Ball joints": "Rótulas", "Battery": "Batería", "Best day": "Mejor día", "Bigger buttons, for gloves": "Botones más grandes, para guantes", "Blueprint grid": "Cuadrícula de plano", "Bonus hours = warranty hours × (multiplier − 1). Leave the end date empty if it's still running.": "Horas de bono = horas de garantía × (multiplicador − 1). Deja la fecha final vacía si sigue vigente.", "Brushed steel": "Acero cepillado", "C customer · W warranty · I internal": "C cliente · W garantía · I interno", "Calendar": "Calendario", "Cancel": "Cancelar", "Carbon fiber": "Fibra de carbono", "Card photo dimming": "Oscurecer foto de la tarjeta", "Chargebacks come off your pay in the week they're charged back. The RO keeps its flagged hours.": "Los cobros de vuelta se restan de tu pago en la semana en que se cobran. La RO mantiene sus horas marcadas.", "Charged back on": "Cobrado de vuelta el", "Check your paycheck": "Revisa tu cheque", "Choose another photo": "Elegir otra foto", "Choose one": "Elige una", "Close": "Cerrar", "Color": "Color", "Color tint": "Tinte de color", "Comeback or chargeback reason": "Motivo del regreso o cobro de vuelta", "Copy last RO": "Copiar última RO", "Custom": "Personalizado", "Custom color": "Color personalizado", "Customer labor price": "Precio de mano de obra al cliente", "Customer pay": "Pago del cliente", "Dark": "Oscuro", "Dashboard card": "Tarjeta del tablero", "Dashboard card background": "Fondo de la tarjeta del tablero", "Date": "Fecha", "Day": "Día", "Days of this pay week": "Días de esta semana de pago", "Dealership": "Concesionario", "Dealership name (optional)": "Nombre del concesionario (opcional)", "Declined": "Rechazada", "Delete": "Borrar", "Delete this RO": "Borrar esta RO", "Description": "Descripción", "Drive belts": "Bandas de transmisión", "Each day": "Cada día", "Each phone keeps its own ROs": "Cada teléfono guarda sus propias RO", "Engine / drive": "Motor / tracción", "Exhaust": "Escape", "Export CSV": "Exportar CSV", "Fail": "Falla", "Favorite jobs": "Trabajos favoritos", "Favorites": "Favoritos", "Flag hours on your pay stub for this week": "Horas marcadas en tu talón de pago de esta semana", "Flagged hours": "Horas marcadas", "Flat rate ($/hr)": "Tarifa por hora ($/h)", "For checking your paycheck": "Para revisar tu cheque", "For days you didn't log ROs. These hours count toward your totals, gauge, calendar and bonus, but not your RO count.": "Para días en que no registraste RO. Estas horas cuentan en tus totales, medidor, calendario y bono, pero no en tu cuenta de RO.", "From": "Desde", "Front brakes": "Frenos delanteros", "Gets warranty multiplier": "Recibe multiplicador de garantía", "Glass": "Vidrio", "Google Vision, for Scan repair sheet": "Google Vision, para Escanear hoja de reparación", "Graphite": "Grafito", "Handwriting reader": "Lector de escritura a mano", "Hours": "Horas", "Hours charged back": "Horas cobradas de vuelta", "Hours flagged on these days pay your rate × the overtime rate. Saturday at 1.5 is the default.": "Las horas marcadas en estos días pagan tu tarifa × la tarifa de tiempo extra. Sábado a 1.5 es lo predeterminado.", "How to enter": "Cómo ingresar", "Hrs labor": "Horas de mano de obra", "In stock": "En existencia", "Inside": "Interior", "Internal": "Interno", "Job lines": "Líneas de trabajo", "Labor calculator": "Calculadora de mano de obra", "Labor hours": "Horas de mano de obra", "Language": "Idioma", "Language & buttons": "Idioma y botones", "Leaks": "Fugas", "Left front": "Delantera izquierda", "Left rear": "Trasera izquierda", "Lexus blue": "Azul Lexus", "Light": "Claro", "Lights": "Luces", "Log": "Registro", "Log your repair orders, flag hours, inspections and pay. Everything stays on your phone.": "Registra tus órdenes de reparación, horas marcadas, inspecciones y pago. Todo se queda en tu teléfono.", "Look up vehicle from VIN": "Buscar vehículo por VIN", "Main": "Principal", "Manufacturer": "Fabricante", "Manufacturer name": "Nombre del fabricante", "Middle": "Centro", "Midnight": "Medianoche", "Miles": "Millas", "Mixed days? Use One day for those and split the hours.": "¿Días mixtos? Usa Un día para esos y divide las horas.", "Month": "Mes", "Multiplier": "Multiplicador", "Multipoint inspection": "Inspección de varios puntos", "Name": "Nombre", "New RO": "Nueva RO", "New inspection item": "Nuevo punto de inspección", "New repair order": "Nueva orden de reparación", "Next": "Siguiente", "Next day": "Día siguiente", "Next month": "Mes siguiente", "Next pay week": "Semana de pago siguiente", "No favorites yet.": "Aún no hay favoritos.", "Not backed up yet. Save a copy to iCloud Drive.": "Aún sin respaldo. Guarda una copia en iCloud Drive.", "Not set": "Sin configurar", "Not set up yet": "Aún sin configurar", "None in effect": "Ninguno vigente", "Note (optional)": "Nota (opcional)", "Notes": "Notas", "OT": "TE", "On the clock": "Horas de reloj", "One day": "Un día", "One tap on the RO form": "Un toque en el formulario de RO", "Only if you set APP_TOKEN on the relay": "Solo si pusiste APP_TOKEN en el relevo", "Only you see these": "Solo tú los ves", "Op code": "Código de op.", "Optional": "Opcional", "Orange": "Naranja", "Other…": "Otro…", "Outside": "Exterior", "Overtime days": "Días de tiempo extra", "Overtime rate": "Tarifa de tiempo extra", "PDC order": "Pedido PDC", "PDI etc.": "PDI etc.", "PDI or other job with no multiplier": "PDI u otro trabajo sin multiplicador", "Paid": "Pagada", "Paid on my paycheck": "Pagada en mi cheque", "Part #": "Parte #", "Pass": "Bien", "Paste the address of your Cloudflare relay. Your Google key stays on the relay, never in this app.": "Pega la dirección de tu relevo de Cloudflare. Tu clave de Google se queda en el relevo, nunca en esta app.", "Pay": "Pago", "Pay settings": "Ajustes de pago", "Pay tracking": "Control de pago", "Pay type": "Tipo de pago", "Pay week": "Semana de pago", "Pay week starts on": "La semana de pago empieza el", "Paycheck check": "Revisión del cheque", "Pending": "Pendiente", "Photo dimming": "Oscurecer foto", "Photos are kept in the phone's larger app storage.": "Las fotos se guardan en el almacenamiento grande de la app.", "Pick a card color": "Elige un color de tarjeta", "Pick a tint": "Elige un tinte", "Pick your accent": "Elige tu acento", "Plain": "Liso", "Pre-delivery inspection": "Inspección previa a la entrega", "Previous": "Anterior", "Previous day": "Día anterior", "Previous month": "Mes anterior", "Previous pay week": "Semana de pago anterior", "Prints on the PDF": "Se imprime en el PDF", "Promised": "Prometido", "Purple": "Morado", "Put it on the home screen:": "Ponla en la pantalla de inicio:", "QT": "Cant.", "RO page: RO #, VIN, vehicle and job lines. Repair sheet: your handwritten inspection, tire and brake readings, and recommendations. Tip: on iPhone, tap any box twice and choose Scan Text to read one handwritten number.": "Página de RO: RO #, VIN, vehículo y líneas de trabajo. Hoja de reparación: tu inspección a mano, lecturas de llantas y frenos, y recomendaciones. Consejo: en iPhone, toca dos veces cualquier casilla y elige Escanear texto para leer un número escrito a mano.", "Rear brakes": "Frenos traseros", "Reason failed": "Motivo de la falla", "Recommended repairs": "Reparaciones recomendadas", "Red": "Rojo", "Rejected": "Rechazado", "Relay address": "Dirección del relevo", "Remove job line": "Quitar línea de trabajo", "Remove multiplier range": "Quitar rango de multiplicador", "Remove photo": "Quitar foto", "Remove recommendation": "Quitar recomendación", "Repair (e.g. front pads & rotors)": "Reparación (ej. balatas y rotores delanteros)", "Repair orders": "Órdenes de reparación", "Reset maintenance light": "Reiniciar luz de mantenimiento", "Reset to default look": "Volver a la apariencia original", "Restore from file": "Restaurar desde archivo", "Right front": "Delantera derecha", "Right rear": "Trasera derecha", "Rows are your pay weeks. Tap a day to see its ROs, or a week total to open that week.": "Las filas son tus semanas de pago. Toca un día para ver sus RO, o el total de una semana para abrirla.", "Run setup again": "Volver a configurar", "Saturdays pay time and a half": "Los sábados pagan tiempo y medio", "Save RO": "Guardar RO", "Save a job line as a favorite from the RO form with ☆ Save as favorite. Your op codes and usual flag times go here.": "Guarda una línea de trabajo como favorita desde el formulario de RO con ☆ Guardar como favorito. Aquí van tus códigos de op. y tiempos habituales.", "Save hours": "Guardar horas", "Save settings": "Guardar ajustes", "Saved on this device": "Guardado en este dispositivo", "Saved on this device only": "Guardado solo en este dispositivo", "Saving on this device": "Guardando en este dispositivo", "Scan": "Escanear", "Scan RO page": "Escanear página de RO", "Scan repair sheet": "Escanear hoja de reparación", "Search all ROs: RO #, tag, VIN, work": "Buscar en todas las RO: RO #, etiqueta, VIN, trabajo", "See-through": "Transparencia", "Separate with commas. Jobs described as PDI or pre-delivery are also excluded. You can change any job with its checkbox.": "Separa con comas. Los trabajos descritos como PDI o previos a la entrega también se excluyen. Puedes cambiar cualquier trabajo con su casilla.", "Set shop rate": "Pon la tarifa del taller", "Set your warranty multiplier in Pay settings below.": "Configura tu multiplicador de garantía abajo en Ajustes de pago.", "Settings": "Ajustes", "Settings live on this device": "Los ajustes viven en este dispositivo", "Settings → Back up everything, and save it to iCloud Drive.": "Ajustes → Respaldar todo, y guárdalo en iCloud Drive.", "Share link": "Compartir enlace", "Share with coworkers": "Compartir con compañeros", "Shop labor rate ($/hr)": "Tarifa del taller ($/h)", "Show": "Mostrar", "Shows on your ROs and PDFs": "Aparece en tus RO y PDF", "Skip": "Omitir", "Spare": "Refacción", "Stock #": "Inventario #", "Suspension": "Suspensión", "System": "Sistema", "Tag #": "Etiqueta #", "Tap": "Toca", "Tap +": "Toca +", "Tap Approved or Declined": "Toca Aprobada o Rechazada", "Tap one on an RO to fill it in": "Toca uno en una RO para llenarlo", "Tap ☆ Save as favorite on a job line to reuse it with one tap.": "Toca ☆ Guardar como favorito en una línea de trabajo para reusarla con un toque.", "Teal": "Verde azulado", "Tech #": "Técnico #", "Test connection": "Probar conexión", "The card stays dark so the gauge is easy to read. Your photo stays on this device only.": "La tarjeta se queda oscura para leer bien el medidor. Tu foto se queda solo en este dispositivo.", "The manufacturer sets the examples in the RO form and helps VIN lookup. Change it anytime.": "El fabricante define los ejemplos del formulario de RO y ayuda a buscar el VIN. Cámbialo cuando quieras.", "Theme": "Tema", "These hours are": "Estas horas son", "Time received": "Hora de recibido", "Tire tread before service": "Dibujo de llantas antes del servicio", "To (optional)": "Hasta (opcional)", "Today": "Hoy", "Total": "Total", "Totals": "Totales", "Totals for": "Totales de", "Tread plate": "Placa antiderrapante", "Type": "Tipo", "Waiting on customer": "Esperando al cliente", "Warranty": "Garantía", "Warranty (gets multiplier)": "Garantía (con multiplicador)", "Warranty bonus": "Bono de garantía", "Warranty claim": "Reclamo de garantía", "Warranty hours flagged": "Horas de garantía marcadas", "Warranty multiplier": "Multiplicador de garantía", "Warranty op codes with no multiplier": "Códigos de op. de garantía sin multiplicador", "Warranty, no multiplier": "Garantía, sin multiplicador", "Week total": "Total de la semana", "Weekly hours goal": "Meta de horas por semana", "Welcome to RO Log": "Bienvenido a RO Log", "What needs attention": "Qué necesita atención", "What's wrong": "Qué está mal", "Whole week": "Toda la semana", "Wk": "Sem", "Work performed / test & trouble codes": "Trabajo realizado / códigos de prueba y falla", "Working": "Trabajando", "Year": "Año", "Year / make / model": "Año / marca / modelo", "You can set the warranty multiplier and more in the Pay tab later.": "Después puedes configurar el multiplicador de garantía y más en la pestaña Pago.", "You flag": "Tú marcas", "You logged": "Registraste", "You logged (after chargebacks)": "Registraste (después de cobros de vuelta)", "You're set": "Listo", "Your dealership": "Tu concesionario", "Your flat rate ($/hr)": "Tu tarifa por hora ($/h)", "Your pay": "Tu pago", "Your photo": "Tu foto", "Your photo stays on this device only.": "Tu foto se queda solo en este dispositivo.", "Your tech #": "Tu número de técnico", "above.": "arriba.", "e.g. 30K service, replaced cabin filter, P0420 stored": "ej. servicio de 30K, filtro de cabina cambiado, P0420 guardado", "e.g. Comeback, same noise": "ej. Regresó, mismo ruido", "e.g. From pay stub": "ej. Del talón de pago", "e.g. Your dealership's name": "ej. El nombre de tu concesionario", "hrs": "h", "hrs flagged": "h marcadas", "hrs this pay week": "h esta semana de pago", "hrs that pay week": "h esa semana de pago", "in Safari tap Share, then Add to Home Screen.": "en Safari toca Compartir y luego Agregar a inicio.", "in the Pay tab against what you logged.": "en la pestaña Pago contra lo que registraste.", "open the link in Safari, tap Share, then Add to Home Screen. It opens like an app and works without signal once it's been opened.": "abre el enlace en Safari, toca Compartir y luego Agregar a inicio. Abre como una app y funciona sin señal después de abrirla una vez.", "or": "o", "tap to add": "toca para agregar", "time and a half": "tiempo y medio", "to go": "por hacer", "to log an RO. Pick a day on the Log to see just that day.": "para registrar una RO. Elige un día en el Registro para ver solo ese día.", "☆ Save as favorite": "☆ Guardar como favorito", "Goal hit": "Meta cumplida", "MPI passed": "MPI aprobada", "No MPI": "Sin MPI", "Maint reset": "Mant. reiniciado", "Claim pending": "Reclamo pendiente", "Claim rejected": "Reclamo rechazado", "No RO": "Sin RO", "Hours only": "Solo horas", "Chargebacks": "Cobros de vuelta", "Chargebacks this week": "Cobros de vuelta esta semana", "Paid hours with overtime": "Horas pagadas con tiempo extra", "Pay stub": "Talón de pago", "Pay stub is short": "Al talón de pago le faltan", "Pay stub has more than you logged": "El talón de pago tiene más de lo registrado", "Matches what you logged": "Coincide con lo que registraste", "Not marked paid yet. Check these against your stub, then tap one to mark it paid:": "Aún sin marcar como pagadas. Compáralas con tu talón y toca una para marcarla pagada:", "Warranty bonus earned": "Bono de garantía ganado", "Warranty bonus earned (paid next month)": "Bono de garantía ganado (se paga el próximo mes)", "No multiplier (PDI etc.)": "Sin multiplicador (PDI etc.)", "Qualifying warranty hours": "Horas de garantía que califican", "Job pays": "El trabajo paga", "Total hours": "Horas totales", "Paid this week": "Pagado esta semana", "Added to next month's bonus": "Se suma al bono del próximo mes", "Warranty bonus (no multiplier)": "Bono de garantía (sin multiplicador)", "Est. earnings": "Ganancias estimadas", "Est. earnings + bonus": "Ganancias estimadas + bono", "Nothing found for": "No se encontró nada para", "No match": "Sin resultados", "Customer": "Cliente", "Gauge": "Medidor", "Link copied": "Enlace copiado", "Pay settings saved": "Ajustes de pago guardados", "RO deleted": "RO borrada", "Enter the RO number to save": "Escribe el número de RO para guardar", "Pick the RO date": "Elige la fecha de la RO", "Picked up the RO you were working on": "Se recuperó la RO en la que trabajabas", "Tip: swipe left or right to switch tabs": "Consejo: desliza a la izquierda o derecha para cambiar de pestaña", "All set. Tap + to log your first RO.": "Listo. Toca + para registrar tu primera RO.", "Add an op code or description first": "Primero agrega un código de op. o descripción", "Couldn't save. Try again.": "No se pudo guardar. Intenta de nuevo.", "Couldn't delete. Try again.": "No se pudo borrar. Intenta de nuevo.", "Preparing PDF…": "Preparando PDF…", "Hours entry deleted": "Entrada de horas borrada", "Enter some hours first": "Primero escribe algunas horas", "Pick the date": "Elige la fecha", "Removed from services performed": "Quitado de servicios realizados", "Repair and its job line removed": "Reparación y su línea de trabajo quitadas", "Default look restored": "Apariencia original restaurada", "Photo removed": "Foto quitada", "Background photo set": "Foto de fondo puesta", "Card photo set": "Foto de tarjeta puesta", "Card photo removed": "Foto de tarjeta quitada", "Overtime rate must be 1 or more, like 1.5": "La tarifa de tiempo extra debe ser 1 o más, como 1.5", "Enter the RO number first": "Primero escribe el número de RO", "Those details are already filled in": "Esos datos ya están llenos", "Use letters or numbers in the name": "Usa letras o números en el nombre", "Enter the advisor's name": "Escribe el nombre del asesor", "That file isn't an RO Log backup": "Ese archivo no es un respaldo de RO Log", "Couldn't open that file": "No se pudo abrir ese archivo", "Couldn't read a VIN. Try a closer, sharper photo.": "No se pudo leer un VIN. Intenta una foto más cerca y nítida.", "Couldn't read this RO. Take a straight, close photo of the top half of the first page.": "No se pudo leer esta RO. Toma una foto derecha y de cerca de la mitad de arriba de la primera página.", "This device didn't save that. Storage may be full or blocked. Tap Back up now.": "Este dispositivo no guardó eso. El almacenamiento puede estar lleno o bloqueado. Toca Respaldar ahora.", "Sun": "Dom", "Mon": "Lun", "Tue": "Mar", "Wed": "Mié", "Thu": "Jue", "Fri": "Vie", "Sat": "Sáb", "Su": "Do", "Mo": "Lu", "Tu": "Ma", "We": "Mi", "Th": "Ju", "Fr": "Vi", "Sa": "Sá", "Sunday": "Domingo", "Monday": "Lunes", "Tuesday": "Martes", "Wednesday": "Miércoles", "Thursday": "Jueves", "Friday": "Viernes", "Saturday": "Sábado", "Every RO": "Cada RO", "This RO only": "Solo esta RO", "✓ Every RO": "✓ Cada RO", "Added": "Agregado"};
+const ES={"Customize RO form": "Personalizar formulario de RO","Sections, fields, inspection list": "Secciones, campos, lista de inspección","Sections": "Secciones","Uncheck to hide · arrows to reorder": "Desmarca para ocultar · flechas para ordenar","Fields": "Campos","Uncheck the ones you never fill in": "Desmarca los que nunca llenas","Your own fields": "Tus propios campos","Show up under “Your fields” on every RO": "Aparecen en “Tus campos” en cada RO","Inspection list": "Lista de inspección","Used on new ROs": "Se usa en RO nuevas","Start from a preset": "Empezar con una plantilla","Choose a preset…": "Elige una plantilla…","Lexus / Toyota repair sheet": "Hoja de reparación Lexus / Toyota","Standard multipoint (any brand)": "Multipunto estándar (cualquier marca)","Quick check": "Revisión rápida","Reset sections & fields": "Restablecer secciones y campos","Always first": "Siempre primero","RO basics": "Datos del RO","Job lines": "Líneas de trabajo","Advisor & vehicle": "Asesor y vehículo","Multipoint inspection": "Inspección multipunto","Tire tread": "Banda de llantas","Recommended repairs": "Reparaciones recomendadas","Files & photos": "Archivos y fotos","Your fields": "Tus campos","Pay tracking": "Control de pago","Set up in Settings": "Se configura en Ajustes","📷 Take photo": "📷 Tomar foto","+ Add photo or file": "+ Agregar foto o archivo","Save all to Files": "Guardar todo en Archivos","Getting files ready…": "Preparando archivos…","Keep scanned RO and repair-sheet photos here": "Guardar aquí las fotos escaneadas del RO y la hoja","Share / Save": "Compartir / Guardar","Delete": "Borrar","Tap again to delete": "Toca otra vez para borrar","File deleted": "Archivo borrado","Include RO photos & files": "Incluir fotos y archivos de RO","Inspection checklist": "Lista de inspección","Keep my current list": "Mantener mi lista actual","Text": "Texto","Number": "Número","Date": "Fecha","Yes / no": "Sí / no","No files yet. Photos of the RO page and repair sheet you scan are kept here too.": "Aún no hay archivos. Aquí también se guardan las fotos del RO y la hoja que escaneas.","Nothing to save yet": "Nada que guardar todavía","RO form layout reset": "Diseño del formulario restablecido","Inspection list updated for new ROs": "Lista de inspección actualizada para RO nuevas","Check “mm” for items you measure left and right, like brake pads. Changes apply to new ROs; saved ROs keep what they had.": "Marca “mm” para lo que mides izquierda y derecha, como las pastillas. Los cambios aplican a RO nuevas; las guardadas no cambian.","You can add, remove and rename items any time in Settings → Customize RO form.": "Puedes agregar, quitar y renombrar puntos cuando quieras en Ajustes → Personalizar formulario de RO.","Share last scan": "Compartir último escaneo", "Scan a repair sheet first": "Primero escanea una hoja de reparación","Automatic cloud backup": "Respaldo automático en la nube", "Sync now": "Sincronizar ahora", "Syncing…": "Sincronizando…", "Every change is saved to your reader, locked with your passphrase. On a new phone or after reinstalling, enter the passphrase and your ROs and settings come back. Background photos over 2 MB stay on this phone.": "Cada cambio se guarda en tu lector, protegido con tu frase de acceso. En un teléfono nuevo o al reinstalar, escribe la frase y regresan tus RO y ajustes. Las fotos de fondo de más de 2 MB se quedan en este teléfono.", "Enter your passphrase in Handwriting reader below to turn this on.": "Escribe tu frase de acceso en el Lector de escritura abajo para activarlo.", "Off. Your ROs are only on this phone.": "Apagado. Tus RO están solo en este teléfono.", "Not backed up to the cloud yet.": "Aún sin respaldo en la nube.", "Cloud backup is up to date": "El respaldo en la nube está al día", "Synced with your cloud backup": "Sincronizado con tu respaldo en la nube", "Cloud backup was made with a different passphrase.": "El respaldo en la nube se hizo con otra frase de acceso.", "Couldn't reach the cloud backup.": "No se pudo llegar al respaldo en la nube.", "Couldn't reach the cloud backup. Try again.": "No se pudo llegar al respaldo en la nube. Intenta de nuevo.", "Enter your reader passphrase first": "Primero escribe tu frase de acceso","Enter your passphrase to turn on the reader. Your Google key stays on the relay, never in this app.": "Escribe tu frase de acceso para activar el lector. Tu clave de Google se queda en el relevo, nunca en esta app.", "Passphrase": "Frase de acceso", "Your reader passphrase": "Tu frase de acceso del lector", "Use a different relay": "Usar otro relevo", "Leave empty to use the built-in relay": "Déjalo vacío para usar el relevo incluido", "Enter your reader passphrase in Settings first": "Primero escribe tu frase de acceso en Ajustes", "Enter your passphrase first": "Primero escribe tu frase de acceso","Duplicate": "Duplicar", "Unpaid": "No pagada", "Confirm": "Confirmar", "Open": "Abrir", "Save PDF": "Guardar PDF", "Copy RO #": "Copiar RO #", "Mark paid": "Marcar pagada", "Mark not paid": "Marcar no pagada", "Tap again to delete": "Toca otra vez para borrar", "Icon badge: ROs not marked paid": "Globo del ícono: RO sin marcar pagadas", "RO blue": "Azul RO", "Calendar": "Calendario", "Unsaved changes. Tap Save RO, or Cancel to discard.": "Cambios sin guardar. Toca Guardar RO, o Cancelar para descartar.", "Saving files isn't available here.": "Guardar archivos no está disponible aquí.","Scan VIN": "Escanear VIN", "Take photo instead": "Tomar foto mejor", "Light": "Luz", "Close scanner": "Cerrar escáner", "Fit the VIN barcode or the printed VIN in the box": "Pon el código de barras del VIN o el VIN impreso dentro del cuadro", "Point at the VIN barcode on the door jamb or windshield": "Apunta al código de barras del VIN en el marco de la puerta o el parabrisas", "Still looking. Move closer so the VIN fills the box, and hold steady.": "Sigue buscando. Acércate para que el VIN llene el cuadro y no te muevas.", "No barcode yet. Tap Take photo and Claude will read the printed VIN.": "Aún sin código de barras. Toca Tomar foto y Claude leerá el VIN impreso.", "Got it once. Hold steady…": "Leído una vez. No te muevas…", "✓ Mark the rest Pass": "✓ Marcar el resto Bien", "Every item already has a result": "Todos los puntos ya tienen resultado", "Typing the last 6–8 of a car you've done before fills in the rest. On iPhone you can also tap the box and choose Scan Text.": "Si escribes los últimos 6–8 de un carro que ya hiciste, se llena lo demás. En iPhone también puedes tocar la casilla y elegir Escanear texto.", "Camera blocked. Taking a photo instead.": "Cámara bloqueada. Se tomará una foto.", "Camera not available. Taking a photo instead.": "Cámara no disponible. Se tomará una foto.","+ Add": "+ Agregar", "+ Add RO": "+ Agregar RO", "+ Add job line": "+ Agregar línea de trabajo", "+ Add multiplier range": "+ Agregar rango de multiplicador", "+ Add repair": "+ Agregar reparación", "+ Hours only": "+ Solo horas", "17 characters": "17 caracteres", "2 or less replace": "2 o menos: cambiar", "3–5 soon": "3–5 pronto", "6+ good": "6+ bien", "32nds": "32avos", "A coworker scans the code with the iPhone camera. Their RO Log starts empty and saves only on their phone, so nobody sees anyone else's ROs.": "Un compañero escanea el código con la cámara del iPhone. Su RO Log empieza vacío y guarda solo en su teléfono, así que nadie ve las RO de otros.", "Accent color": "Color de acento", "Accent glow": "Brillo de acento", "Access code (optional)": "Código de acceso (opcional)", "Add it to your home screen:": "Agrégala a tu pantalla de inicio:", "Add item, e.g. Wiper blades": "Agregar punto, ej. plumillas", "Add past hours": "Agregar horas pasadas", "Add to every new RO": "Agregar a cada RO nueva", "Add your advisors in Settings to pick them with one tap.": "Agrega tus asesores en Ajustes para elegirlos con un toque.", "Add your flat rate in Pay settings to see dollars.": "Agrega tu tarifa por hora en Ajustes de pago para ver dólares.", "Add your flat rate in Pay settings to see earnings.": "Agrega tu tarifa por hora en Ajustes de pago para ver ganancias.", "Adv #": "Asesor #", "Advisor": "Asesor", "Advisor & vehicle": "Asesor y vehículo", "Advisor name": "Nombre del asesor", "Advisor number": "Número del asesor", "Advisors": "Asesores", "Any day in the pay week": "Cualquier día de la semana de pago", "App link": "Enlace de la app", "Appearance": "Apariencia", "Approved": "Aprobada", "Attn": "Atención", "Average per week": "Promedio por semana", "Avg / day": "Prom. / día", "Avg hrs / RO": "Prom. h / RO", "Back": "Atrás", "Back up everything": "Respaldar todo", "Back up now": "Respaldar ahora", "Back up saves your ROs, past hours, advisors, pay settings, inspection items, colors and photos in one file. Restore brings all of it back, for example after you install an updated copy of the app.": "El respaldo guarda tus RO, horas pasadas, asesores, ajustes de pago, puntos de inspección, colores y fotos en un archivo. Restaurar lo recupera todo, por ejemplo después de instalar una copia nueva de la app.", "Back up weekly.": "Respalda cada semana.", "Background": "Fondo", "Backup & restore": "Respaldo y restauración", "Ball joints": "Rótulas", "Battery": "Batería", "Best day": "Mejor día", "Bigger buttons, for gloves": "Botones más grandes, para guantes", "Blueprint grid": "Cuadrícula de plano", "Bonus hours = warranty hours × (multiplier − 1). Leave the end date empty if it's still running.": "Horas de bono = horas de garantía × (multiplicador − 1). Deja la fecha final vacía si sigue vigente.", "Brushed steel": "Acero cepillado", "C customer · W warranty · I internal": "C cliente · W garantía · I interno", "Calendar": "Calendario", "Cancel": "Cancelar", "Carbon fiber": "Fibra de carbono", "Card photo dimming": "Oscurecer foto de la tarjeta", "Chargebacks come off your pay in the week they're charged back. The RO keeps its flagged hours.": "Los cobros de vuelta se restan de tu pago en la semana en que se cobran. La RO mantiene sus horas marcadas.", "Charged back on": "Cobrado de vuelta el", "Check your paycheck": "Revisa tu cheque", "Choose another photo": "Elegir otra foto", "Choose one": "Elige una", "Close": "Cerrar", "Color": "Color", "Color tint": "Tinte de color", "Comeback or chargeback reason": "Motivo del regreso o cobro de vuelta", "Copy last RO": "Copiar última RO", "Custom": "Personalizado", "Custom color": "Color personalizado", "Customer labor price": "Precio de mano de obra al cliente", "Customer pay": "Pago del cliente", "Dark": "Oscuro", "Dashboard card": "Tarjeta del tablero", "Dashboard card background": "Fondo de la tarjeta del tablero", "Date": "Fecha", "Day": "Día", "Days of this pay week": "Días de esta semana de pago", "Dealership": "Concesionario", "Dealership name (optional)": "Nombre del concesionario (opcional)", "Declined": "Rechazada", "Delete": "Borrar", "Delete this RO": "Borrar esta RO", "Description": "Descripción", "Drive belts": "Bandas de transmisión", "Each day": "Cada día", "Each phone keeps its own ROs": "Cada teléfono guarda sus propias RO", "Engine / drive": "Motor / tracción", "Exhaust": "Escape", "Export CSV": "Exportar CSV", "Fail": "Falla", "Favorite jobs": "Trabajos favoritos", "Favorites": "Favoritos", "Flag hours on your pay stub for this week": "Horas marcadas en tu talón de pago de esta semana", "Flagged hours": "Horas marcadas", "Flat rate ($/hr)": "Tarifa por hora ($/h)", "For checking your paycheck": "Para revisar tu cheque", "For days you didn't log ROs. These hours count toward your totals, gauge, calendar and bonus, but not your RO count.": "Para días en que no registraste RO. Estas horas cuentan en tus totales, medidor, calendario y bono, pero no en tu cuenta de RO.", "From": "Desde", "Front brakes": "Frenos delanteros", "Gets warranty multiplier": "Recibe multiplicador de garantía", "Glass": "Vidrio", "Google Vision, for Scan repair sheet": "Google Vision, para Escanear hoja de reparación", "Graphite": "Grafito", "Handwriting reader": "Lector de escritura a mano", "Hours": "Horas", "Hours charged back": "Horas cobradas de vuelta", "Hours flagged on these days pay your rate × the overtime rate. Saturday at 1.5 is the default.": "Las horas marcadas en estos días pagan tu tarifa × la tarifa de tiempo extra. Sábado a 1.5 es lo predeterminado.", "How to enter": "Cómo ingresar", "Hrs labor": "Horas de mano de obra", "In stock": "En existencia", "Inside": "Interior", "Internal": "Interno", "Job lines": "Líneas de trabajo", "Labor calculator": "Calculadora de mano de obra", "Labor hours": "Horas de mano de obra", "Language": "Idioma", "Language & buttons": "Idioma y botones", "Leaks": "Fugas", "Left front": "Delantera izquierda", "Left rear": "Trasera izquierda", "Lexus blue": "Azul Lexus", "Light": "Claro", "Lights": "Luces", "Log": "Registro", "Log your repair orders, flag hours, inspections and pay. Everything stays on your phone.": "Registra tus órdenes de reparación, horas marcadas, inspecciones y pago. Todo se queda en tu teléfono.", "Look up vehicle from VIN": "Buscar vehículo por VIN", "Main": "Principal", "Manufacturer": "Fabricante", "Manufacturer name": "Nombre del fabricante", "Middle": "Centro", "Midnight": "Medianoche", "Miles": "Millas", "Mixed days? Use One day for those and split the hours.": "¿Días mixtos? Usa Un día para esos y divide las horas.", "Month": "Mes", "Multiplier": "Multiplicador", "Multipoint inspection": "Inspección de varios puntos", "Name": "Nombre", "New RO": "Nueva RO", "New inspection item": "Nuevo punto de inspección", "New repair order": "Nueva orden de reparación", "Next": "Siguiente", "Next day": "Día siguiente", "Next month": "Mes siguiente", "Next pay week": "Semana de pago siguiente", "No favorites yet.": "Aún no hay favoritos.", "Not backed up yet. Save a copy to iCloud Drive.": "Aún sin respaldo. Guarda una copia en iCloud Drive.", "Not set": "Sin configurar", "Not set up yet": "Aún sin configurar", "None in effect": "Ninguno vigente", "Note (optional)": "Nota (opcional)", "Notes": "Notas", "OT": "TE", "On the clock": "Horas de reloj", "One day": "Un día", "One tap on the RO form": "Un toque en el formulario de RO", "Only if you set APP_TOKEN on the relay": "Solo si pusiste APP_TOKEN en el relevo", "Only you see these": "Solo tú los ves", "Op code": "Código de op.", "Optional": "Opcional", "Orange": "Naranja", "Other…": "Otro…", "Outside": "Exterior", "Overtime days": "Días de tiempo extra", "Overtime rate": "Tarifa de tiempo extra", "PDC order": "Pedido PDC", "PDI etc.": "PDI etc.", "PDI or other job with no multiplier": "PDI u otro trabajo sin multiplicador", "Paid": "Pagada", "Paid on my paycheck": "Pagada en mi cheque", "Part #": "Parte #", "Pass": "Bien", "Paste the address of your Cloudflare relay. Your Google key stays on the relay, never in this app.": "Pega la dirección de tu relevo de Cloudflare. Tu clave de Google se queda en el relevo, nunca en esta app.", "Pay": "Pago", "Pay settings": "Ajustes de pago", "Pay tracking": "Control de pago", "Pay type": "Tipo de pago", "Pay week": "Semana de pago", "Pay week starts on": "La semana de pago empieza el", "Paycheck check": "Revisión del cheque", "Pending": "Pendiente", "Photo dimming": "Oscurecer foto", "Photos are kept in the phone's larger app storage.": "Las fotos se guardan en el almacenamiento grande de la app.", "Pick a card color": "Elige un color de tarjeta", "Pick a tint": "Elige un tinte", "Pick your accent": "Elige tu acento", "Plain": "Liso", "Pre-delivery inspection": "Inspección previa a la entrega", "Previous": "Anterior", "Previous day": "Día anterior", "Previous month": "Mes anterior", "Previous pay week": "Semana de pago anterior", "Prints on the PDF": "Se imprime en el PDF", "Promised": "Prometido", "Purple": "Morado", "Put it on the home screen:": "Ponla en la pantalla de inicio:", "QT": "Cant.", "RO page: RO #, VIN, vehicle and job lines. Repair sheet: your handwritten inspection, tire and brake readings, and recommendations. Tip: on iPhone, tap any box twice and choose Scan Text to read one handwritten number.": "Página de RO: RO #, VIN, vehículo y líneas de trabajo. Hoja de reparación: tu inspección a mano, lecturas de llantas y frenos, y recomendaciones. Consejo: en iPhone, toca dos veces cualquier casilla y elige Escanear texto para leer un número escrito a mano.", "Rear brakes": "Frenos traseros", "Reason failed": "Motivo de la falla", "Recommended repairs": "Reparaciones recomendadas", "Red": "Rojo", "Rejected": "Rechazado", "Relay address": "Dirección del relevo", "Remove job line": "Quitar línea de trabajo", "Remove multiplier range": "Quitar rango de multiplicador", "Remove photo": "Quitar foto", "Remove recommendation": "Quitar recomendación", "Repair (e.g. front pads & rotors)": "Reparación (ej. balatas y rotores delanteros)", "Repair orders": "Órdenes de reparación", "Reset maintenance light": "Reiniciar luz de mantenimiento", "Reset to default look": "Volver a la apariencia original", "Restore from file": "Restaurar desde archivo", "Right front": "Delantera derecha", "Right rear": "Trasera derecha", "Rows are your pay weeks. Tap a day to see its ROs, or a week total to open that week.": "Las filas son tus semanas de pago. Toca un día para ver sus RO, o el total de una semana para abrirla.", "Run setup again": "Volver a configurar", "Saturdays pay time and a half": "Los sábados pagan tiempo y medio", "Save RO": "Guardar RO", "Save a job line as a favorite from the RO form with ☆ Save as favorite. Your op codes and usual flag times go here.": "Guarda una línea de trabajo como favorita desde el formulario de RO con ☆ Guardar como favorito. Aquí van tus códigos de op. y tiempos habituales.", "Save hours": "Guardar horas", "Save settings": "Guardar ajustes", "Saved on this device": "Guardado en este dispositivo", "Saved on this device only": "Guardado solo en este dispositivo", "Saving on this device": "Guardando en este dispositivo", "Scan": "Escanear", "Scan RO page": "Escanear página de RO", "Scan repair sheet": "Escanear hoja de reparación", "Search all ROs: RO #, tag, VIN, work": "Buscar en todas las RO: RO #, etiqueta, VIN, trabajo", "See-through": "Transparencia", "Separate with commas. Jobs described as PDI or pre-delivery are also excluded. You can change any job with its checkbox.": "Separa con comas. Los trabajos descritos como PDI o previos a la entrega también se excluyen. Puedes cambiar cualquier trabajo con su casilla.", "Set shop rate": "Pon la tarifa del taller", "Set your warranty multiplier in Pay settings below.": "Configura tu multiplicador de garantía abajo en Ajustes de pago.", "Settings": "Ajustes", "Settings live on this device": "Los ajustes viven en este dispositivo", "Settings → Back up everything, and save it to iCloud Drive.": "Ajustes → Respaldar todo, y guárdalo en iCloud Drive.", "Share link": "Compartir enlace", "Share with coworkers": "Compartir con compañeros", "Shop labor rate ($/hr)": "Tarifa del taller ($/h)", "Show": "Mostrar", "Shows on your ROs and PDFs": "Aparece en tus RO y PDF", "Skip": "Omitir", "Spare": "Refacción", "Stock #": "Inventario #", "Suspension": "Suspensión", "System": "Sistema", "Tag #": "Etiqueta #", "Tap": "Toca", "Tap +": "Toca +", "Tap Approved or Declined": "Toca Aprobada o Rechazada", "Tap one on an RO to fill it in": "Toca uno en una RO para llenarlo", "Tap ☆ Save as favorite on a job line to reuse it with one tap.": "Toca ☆ Guardar como favorito en una línea de trabajo para reusarla con un toque.", "Teal": "Verde azulado", "Tech #": "Técnico #", "Test connection": "Probar conexión", "The card stays dark so the gauge is easy to read. Your photo stays on this device only.": "La tarjeta se queda oscura para leer bien el medidor. Tu foto se queda solo en este dispositivo.", "The manufacturer sets the examples in the RO form and helps VIN lookup. Change it anytime.": "El fabricante define los ejemplos del formulario de RO y ayuda a buscar el VIN. Cámbialo cuando quieras.", "Theme": "Tema", "These hours are": "Estas horas son", "Time received": "Hora de recibido", "Tire tread before service": "Dibujo de llantas antes del servicio", "To (optional)": "Hasta (opcional)", "Today": "Hoy", "Total": "Total", "Totals": "Totales", "Totals for": "Totales de", "Tread plate": "Placa antiderrapante", "Type": "Tipo", "Waiting on customer": "Esperando al cliente", "Warranty": "Garantía", "Warranty (gets multiplier)": "Garantía (con multiplicador)", "Warranty bonus": "Bono de garantía", "Warranty claim": "Reclamo de garantía", "Warranty hours flagged": "Horas de garantía marcadas", "Warranty multiplier": "Multiplicador de garantía", "Warranty op codes with no multiplier": "Códigos de op. de garantía sin multiplicador", "Warranty, no multiplier": "Garantía, sin multiplicador", "Week total": "Total de la semana", "Weekly hours goal": "Meta de horas por semana", "Welcome to RO Log": "Bienvenido a RO Log", "What needs attention": "Qué necesita atención", "What's wrong": "Qué está mal", "Whole week": "Toda la semana", "Wk": "Sem", "Work performed / test & trouble codes": "Trabajo realizado / códigos de prueba y falla", "Working": "Trabajando", "Year": "Año", "Year / make / model": "Año / marca / modelo", "You can set the warranty multiplier and more in the Pay tab later.": "Después puedes configurar el multiplicador de garantía y más en la pestaña Pago.", "You flag": "Tú marcas", "You logged": "Registraste", "You logged (after chargebacks)": "Registraste (después de cobros de vuelta)", "You're set": "Listo", "Your dealership": "Tu concesionario", "Your flat rate ($/hr)": "Tu tarifa por hora ($/h)", "Your pay": "Tu pago", "Your photo": "Tu foto", "Your photo stays on this device only.": "Tu foto se queda solo en este dispositivo.", "Your tech #": "Tu número de técnico", "above.": "arriba.", "e.g. 30K service, replaced cabin filter, P0420 stored": "ej. servicio de 30K, filtro de cabina cambiado, P0420 guardado", "e.g. Comeback, same noise": "ej. Regresó, mismo ruido", "e.g. From pay stub": "ej. Del talón de pago", "e.g. Your dealership's name": "ej. El nombre de tu concesionario", "hrs": "h", "hrs flagged": "h marcadas", "hrs this pay week": "h esta semana de pago", "hrs that pay week": "h esa semana de pago", "in Safari tap Share, then Add to Home Screen.": "en Safari toca Compartir y luego Agregar a inicio.", "in the Pay tab against what you logged.": "en la pestaña Pago contra lo que registraste.", "open the link in Safari, tap Share, then Add to Home Screen. It opens like an app and works without signal once it's been opened.": "abre el enlace en Safari, toca Compartir y luego Agregar a inicio. Abre como una app y funciona sin señal después de abrirla una vez.", "or": "o", "tap to add": "toca para agregar", "time and a half": "tiempo y medio", "to go": "por hacer", "to log an RO. Pick a day on the Log to see just that day.": "para registrar una RO. Elige un día en el Registro para ver solo ese día.", "☆ Save as favorite": "☆ Guardar como favorito", "Goal hit": "Meta cumplida", "MPI passed": "MPI aprobada", "No MPI": "Sin MPI", "Maint reset": "Mant. reiniciado", "Claim pending": "Reclamo pendiente", "Claim rejected": "Reclamo rechazado", "No RO": "Sin RO", "Hours only": "Solo horas", "Chargebacks": "Cobros de vuelta", "Chargebacks this week": "Cobros de vuelta esta semana", "Paid hours with overtime": "Horas pagadas con tiempo extra", "Pay stub": "Talón de pago", "Pay stub is short": "Al talón de pago le faltan", "Pay stub has more than you logged": "El talón de pago tiene más de lo registrado", "Matches what you logged": "Coincide con lo que registraste", "Not marked paid yet. Check these against your stub, then tap one to mark it paid:": "Aún sin marcar como pagadas. Compáralas con tu talón y toca una para marcarla pagada:", "Warranty bonus earned": "Bono de garantía ganado", "Warranty bonus earned (paid next month)": "Bono de garantía ganado (se paga el próximo mes)", "No multiplier (PDI etc.)": "Sin multiplicador (PDI etc.)", "Qualifying warranty hours": "Horas de garantía que califican", "Job pays": "El trabajo paga", "Total hours": "Horas totales", "Paid this week": "Pagado esta semana", "Added to next month's bonus": "Se suma al bono del próximo mes", "Warranty bonus (no multiplier)": "Bono de garantía (sin multiplicador)", "Est. earnings": "Ganancias estimadas", "Est. earnings + bonus": "Ganancias estimadas + bono", "Nothing found for": "No se encontró nada para", "No match": "Sin resultados", "Customer": "Cliente", "Gauge": "Medidor", "Link copied": "Enlace copiado", "Pay settings saved": "Ajustes de pago guardados", "RO deleted": "RO borrada", "Enter the RO number to save": "Escribe el número de RO para guardar", "Pick the RO date": "Elige la fecha de la RO", "Picked up the RO you were working on": "Se recuperó la RO en la que trabajabas", "Tip: swipe left or right to switch tabs": "Consejo: desliza a la izquierda o derecha para cambiar de pestaña", "All set. Tap + to log your first RO.": "Listo. Toca + para registrar tu primera RO.", "Add an op code or description first": "Primero agrega un código de op. o descripción", "Couldn't save. Try again.": "No se pudo guardar. Intenta de nuevo.", "Couldn't delete. Try again.": "No se pudo borrar. Intenta de nuevo.", "Preparing PDF…": "Preparando PDF…", "Hours entry deleted": "Entrada de horas borrada", "Enter some hours first": "Primero escribe algunas horas", "Pick the date": "Elige la fecha", "Removed from services performed": "Quitado de servicios realizados", "Repair and its job line removed": "Reparación y su línea de trabajo quitadas", "Default look restored": "Apariencia original restaurada", "Photo removed": "Foto quitada", "Background photo set": "Foto de fondo puesta", "Card photo set": "Foto de tarjeta puesta", "Card photo removed": "Foto de tarjeta quitada", "Overtime rate must be 1 or more, like 1.5": "La tarifa de tiempo extra debe ser 1 o más, como 1.5", "Enter the RO number first": "Primero escribe el número de RO", "Those details are already filled in": "Esos datos ya están llenos", "Use letters or numbers in the name": "Usa letras o números en el nombre", "Enter the advisor's name": "Escribe el nombre del asesor", "That file isn't an RO Log backup": "Ese archivo no es un respaldo de RO Log", "Couldn't open that file": "No se pudo abrir ese archivo", "Couldn't read a VIN. Try a closer, sharper photo.": "No se pudo leer un VIN. Intenta una foto más cerca y nítida.", "Couldn't read this RO. Take a straight, close photo of the top half of the first page.": "No se pudo leer esta RO. Toma una foto derecha y de cerca de la mitad de arriba de la primera página.", "This device didn't save that. Storage may be full or blocked. Tap Back up now.": "Este dispositivo no guardó eso. El almacenamiento puede estar lleno o bloqueado. Toca Respaldar ahora.", "Sun": "Dom", "Mon": "Lun", "Tue": "Mar", "Wed": "Mié", "Thu": "Jue", "Fri": "Vie", "Sat": "Sáb", "Su": "Do", "Mo": "Lu", "Tu": "Ma", "We": "Mi", "Th": "Ju", "Fr": "Vi", "Sa": "Sá", "Sunday": "Domingo", "Monday": "Lunes", "Tuesday": "Martes", "Wednesday": "Miércoles", "Thursday": "Jueves", "Friday": "Viernes", "Saturday": "Sábado", "Every RO": "Cada RO", "This RO only": "Solo esta RO", "✓ Every RO": "✓ Cada RO", "Added": "Agregado"};
 const ESRX=(()=>{const DAYMAP={"Sun": "Dom", "Mon": "Lun", "Tue": "Mar", "Wed": "Mié", "Thu": "Jue", "Fri": "Vie", "Sat": "Sáb", "Sunday": "domingo", "Monday": "lunes", "Tuesday": "martes", "Wednesday": "miércoles", "Thursday": "jueves", "Friday": "viernes", "Saturday": "sábado"};return [
 [/^Restored (\d+) ROs? from your cloud backup$/,"Se restauraron $1 RO de tu respaldo en la nube"],[/^✓ Backed up (.+)$/,(m,t)=>"✓ Respaldado "+t.replace("just now","ahora").replace(/(\d+) min ago/,"hace $1 min").replace(/(\d+) hr ago/,"hace $1 h")],
 [/^RO (\S+) marked paid$/,"RO $1 marcada pagada"],[/^RO (\S+) marked not paid$/,"RO $1 marcada no pagada"],[/^RO (\S+) deleted$/,"RO $1 borrada"],[/^Copied RO (\S+)$/,"RO $1 copiada"],[/^Copied RO (\S+)\. Add the new RO # and tag\.$/,"RO $1 copiada. Agrega el nuevo RO # y etiqueta."],
@@ -3672,8 +3876,9 @@ document.addEventListener("visibilitychange",()=>{if(document.hidden&&CLOUD.t){c
 document.addEventListener("click",e=>{if(e.target&&e.target.id==="backup-now")$("backup").onclick()});
 $("backup").onclick=async()=>{
   const photos={bg:PH.bg||null,hero:PH.hero||null};
-  const data=JSON.stringify({app:"ro-log",version:2,exported:new Date().toISOString(),records,prefs,photos});
-  try{await downloads.save({filename:`ro-log-backup-${today()}.json`,data});LS.set("ro-lastbackup",Date.now());renderBackup();toast(`Backed up ${records.length} RO${records.length===1?"":"s"} and your settings`)}
+  const files=$("bk-files").checked?await exportFiles():[];
+  const data=JSON.stringify({app:"ro-log",version:2,exported:new Date().toISOString(),records,prefs,photos,files});
+  try{await downloads.save({filename:`ro-log-backup-${today()}.json`,data});LS.set("ro-lastbackup",Date.now());renderBackup();toast(`Backed up ${records.length} RO${records.length===1?"":"s"}${files.length?`, ${files.length} file${files.length>1?"s":""}`:""} and your settings`)}
   catch(e){}
 };
 $("restore").onclick=()=>$("restore-file").click();
@@ -3688,6 +3893,7 @@ $("restore-file").addEventListener("change",async e=>{
     let j;try{j=JSON.parse(t);incoming=(Array.isArray(j)?j:j.records||[]).filter(r=>r&&typeof r==="object"&&r.id&&(r.ro||r.kind==="hours"))}
     catch(err){toast("That file isn't an RO Log backup");return}
     if(j&&!Array.isArray(j)&&(j.prefs||j.photos)){await restoreSettings(j);setMsg="settings"}
+    if(j&&Array.isArray(j.files)&&j.files.length){const n=await importFiles(j.files);if(n)setMsg=setMsg?setMsg+" and files":"files"}
   }else{
     incoming=csvToRecords(t);
     if(incoming===null){toast("That CSV doesn't have an RO column. Use a file from Export CSV.");return}
@@ -3711,6 +3917,7 @@ async function restoreSettings(j){
   const merged=Object.assign({},cur,bp,{
     advisors:uniq([...(cur.advisors||[]),...(bp.advisors||[])],a=>String(a.name||"").toLowerCase()).sort((a,b)=>String(a.name).localeCompare(String(b.name))),
     customItems:uniq([...(cur.customItems||[]),...(bp.customItems||[])],c=>c.k),
+    customFields:uniq([...(cur.customFields||[]),...(bp.customFields||[])],f=>f.id),
     mults:(bp.mults&&bp.mults.length)?bp.mults:(cur.mults||[]),
     favs:uniq([...(cur.favs||[]),...(bp.favs||[])],f=>(f.op+"|"+f.desc).toLowerCase()),
     setupDone:cur.setupDone||bp.setupDone,hwUrl:cur.hwUrl||bp.hwUrl||"",hwToken:cur.hwUrl?(cur.hwToken||""):(bp.hwToken||""),clock:Object.assign({},cur.clock||{},bp.clock||{}),stubs:Object.assign({},cur.stubs||{},bp.stubs||{}),
@@ -4066,7 +4273,7 @@ function applyRO(x){const filled=[];
   syncHours();refreshInsp();updateBar();saveDraft();return{filled,vin:vinValid(vin)?vin:""}}
 $("ro-scan").onclick=()=>$("ro-file").click();
 $("ro-file").addEventListener("change",async e=>{
-  const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
+  const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;autoAttach(f,"RO page");
   const b=$("ro-scan");b.disabled=true;b.textContent="Reading RO…";
   try{
     let x=null;
@@ -4122,7 +4329,7 @@ function applySheet(x){const filled=[];const num=v=>String(v==null?"":v).replace
   refreshInsp();updateBar();saveDraft();return filled}
 $("sheet-scan").onclick=()=>{if(!inClaude&&!hwUrl()){toast("Enter your reader passphrase in Settings first");show("set");fillLookForm();renderAdvList();fillDealer();fillHW();setTimeout(()=>$("hw-sec").scrollIntoView({block:"start"}),60);return}$("sheet-file").click()};
 $("sheet-file").addEventListener("change",async e=>{
-  const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
+  const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;autoAttach(f,"Repair sheet");
   const b=$("sheet-scan");b.disabled=true;b.textContent="Reading sheet…";
   try{const x=inClaude?await readSheetWithClaude(f):await readSheetWithGoogle(f);
     if(x.err==="denied"){toast("Allow Claude to read photos to scan repair sheets");return}
@@ -4353,6 +4560,9 @@ function makePDF(r){
     y+=h;hline(y)});
   if(r.work){const wl=fit(r.work,CW-12,9);ensure(16);tint(14);lab("Work performed / test & trouble codes",M+5,y+10);y+=14;
     wl.forEach(t=>{if(y+11>BOT){box(y0);d.addPage();y=M;y0=y}tint(11);val(t,M+5,y+8,9);y+=11});y+=2;tint(2)}
+  {const cfl=Object.entries(r.custom||{}).filter(([,v])=>v!==""&&v!=null&&v!==false).map(([k,v])=>`${((r.customNames||{})[k])||k}: ${v===true?"Yes":v}`);
+   if(cfl.length){const wl=fit(cfl.join("   ·   "),CW-12,9);ensure(16);tint(14);lab("Additional info",M+5,y+10);y+=14;
+    wl.forEach(t=>{if(y+11>BOT){box(y0);d.addPage();y=M;y0=y}tint(11);val(t,M+5,y+8,9);y+=11});y+=2;tint(2)}}
   tint(18);hline(y);lab("Total flagged hours",M+CW-60,y+11,"right");val(h1(r.hours),M+CW-6,y+13,11,"right");y+=18;
   box(y0);y+=12;
 
@@ -4436,8 +4646,10 @@ $("pdf").onclick=async()=>{
 /* ---------- CSV export ---------- */
 $("export").onclick=async()=>{
   const cust=[];const seenC=new Set(ITEMS.map(i=>i[1].toLowerCase()));
-  records.forEach(r=>recordItems(r).filter(i=>i[3]).forEach(([k,n])=>{if(!seenC.has(n.toLowerCase())){seenC.add(n.toLowerCase());cust.push([k,n])}}));
-  const cols=["Date","RO","Tag","VIN","Miles","Tech","Flagged hrs","Work performed","Maint reset",...ITEMS.map(i=>i[1]),...cust.map(c=>c[1]),"Front brakes L mm","Front brakes R mm","Rear brakes L mm","Rear brakes R mm",...TIRES.flatMap(([,n])=>[n+" inside",n+" middle",n+" outside"]),"Recommendations","Job lines","Year/Make/Model","Engine/drive","Advisor","Advisor #","Color","Stock","Time in","Promised","Customer pay hrs","Warranty hrs","Internal hrs","Warranty multiplier","Warranty bonus hrs","Approved repairs $","Declined repairs $","Entry","RO Log data"];
+  records.forEach(r=>recordItems(r).filter(i=>!ITEMNAME[i[0]]).forEach(([k,n])=>{if(!seenC.has(n.toLowerCase())){seenC.add(n.toLowerCase());cust.push([k,n])}}));
+  const cfs=[];const seenF=new Set();customFields().forEach(f=>{seenF.add(f.id);cfs.push([f.id,f.n])});
+  records.forEach(r=>Object.keys(r.custom||{}).forEach(k=>{if(!seenF.has(k)){seenF.add(k);cfs.push([k,((r.customNames||{})[k])||k])}}));
+  const cols=["Date","RO","Tag","VIN","Miles","Tech","Flagged hrs","Work performed","Maint reset",...ITEMS.map(i=>i[1]),...cust.map(c=>c[1]),"Front brakes L mm","Front brakes R mm","Rear brakes L mm","Rear brakes R mm",...TIRES.flatMap(([,n])=>[n+" inside",n+" middle",n+" outside"]),"Recommendations","Job lines","Year/Make/Model","Engine/drive","Advisor","Advisor #","Color","Stock","Time in","Promised",...cfs.map(c=>c[1]),"Customer pay hrs","Warranty hrs","Internal hrs","Warranty multiplier","Warranty bonus hrs","Approved repairs $","Declined repairs $","Entry","RO Log data"];
   const q=v=>`"${String(v==null?"":v).replace(/"/g,'""')}"`;
   const rows=records.slice().sort((a,b)=>(a.date||"").localeCompare(b.date||"")).map(r=>{const i=r.inspection||{},t=r.tires||{};
     return[r.date,r.ro,r.tag,r.vin,r.miles,r.tech,h1(r.hours),r.work,r.maintReset?"Yes":"",
@@ -4446,7 +4658,7 @@ $("export").onclick=async()=>{
       ...TIRES.flatMap(([k])=>{const v=t[k]||{};return[v.in!=null?v.in:v.edge,v.mid,v.out!=null?v.out:v.edge]}),
       (r.recs||[]).map(x=>[x.qt&&x.qt+"x",x.desc,x.part,x.price&&"$"+x.price,x.hrs&&x.hrs+"h",x.status&&"["+x.status+"]"].filter(Boolean).join(" ")).join(" | "),
       (r.jobs||[]).map(j=>[j.type,j.op,j.desc,j.hrs&&j.hrs+"h",j.type==="W"&&!jobGetsMult(j)?"(no mult)":""].filter(Boolean).join(" ")).join(" | "),
-      r.ymm,r.engine,r.advisor,r.advisorNo,r.color,r.stock,r.timein,r.promised,...(()=>{const h=splitHours(r),b=bonusFor(r);return[h1(h.C),h1(h.W),h1(h.I),b.m>1&&b.w?b.m:"",b.b?h1(b.b):""]})(),...(()=>{const T=recTotals(r.recs);return[T.approved.n?T.approved.$.toFixed(2):"",T.declined.n?T.declined.$.toFixed(2):""]})(),r.kind==="hours"?(r.span==="week"?"Week total (no RO)":"Hours only (no RO)"):"RO",JSON.stringify(r)].map(q).join(",")});
+      r.ymm,r.engine,r.advisor,r.advisorNo,r.color,r.stock,r.timein,r.promised,...cfs.map(([k])=>{const v=(r.custom||{})[k];return v===true?"Yes":v===false?"":v}),...(()=>{const h=splitHours(r),b=bonusFor(r);return[h1(h.C),h1(h.W),h1(h.I),b.m>1&&b.w?b.m:"",b.b?h1(b.b):""]})(),...(()=>{const T=recTotals(r.recs);return[T.approved.n?T.approved.$.toFixed(2):"",T.declined.n?T.declined.$.toFixed(2):""]})(),r.kind==="hours"?(r.span==="week"?"Week total (no RO)":"Hours only (no RO)"):"RO",JSON.stringify(r)].map(q).join(",")});
   try{await downloads.save({filename:`ro-log-${today()}.csv`,data:[cols.map(q).join(","),...rows].join("\n")});}catch(e){}
 };
 
