@@ -1,0 +1,11 @@
+{
+  "appId": "com.honestechmobileapp.rolog",
+  "appName": "RO Log",
+  "webDir": "www",
+  "backgroundColor": "#0b1118",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#0b1118",
+    "preferredContentMode": "mobile"
+  }
+}
