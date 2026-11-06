@@ -101,7 +101,7 @@ jobs:
             exit 1
           fi
           echo "ASC_KEY_PATH=$KEY" >> "$GITHUB_ENV"
-          ASC_KEY_PATH="$KEY" BUNDLE_ID=com.honestechmobileapp.rolog PROFILE_NAME="RO Log App Store (GitHub)" APP_NAME="RO Log" python3 ios/ci/signing.py
+          ASC_KEY_PATH="$KEY" BUNDLE_ID=com.honestechmobileapp.rolog ICLOUD_CONTAINER=iCloud.com.honestechmobileapp.rolog APP_GROUP=group.com.honestechmobileapp.rolog WIDGET_BUNDLE_ID=com.honestechmobileapp.rolog.widget PROFILE_NAME="RO Log App Store (GitHub)" APP_NAME="RO Log" python3 ios/ci/signing.py
       - name: Archive, sign and upload to App Store Connect
         if: steps.mode.outputs.upload == 'true'
         run: |
@@ -112,11 +112,13 @@ jobs:
           python3 - <<'PY'
           import os, re
           p = "ios/App/App.xcodeproj/project.pbxproj"; s = open(p).read()
-          team, prof = os.environ["APPLE_TEAM_ID"], os.environ["PROFILE_NAME"]
+          team = os.environ["APPLE_TEAM_ID"]
+          profs = {"com.honestechmobileapp.rolog": os.environ["PROFILE_NAME"], "com.honestechmobileapp.rolog.widget": os.environ["WIDGET_PROFILE_NAME"]}
           blocks = re.findall(r"buildSettings = \{[^{}]*CODE_SIGN_ENTITLEMENTS[^{}]*\}", s)
-          assert len(blocks) == 2, len(blocks)
+          assert len(blocks) == 4, len(blocks)
           for b in blocks:
-              s = s.replace(b, b.replace("CODE_SIGN_STYLE = Automatic;", f'CODE_SIGN_STYLE = Manual;\n\t\t\t\tDEVELOPMENT_TEAM = {team};\n\t\t\t\tCODE_SIGN_IDENTITY = "Apple Distribution";\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "{prof}";'))
+              bid = re.search(r"PRODUCT_BUNDLE_IDENTIFIER = ([\w.]+);", b).group(1)
+              s = s.replace(b, b.replace("CODE_SIGN_STYLE = Automatic;", f'CODE_SIGN_STYLE = Manual;\n\t\t\t\tDEVELOPMENT_TEAM = {team};\n\t\t\t\tCODE_SIGN_IDENTITY = "Apple Distribution";\n\t\t\t\tPROVISIONING_PROFILE_SPECIFIER = "{profs[bid]}";'))
           open(p, "w").write(s)
           PY
           BUILD=$((100 + ${{ github.run_number }}))
@@ -135,7 +137,7 @@ jobs:
             <key>teamID</key><string>${APPLE_TEAM_ID}</string>
             <key>signingStyle</key><string>manual</string>
             <key>signingCertificate</key><string>Apple Distribution</string>
-            <key>provisioningProfiles</key><dict><key>com.honestechmobileapp.rolog</key><string>${PROFILE_NAME}</string></dict>
+            <key>provisioningProfiles</key><dict><key>com.honestechmobileapp.rolog</key><string>${PROFILE_NAME}</string><key>com.honestechmobileapp.rolog.widget</key><string>${WIDGET_PROFILE_NAME}</string></dict>
             <key>uploadSymbols</key><true/>
             <key>manageAppVersionAndBuildNumber</key><false/>
           </dict></plist>

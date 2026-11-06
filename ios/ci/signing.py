@@ -135,17 +135,42 @@ def signing_key_pem(secret: bytes) -> tuple[str, int]:
     return pem, n
 
 
+def ensure_bundle(identifier: str, name: str) -> str:
+    """The app ID's API id, registering it the first time (same as developer.apple.com → Identifiers → +)."""
+    ids = [d for d in api("GET", f"/bundleIds?filter[identifier]={identifier}&limit=5")["data"] if d["attributes"]["identifier"] == identifier]
+    if ids:
+        return ids[0]["id"]
+    made = api("POST", "/bundleIds", {"data": {"type": "bundleIds", "attributes": {"identifier": identifier, "name": name.replace(".", " "), "platform": "IOS"}}})["data"]
+    print(f"::notice::Registered the app ID {identifier}")
+    return made["id"]
+
+
+def ensure_caps(api_id: str, identifier: str, caps: list):
+    """Switch on capabilities (iCloud, App Groups) for an app ID; a failure here never stops the build."""
+    if not caps:
+        return
+    try:
+        have = {c["attributes"].get("capabilityType") for c in api("GET", f"/bundleIds/{api_id}/bundleIdCapabilities")["data"]}
+    except SystemExit:
+        return
+    for cap in caps:
+        if cap in have:
+            continue
+        attrs = {"capabilityType": cap}
+        if cap == "ICLOUD":
+            attrs["settings"] = [{"key": "ICLOUD_VERSION", "options": [{"key": "XCODE_6"}]}]
+        try:
+            api("POST", "/bundleIdCapabilities", {"data": {"type": "bundleIdCapabilities", "attributes": attrs,
+                                                           "relationships": {"bundleId": {"data": {"type": "bundleIds", "id": api_id}}}}})
+            print(f"::notice::Turned on {cap} for {identifier}")
+        except SystemExit:
+            print(f"::warning::Couldn't turn on {cap} for {identifier} automatically")
+
+
 def main():
     TMP.mkdir(parents=True, exist_ok=True)
     # 1. the app's ID
-    ids = api("GET", f"/bundleIds?filter[identifier]={BUNDLE}&limit=5")["data"]
-    ids = [d for d in ids if d["attributes"]["identifier"] == BUNDLE]
-    if not ids:
-        # register the app's ID the first time (same as developer.apple.com → Identifiers → +)
-        made = api("POST", "/bundleIds", {"data": {"type": "bundleIds", "attributes": {"identifier": BUNDLE, "name": os.environ.get("APP_NAME", BUNDLE).replace(".", " "), "platform": "IOS"}}})["data"]
-        print(f"::notice::Registered the app ID {BUNDLE}")
-        ids = [made]
-    bundle_id = ids[0]["id"]
+    bundle_id = ensure_bundle(BUNDLE, os.environ.get("APP_NAME", BUNDLE))
 
     # 2. the Apple Distribution certificate: reuse ours if Apple still has it, otherwise make it (once)
     key = TMP / "dist.key"
@@ -182,17 +207,52 @@ def main():
     p12pw = uuid.uuid4().hex
     subprocess.run([OPENSSL, "pkcs12", "-export", "-inkey", str(key), "-in", str(pem), "-out", str(p12), "-passout", f"pass:{p12pw}"], check=True, capture_output=True)
 
-    # 3. a fresh App Store profile for the app with that certificate (replaces the last one)
-    for p in api("GET", f"/profiles?filter[name]={urllib.parse.quote(PROFILE_NAME)}&limit=50")["data"]:
-        api("DELETE", f"/profiles/{p['id']}")
-    prof = api("POST", "/profiles", {"data": {"type": "profiles", "attributes": {"name": PROFILE_NAME, "profileType": "IOS_APP_STORE"},
-                                              "relationships": {"bundleId": {"data": {"type": "bundleIds", "id": bundle_id}},
-                                                                "certificates": {"data": [{"type": "certificates", "id": cert_id}]}}}})["data"]
-    uid = prof["attributes"]["uuid"]
-    content = base64.b64decode(prof["attributes"]["profileContent"])
-    for d in [pathlib.Path.home() / "Library/MobileDevice/Provisioning Profiles", pathlib.Path.home() / "Library/Developer/Xcode/UserData/Provisioning Profiles"]:
-        d.mkdir(parents=True, exist_ok=True)
-        (d / f"{uid}.mobileprovision").write_bytes(content)
+    # 2b + 3. capabilities and a fresh App Store profile for the app and for its Home Screen widget.
+    #     iCloud Drive and the App Group (how the widget reads the app's numbers) can be switched on from here,
+    #     but the container and the group themselves can only be made on developer.apple.com, so each target
+    #     asks for them only once its new profile actually includes them.
+    ICLOUD = os.environ.get("ICLOUD_CONTAINER", "")
+    GROUP = os.environ.get("APP_GROUP", "")
+    WIDGET = os.environ.get("WIDGET_BUNDLE_ID", "")
+    targets = [{"bundle": BUNDLE, "id": bundle_id, "profile": PROFILE_NAME, "ent": os.environ.get("ENTITLEMENTS", "ios/App/App/App.entitlements"),
+                "caps": [c for c, on in (("ICLOUD", ICLOUD), ("APP_GROUPS", GROUP)) if on]}]
+    if WIDGET:
+        targets.append({"bundle": WIDGET, "id": ensure_bundle(WIDGET, os.environ.get("APP_NAME", "App") + " Widget"),
+                        "profile": os.environ.get("WIDGET_PROFILE_NAME", PROFILE_NAME + " Widget"),
+                        "ent": os.environ.get("WIDGET_ENTITLEMENTS", "ios/App/Widget/Widget.entitlements"), "caps": ["APP_GROUPS"] if GROUP else []})
+    env_lines = []
+    for t in targets:
+        ensure_caps(t["id"], t["bundle"], t["caps"])
+        for p in api("GET", f"/profiles?filter[name]={urllib.parse.quote(t['profile'])}&limit=50")["data"]:
+            api("DELETE", f"/profiles/{p['id']}")
+        prof = api("POST", "/profiles", {"data": {"type": "profiles", "attributes": {"name": t["profile"], "profileType": "IOS_APP_STORE"},
+                                                  "relationships": {"bundleId": {"data": {"type": "bundleIds", "id": t["id"]}},
+                                                                    "certificates": {"data": [{"type": "certificates", "id": cert_id}]}}}})["data"]
+        uid = prof["attributes"]["uuid"]
+        content = base64.b64decode(prof["attributes"]["profileContent"])
+        keys = []
+        if t["bundle"] == BUNDLE and ICLOUD:
+            if ICLOUD.encode() in content:
+                keys += [("com.apple.developer.icloud-container-environment", "<string>Production</string>"),
+                         ("com.apple.developer.icloud-container-identifiers", f"<array><string>{ICLOUD}</string></array>"),
+                         ("com.apple.developer.icloud-services", "<array><string>CloudDocuments</string></array>"),
+                         ("com.apple.developer.ubiquity-container-identifiers", f"<array><string>{ICLOUD}</string></array>")]
+                print(f"::notice::iCloud Drive: on ({ICLOUD})")
+            else:
+                print(f"::warning::iCloud Drive is off in this build: the iCloud container {ICLOUD} isn't linked to {t['bundle']} yet (one-time step on developer.apple.com).")
+        if GROUP:
+            if GROUP.encode() in content:
+                keys.append(("com.apple.security.application-groups", f"<array><string>{GROUP}</string></array>"))
+                print(f"::notice::App Group on for {t['bundle']}")
+            else:
+                print(f"::warning::The widget can't show your hours yet: the App Group {GROUP} isn't linked to {t['bundle']} (one-time step on developer.apple.com).")
+        pathlib.Path(t["ent"]).write_text('<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n'
+                                          '<plist version="1.0">\n<dict>\n' + "".join(f"\t<key>{k}</key>\n\t{v}\n" for k, v in keys) + "</dict>\n</plist>\n")
+        for d in [pathlib.Path.home() / "Library/MobileDevice/Provisioning Profiles", pathlib.Path.home() / "Library/Developer/Xcode/UserData/Provisioning Profiles"]:
+            d.mkdir(parents=True, exist_ok=True)
+            (d / f"{uid}.mobileprovision").write_bytes(content)
+        if t["bundle"] != BUNDLE:
+            env_lines.append(f"WIDGET_PROFILE_NAME={t['profile']}\n")
 
     # 4. a private keychain on the build Mac holding the certificate
     kc = str(TMP / "build.keychain-db")
@@ -212,8 +272,8 @@ def main():
         raise SystemExit(1)
 
     with open(os.environ["GITHUB_ENV"], "a") as f:
-        f.write(f"PROFILE_NAME={PROFILE_NAME}\nPROFILE_UUID={uid}\nSIGN_KEYCHAIN={kc}\n")
-    print(f"Signing ready: certificate {cert_id}, profile {PROFILE_NAME} ({uid})")
+        f.write(f"PROFILE_NAME={PROFILE_NAME}\nSIGN_KEYCHAIN={kc}\n" + "".join(env_lines))
+    print(f"Signing ready: certificate {cert_id}, profiles for {', '.join(t['bundle'] for t in targets)}")
 
 
 if __name__ == "__main__":

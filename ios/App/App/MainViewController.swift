@@ -6,5 +6,7 @@ class MainViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
         bridge?.registerPluginInstance(VinScannerPlugin())
         bridge?.registerPluginInstance(TextReaderPlugin())
+        bridge?.registerPluginInstance(ICloudDrivePlugin())
+        bridge?.registerPluginInstance(WidgetDataPlugin())
     }
 }
