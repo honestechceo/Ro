@@ -230,6 +230,10 @@ def main():
                                                                     "certificates": {"data": [{"type": "certificates", "id": cert_id}]}}}})["data"]
         uid = prof["attributes"]["uuid"]
         content = base64.b64decode(prof["attributes"]["profileContent"])
+        import re as _re
+        m = _re.search(rb"<key>Entitlements</key>\s*<dict>(.*?)</dict>\s*<key>ExpirationDate", content, _re.S)
+        if m:
+            print(f"Profile entitlements for {t['bundle']}: " + " ".join(_re.sub(rb"\s+", b" ", m.group(1)).decode(errors="replace").split())[:1500])
         keys = []
         if t["bundle"] == BUNDLE and ICLOUD:
             if ICLOUD.encode() in content:
