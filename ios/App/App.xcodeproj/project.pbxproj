@@ -23,6 +23,9 @@
 		B1C2D3E4F5A6071829304B02 /* WidgetDataPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1C2D3E4F5A6071829304B01 /* WidgetDataPlugin.swift */; };
 		B1C2D3E4F5A6071829304B04 /* ROLogWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1C2D3E4F5A6071829304B03 /* ROLogWidget.swift */; };
 		B1C2D3E4F5A6071829304B06 /* RoWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B1C2D3E4F5A6071829304B05 /* RoWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		B1C2D3E4F5A6071829304B31 /* ROTimerAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1C2D3E4F5A6071829304B30 /* ROTimerAttributes.swift */; };
+		B1C2D3E4F5A6071829304B32 /* ROTimerAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1C2D3E4F5A6071829304B30 /* ROTimerAttributes.swift */; };
+		B1C2D3E4F5A6071829304B34 /* LiveTimerPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1C2D3E4F5A6071829304B33 /* LiveTimerPlugin.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -70,6 +73,8 @@
 		B1C2D3E4F5A6071829304B05 /* RoWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = RoWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B1C2D3E4F5A6071829304B07 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B1C2D3E4F5A6071829304B08 /* Widget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Widget.entitlements; sourceTree = "<group>"; };
+		B1C2D3E4F5A6071829304B30 /* ROTimerAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ROTimerAttributes.swift; sourceTree = "<group>"; };
+		B1C2D3E4F5A6071829304B33 /* LiveTimerPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTimerPlugin.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -121,6 +126,7 @@
 				A1B2C3D4E5F6071829304A05 /* TextReaderPlugin.swift */,
 				A1B2C3D4E5F6071829304A07 /* ICloudDrivePlugin.swift */,
 				B1C2D3E4F5A6071829304B01 /* WidgetDataPlugin.swift */,
+				B1C2D3E4F5A6071829304B33 /* LiveTimerPlugin.swift */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
 				504EC30E1FED79650016851F /* Assets.xcassets */,
 				504EC3101FED79650016851F /* LaunchScreen.storyboard */,
@@ -135,6 +141,7 @@
 			isa = PBXGroup;
 			children = (
 				B1C2D3E4F5A6071829304B03 /* ROLogWidget.swift */,
+				B1C2D3E4F5A6071829304B30 /* ROTimerAttributes.swift */,
 				B1C2D3E4F5A6071829304B07 /* Info.plist */,
 				B1C2D3E4F5A6071829304B08 /* Widget.entitlements */,
 			);
@@ -255,6 +262,8 @@
 				A1B2C3D4E5F6071829304A06 /* TextReaderPlugin.swift in Sources */,
 				A1B2C3D4E5F6071829304A08 /* ICloudDrivePlugin.swift in Sources */,
 				B1C2D3E4F5A6071829304B02 /* WidgetDataPlugin.swift in Sources */,
+				B1C2D3E4F5A6071829304B31 /* ROTimerAttributes.swift in Sources */,
+				B1C2D3E4F5A6071829304B34 /* LiveTimerPlugin.swift in Sources */,
 				9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -264,6 +273,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B1C2D3E4F5A6071829304B04 /* ROLogWidget.swift in Sources */,
+				B1C2D3E4F5A6071829304B32 /* ROTimerAttributes.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -460,7 +470,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				INFOPLIST_FILE = Widget/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -484,7 +494,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				INFOPLIST_FILE = Widget/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

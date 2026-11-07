@@ -8,5 +8,6 @@ class MainViewController: CAPBridgeViewController {
         bridge?.registerPluginInstance(TextReaderPlugin())
         bridge?.registerPluginInstance(ICloudDrivePlugin())
         bridge?.registerPluginInstance(WidgetDataPlugin())
+        bridge?.registerPluginInstance(LiveTimerPlugin())
     }
 }

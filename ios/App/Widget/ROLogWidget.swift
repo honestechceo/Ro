@@ -505,6 +505,47 @@ struct ROLogScanVINControl: ControlWidget {
     }
 }
 
+// ---------- Job timer on the Lock Screen and in the Dynamic Island ----------
+struct ROTimerLiveActivity: Widget {
+    var body: some WidgetConfiguration {
+        ActivityConfiguration(for: ROTimerAttributes.self) { context in
+            HStack(spacing: 12) {
+                Image(systemName: "timer").font(.title2).foregroundColor(accent)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("RO \(context.attributes.ro)").font(.headline).foregroundColor(.white)
+                    Text(context.state.flagged > 0 ? "Flagged \(h1(context.state.flagged)) hrs" : "Job timer").font(.caption).foregroundColor(.white.opacity(0.7))
+                }
+                Spacer()
+                Text(context.state.startedAt, style: .timer).font(.system(size: 30, weight: .bold, design: .rounded)).monospacedDigit()
+                    .foregroundColor(.white).multilineTextAlignment(.trailing).frame(maxWidth: 130, alignment: .trailing)
+            }
+            .padding(16)
+            .activityBackgroundTint(bg)
+            .activitySystemActionForegroundColor(.white)
+            .widgetURL(link("timer"))
+        } dynamicIsland: { context in
+            DynamicIsland {
+                DynamicIslandExpandedRegion(.leading) {
+                    Label("RO \(context.attributes.ro)", systemImage: "timer").font(.headline).foregroundColor(accent)
+                }
+                DynamicIslandExpandedRegion(.trailing) {
+                    Text(context.state.startedAt, style: .timer).font(.title2.weight(.bold)).monospacedDigit().multilineTextAlignment(.trailing).frame(maxWidth: 110)
+                }
+                DynamicIslandExpandedRegion(.bottom) {
+                    Text(context.state.flagged > 0 ? "Flagged \(h1(context.state.flagged)) hrs · tap to open the RO" : "Tap to open the RO").font(.caption).foregroundColor(.secondary)
+                }
+            } compactLeading: {
+                Image(systemName: "timer").foregroundColor(accent)
+            } compactTrailing: {
+                Text(context.state.startedAt, style: .timer).monospacedDigit().frame(maxWidth: 56).font(.caption.weight(.semibold))
+            } minimal: {
+                Image(systemName: "timer").foregroundColor(accent)
+            }
+            .widgetURL(link("timer"))
+        }
+    }
+}
+
 @main
 struct ROLogWidgets: WidgetBundle {
     var body: some Widget {
@@ -512,6 +553,7 @@ struct ROLogWidgets: WidgetBundle {
         ROLogPeriodWidget()
         ROLogQuickWidget()
         ROLogLockWidget()
+        ROTimerLiveActivity()
         if #available(iOSApplicationExtension 18.0, *) {
             ROLogNewROControl()
             ROLogScanVINControl()
