@@ -37,6 +37,17 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.honestechmobileapp.rolog</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>rolog</string>
+			</array>
+		</dict>
+	</array>
 	<key>NSUbiquitousContainers</key>
 	<dict>
 		<key>iCloud.com.honestechmobileapp.rolog</key>

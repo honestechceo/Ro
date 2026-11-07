@@ -826,6 +826,9 @@ details.sec>summary>h2 small{margin-left:auto;font:500 .75rem var(--f-body);lett
 .icllist{display:grid;gap:6px}
 .iclrow{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:48px;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
 .iclrow small{color:var(--muted);font-size:.75rem;text-align:right}
+
+.btn.scan.pulse{animation:scanpulse 1.2s ease-out 3}
+@keyframes scanpulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 70%,transparent)}100%{box-shadow:0 0 0 16px transparent}}
 </style>
 
 </head>
@@ -1856,12 +1859,31 @@ function pushWidget(){if(!NATIVE)return;clearTimeout(widgetT);widgetT=setTimeout
     const labels=[...Array(7)].map((_,i)=>{const d=new Date(ws);d.setDate(d.getDate()+i);return DOW[d.getDay()].slice(0,1)});
     let pay="";if(rate){const E=earnFor(rs,a,z);pay=money((E.tot-E.ot)*rate+E.ot*rate*otMult()-E.cb*rate).replace(/\.\d\d$/,"")}
     const P=periodRange(0),pe=new Date(P.e);pe.setDate(pe.getDate()+1);
-    const sum={hrs:Math.round(hrs*10)/10,goal:+prefs.weekGoal||40,ros:rs.filter(isRO).length,pay,days,dayLabels:labels,
+    const prs=records.filter(r=>r.date>=P.a&&r.date<=P.z),phrs=prs.reduce((t,r)=>t+(+r.hours||0),0);
+    let ppay="";if(rate){const E2=earnFor(prs,P.a,P.z);ppay=money((E2.tot-E2.ot)*rate+E2.ot*rate*otMult()-E2.cb*rate).replace(/\.\d\d$/,"")}
+    const tk=today(),trs=records.filter(r=>r.date===tk);
+    const recent=records.filter(isRO).slice().sort((x,y)=>(y.date||"").localeCompare(x.date||"")||(y.updatedAt||0)-(x.updatedAt||0)).slice(0,4)
+      .map(r=>{const sp=splitHours(r),t=sp.W>=sp.C&&sp.W>=sp.I&&sp.W>0?"W":sp.I>sp.C?"I":"C";return{ro:String(r.ro||""),d:fmt(parse(r.date),{month:"short",day:"numeric"}),h:Math.round((+r.hours||0)*10)/10,t}});
+    const sum={today:Math.round(trs.reduce((t,r)=>t+(+r.hours||0),0)*10)/10,todayRos:trs.filter(isRO).length,
+      periodHrs:Math.round(phrs*10)/10,periodRos:prs.filter(isRO).length,periodPay:ppay,periodBonus:Math.round(prs.reduce((t,r)=>t+bonusFor(r).b,0)*10)/10,periodWeekly:ppKind()==="weekly",recent,
+      hrs:Math.round(hrs*10)/10,goal:+prefs.weekGoal||40,ros:rs.filter(isRO).length,pay,days,dayLabels:labels,
       weekLabel:fmt(ws,{month:"short",day:"numeric"})+" – "+fmt(zEnd,{day:"numeric"}),weekEnd:we.getTime(),periodEnd:pe.getTime(),
       periodLabel:fmt(P.s,{month:"short",day:"numeric"})+" – "+fmt(P.e,{month:"short",day:"numeric"}),updated:0};
     const key=JSON.stringify(sum);if(key===widgetLast)return;widgetLast=key;sum.updated=Date.now();
     await W.update({json:JSON.stringify(sum)})}catch(e){}},1500)}
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"){widgetLast="";pushWidget()}});
+/* ---------- links from the widgets and Control Center: rolog://new, scan, vin, calc, pay, home ---------- */
+function deepOpen(u){const m=String(u||"").match(/^rolog:\/\/([\w-]+)/i);if(!m)return;const a=m[1].toLowerCase();
+  if(!$("csheet").hidden)closeCalc();
+  if(a==="pay"){$("tab-pay").click();return}
+  if(a==="calc"){openCalc($("view-form").hidden?null:"hours");return}
+  if(a==="home"){if($("view-form").hidden)$("tab-log").click();return}
+  if(a==="new"||a==="scan"||a==="vin"){
+    if($("view-form").hidden||editingId)openForm();
+    if(a==="vin")setTimeout(()=>$("vin-scan").click(),450);
+    if(a==="scan")setTimeout(()=>{const b=$("ro-scan");b.scrollIntoView({block:"center",behavior:"smooth"});b.classList.remove("pulse");void b.offsetWidth;b.classList.add("pulse");toast("Tap Scan RO page to take the photo")},350)}}
+if(NATIVE){const AP=capPlugin("App");if(AP){try{AP.addListener("appUrlOpen",e=>deepOpen(e&&e.url))}catch(e){}
+  setTimeout(()=>{AP.getLaunchUrl().then(r=>{if(r&&r.url)deepOpen(r.url)}).catch(()=>{})},700)}}
 /* ---------- customize the RO form: sections, fields, your own fields, inspection list ---------- */
 const FORM_SECS=[["main","RO basics"],["jobs","Job lines"],["vehicle","Advisor & vehicle"],["insp","Multipoint inspection"],["tires","Tire tread"],["recs","Recommended repairs"],["files","Files & photos"],["custom","Your fields"],["pay","Pay tracking"]];
 const FORM_FLDS=[["tag","Tag #"],["vin","VIN #"],["miles","Miles"],["tech","Tech #"],["work","Work performed"],["advisor","Advisor"],["ymm","Year / make / model"],["engine","Engine / drive"],["color","Color"],["stock","Stock #"],["timein","Time received"],["promised","Promised"],["maint","Reset maintenance light"]];
