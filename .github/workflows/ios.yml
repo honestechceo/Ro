@@ -10,10 +10,10 @@
 name: iPhone app
 on:
   pull_request:
-    paths: ["index.html", "build-ios.py", "privacy.html", "ios/**", "package.json", "capacitor.config.json", ".github/workflows/ios.yml"]
+    paths: ["index.html", "build-ios.py", "privacy.html", "terms.html", "ios/**", "package.json", "capacitor.config.json", ".github/workflows/ios.yml"]
   push:
     branches: [main]
-    paths: ["index.html", "build-ios.py", "privacy.html", "ios/**", "package.json", "capacitor.config.json", ".github/workflows/ios.yml"]
+    paths: ["index.html", "build-ios.py", "privacy.html", "terms.html", "ios/**", "package.json", "capacitor.config.json", ".github/workflows/ios.yml"]
   workflow_dispatch:
     inputs:
       upload:

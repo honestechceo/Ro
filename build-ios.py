@@ -24,7 +24,7 @@ html = html.replace("<head>", '<head><script src="capacitor.js"></script>', 1)
 html = re.sub(r'<link rel="manifest"[^>]*>', "", html)
 html = re.sub(r'<link rel="apple-touch-startup-image"[^>]*>', "", html)
 (www / "index.html").write_text(html, encoding="utf-8")
-for f in ["privacy.html", "icon-192.png", "icon-512.png", "apple-touch-icon.png"]:
+for f in ["privacy.html", "terms.html", "icon-192.png", "icon-512.png", "apple-touch-icon.png"]:
     shutil.copy(ROOT / f, www / f)
 (www / "vendor" / "SOURCES.txt").write_text("\n".join(f"{u} -> {l}" for u, l in VENDOR.items()) + "\n", encoding="utf-8")
 print("www/ built")
