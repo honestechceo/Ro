@@ -1559,7 +1559,7 @@ async function boot(){
     const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)}};
   $("export").hidden=!downloads;$("pdf").hidden=!downloads;$("backup").hidden=!downloads;
   try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist().catch(()=>{})}catch(e){}
-  if(!db){mode="local";records=LS.get("ro-local")||[];setSync("local","Saved on this device only");render();return}
+  if(!db){mode="local";records=LS.get("ro-local")||[];setSync("local",NATIVE?"Saved on this iPhone":"Saved on this device only");render();return}
   mode="cloud";col=db.collection("ros");
   prefsDoc=db.doc("settings/prefs");
   prefsDoc.onSnapshot(sn=>{if(!sn.exists)return;
@@ -1912,7 +1912,7 @@ async function iclSave(folder,files){for(const f of files)await iclWrite(`${fold
 async function iclPrune(){const I=capPlugin("ICloudDrive");try{const L=(await I.list({path:"Backups"})).files||[];
   const dated=L.map(f=>f.name).filter(n=>/^RO Log backup \d{4}-\d\d-\d\d\.json$/.test(n)).sort();
   for(const n of dated.slice(0,Math.max(0,dated.length-30)))await I.remove({path:"Backups/"+n})}catch(e){}}
-function renderICloud(){if(!$("icl-sec"))return;const st=$("icl-status"),last=LS.get("ro-icloudlast");
+function renderICloud(){if(iclOn()&&mode==="local")setSync("ok","iCloud backup on");if(!$("icl-sec"))return;const st=$("icl-status"),last=LS.get("ro-icloudlast");
   $("icl-on").checked=prefs.icloud!==false;
   const on=iclState.available;$("icl-on").disabled=!on;$("icl-now").disabled=!on||prefs.icloud===false;$("icl-restore").disabled=!on;
   st.textContent=!iclState.checked?"Checking iCloud…":!iclState.signedIn?"Sign in to iCloud in iPhone Settings, and turn on iCloud Drive.":!on?"iCloud Drive isn't turned on for RO Log yet. Check iPhone Settings → your name → iCloud → Apps using iCloud.":
