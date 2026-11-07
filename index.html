@@ -1095,14 +1095,14 @@ details.sec>summary>h2 small{margin-left:auto;font:500 .75rem var(--f-body);lett
       <div class="body"><button type="button" class="btn" id="run-setup">Run setup again</button></div>
     </div>
     <div class="sec">
-      <h2>Make &amp; tech # <small>Shows on your PDFs</small></h2>
+      <h2>Dealership <small>Shows on your ROs and PDFs</small></h2>
       <div class="body">
         <div class="grid">
           <div class="f"><label for="set-make">Manufacturer</label><select id="set-make"><option value="">Choose one</option><option>Lexus</option><option>Toyota</option><option>Acura</option><option>Honda</option><option>Infiniti</option><option>Nissan</option><option>Mazda</option><option>Subaru</option><option>Mitsubishi</option><option>Hyundai</option><option>Genesis</option><option>Kia</option><option>Ford</option><option>Lincoln</option><option>Chevrolet</option><option>GMC</option><option>Buick</option><option>Cadillac</option><option>Chrysler</option><option>Dodge</option><option>Jeep</option><option>Ram</option><option>Volkswagen</option><option>Audi</option><option>Porsche</option><option>BMW</option><option>MINI</option><option>Mercedes-Benz</option><option>Volvo</option><option>Land Rover</option><option>Jaguar</option><option>Tesla</option><option>Polestar</option><option>Rivian</option><option value="__other">Other…</option></select></div>
           <div class="f" id="set-make-other-f" hidden><label for="set-make-other">Manufacturer name</label><input id="set-make-other" autocomplete="off"></div>
           <div class="f"><label for="set-tech">Your tech #</label><input id="set-tech" class="mono" inputmode="numeric" autocomplete="off"></div>
         </div>
-
+        <div class="f"><label for="set-dealer">Dealership name (optional)</label><input id="set-dealer" autocomplete="off" placeholder="e.g. Your dealership's name"></div>
         <span class="hint">The manufacturer sets the examples in the RO form and helps VIN lookup. Change it anytime.</span>
       </div>
     </div>
@@ -1465,7 +1465,7 @@ details.sec>summary>h2 small{margin-left:auto;font:500 .75rem var(--f-body);lett
     <div class="wzstep" data-step="1" hidden>
       <h2>Your dealership</h2>
       <div class="f"><label for="wz-make">Manufacturer</label><select id="wz-make"></select></div>
-
+      <div class="f"><label for="wz-dealer">Dealership name (optional)</label><input id="wz-dealer" autocomplete="off"></div>
       <div class="f"><label for="wz-tech">Your tech #</label><input id="wz-tech" class="mono" inputmode="numeric" autocomplete="off"></div>
       <div class="f"><label for="wz-insp">Inspection checklist</label><select id="wz-insp"><option value="keep">Keep my current list</option><option value="sheet">Lexus / Toyota repair sheet</option><option value="standard">Standard multipoint (any brand)</option><option value="quick">Quick check</option></select>
         <span class="hint">You can add, remove and rename items any time in Settings → Customize RO form.</span></div>
@@ -2095,8 +2095,6 @@ function renderRunChip(){const r=running(),c=$("run-chip");clearInterval(rcTick)
 $("rc-stop").onclick=()=>{const r=running();if(!r)return;tStop(r.id);toast(`RO ${r.ro} timer stopped · ${hms(timers()[r.id].total)}`);if(!$("view-form").hidden&&formId()===r.id)renderTimer();render()};
 $("rc-open").onclick=()=>{const r=running();if(!r)return;if(!$("view-form").hidden&&formId()===r.id)return;const rec=records.find(x=>x.id===r.id);if(rec)openForm(rec);else toast(`RO ${r.ro} isn't saved yet. Open it from your draft.`)};
 setTimeout(()=>{renderRunChip();const r=running();if(r&&NATIVE)liveStart(r.ro,r.start-(r.total||0),(records.find(x=>x.id===r.id)||{}).hours||0)},900);
-/* the dealership's name is no longer kept anywhere: clear it from saved settings (and so from backups) */
-setTimeout(()=>{try{if(prefs&&prefs.dealer)savePrefs({dealer:""},true)}catch(e){}},1500);
 /* ---------- customize the RO form: sections, fields, your own fields, inspection list ---------- */
 const FORM_SECS=[["main","RO basics"],["jobs","Job lines"],["parts","Parts"],["vehicle","Advisor & vehicle"],["insp","Multipoint inspection"],["tires","Tire tread"],["recs","Recommended repairs"],["wphotos","Warranty photos"],["files","Files & photos"],["custom","Your fields"],["pay","Pay tracking"]];
 const FORM_FLDS=[["status","RO status"],["timer","Job timer"],["tag","Tag #"],["vin","VIN #"],["miles","Miles"],["tech","Tech #"],["work","Work performed"],["advisor","Advisor"],["ymm","Year / make / model"],["engine","Engine / drive"],["color","Color"],["stock","Stock #"],["timein","Time received"],["promised","Promised"],["maint","Reset maintenance light"]];
@@ -2449,18 +2447,18 @@ const MAKES=["Lexus","Toyota","Acura","Honda","Infiniti","Nissan","Mazda","Subar
 function myMake(){return String(prefs.make||"").trim()}
 function fillDealer(){const m=myMake(),known=MAKES.includes(m);
   $("set-make").value=!m?"":known?m:"__other";$("set-make-other-f").hidden=!(m&&!known)&&$("set-make").value!=="__other";$("set-make-other").value=known?"":m;
-  $("set-tech").value=prefs.tech||LS.get("ro-tech")||""}
+  $("set-tech").value=prefs.tech||LS.get("ro-tech")||"";$("set-dealer").value=prefs.dealer||""}
 function applyMake(){const m=myMake();
-  $("h-make").textContent="";$("h-make").hidden=true;
+  $("h-make").textContent=m?(prefs.dealer?`${m} · ${prefs.dealer}`:m):"";$("h-make").hidden=!m;
   $("ymm").placeholder=m?`26 ${m} ${m==="Toyota"?"Camry":m==="Lexus"?"ES 500e":"model"}`:"e.g. 26 Camry SE";
   $("set-noops").placeholder=m==="Lexus"||m==="Toyota"?"31LEZ":"Op codes";}
 let dealerT;
 function saveDealer(){clearTimeout(dealerT);dealerT=setTimeout(async()=>{
   const sel=$("set-make").value,make=sel==="__other"?$("set-make-other").value.trim():sel;
   const tech=$("set-tech").value.trim();if(tech)LS.set("ro-tech",tech);
-  await savePrefs({make,tech},true);applyMake();toast(make?`Saved: ${make}`:"Saved")},500)}
+  await savePrefs({make,dealer:$("set-dealer").value.trim(),tech},true);applyMake();toast(make?`Saved: ${make}`:"Saved")},500)}
 $("set-make").addEventListener("change",()=>{$("set-make-other-f").hidden=$("set-make").value!=="__other";if($("set-make").value==="__other")$("set-make-other").focus();saveDealer()});
-["set-make-other","set-tech"].forEach(id=>$(id).addEventListener("input",saveDealer));
+["set-make-other","set-tech","set-dealer"].forEach(id=>$(id).addEventListener("input",saveDealer));
 
 /* ---------- advisors ---------- */
 function advisors(){return(prefs.advisors||[]).filter(a=>a&&(a.name||a.no))}
@@ -2845,7 +2843,7 @@ document.querySelectorAll('input[name="rm"]').forEach(x=>x.addEventListener("cha
 ["rep-from","rep-to"].forEach(id=>$(id).addEventListener("change",renderReport));
 $("rep-prev").onclick=()=>{repOff--;renderReport()};$("rep-next").onclick=()=>{if(repOff<0){repOff++;renderReport()}};
 function reportPDF(D){const {jsPDF}=window.jspdf,d=new jsPDF({unit:"pt",format:"letter"}),W=612,M=40,rate=+prefs.payRate||0;let y=M;
-  const who=[prefs.techName||"",prefs.tech||LS.get("ro-tech")?`Tech #${prefs.tech||LS.get("ro-tech")}`:""].filter(Boolean).join("  ·  ");
+  const who=[prefs.techName||"",prefs.tech||LS.get("ro-tech")?`Tech #${prefs.tech||LS.get("ro-tech")}`:"",prefs.dealer||""].filter(Boolean).join("  ·  ");
   d.setFont("helvetica","bold");d.setFontSize(18);d.text("Flagged Hours Report",M,y+10);
   d.setFont("helvetica","normal");d.setFontSize(10);d.setTextColor(90);d.text(fmt(D.s,{month:"long",day:"numeric",year:"numeric"})+" – "+fmt(D.e,{month:"long",day:"numeric",year:"numeric"}),M,y+28);
   if(who)d.text(who,M,y+42);d.text("Made "+fmt(new Date(),{month:"short",day:"numeric",year:"numeric"})+" with RO Log",W-M,y+10,{align:"right"});y+=62;
@@ -4166,7 +4164,7 @@ function openWizard(){const wm=document.querySelector('[data-mark]');if(wm&&!wm.
   $("wz-make").innerHTML=$("set-make").innerHTML;$("wz-make").value=MAKES.includes(myMake())?myMake():myMake()?"__other":"";
   if($("wz-make").value==="__other")$("wz-make").value="";
   {const has=(Array.isArray(prefs.inspList)&&prefs.inspList.length)||customPrefs().length||records.length;$("wz-insp").querySelector('[value="keep"]').hidden=!has;$("wz-insp").value=has?"keep":presetForMake($("wz-make").value)}
-  $("wz-tech").value=prefs.tech||LS.get("ro-tech")||"";$("wz-wk").value=String(startDow);
+  $("wz-dealer").value=prefs.dealer||"";$("wz-tech").value=prefs.tech||LS.get("ro-tech")||"";$("wz-wk").value=String(startDow);
   $("wz-rate").value=prefs.payRate||"";$("wz-goal").value=prefs.weekGoal||"";$("wz-ot").checked=otDays().includes(6);
   $("wz-"+(prefs.lang==="es"?"es":"en")).checked=true;$("wz-big").checked=!!prefs.big;
   wzStep=0;wzShow();$("wiz").hidden=false}
@@ -4181,7 +4179,7 @@ $("wz-next").onclick=async()=>{
   if(wzStep<3){wzStep++;wzShow();return}
   const v=x=>{const n=parseFloat(x);return n>0?n:""},lang=$("wz-es").checked?"es":"en",wk=+$("wz-wk").value;
   const od=otDays().filter(d=>d!==6);if($("wz-ot").checked)od.push(6);
-  const patch={setupDone:true,big:$("wz-big").checked,lang,make:$("wz-make").value==="__other"?"":$("wz-make").value,tech:$("wz-tech").value.trim(),
+  const patch={setupDone:true,big:$("wz-big").checked,lang,make:$("wz-make").value==="__other"?"":$("wz-make").value,dealer:$("wz-dealer").value.trim(),tech:$("wz-tech").value.trim(),
     weekStart:wk,payRate:v($("wz-rate").value)||prefs.payRate||"",weekGoal:v($("wz-goal").value)||prefs.weekGoal||"",otDays:od};
   if(patch.tech)LS.set("ro-tech",patch.tech);
   {const ip=$("wz-insp").value;if(ip!=="keep"&&INSP_PRESETS[ip]){patch.inspList=INSP_PRESETS[ip]();patch.customItems=[]}}
@@ -5183,7 +5181,7 @@ function makePDF(r){
   let LX=M;try{const lg=document.querySelector(".brand .markimg");if(lg&&lg.src.startsWith("data:image/png")){d.addImage(lg.src,"PNG",M,y-2,34,34);LX=M+42}}catch(e){}
   d.setFont("helvetica","bold");d.setFontSize(16);d.setTextColor(...INK);d.text("TECHNICIAN WORK RECORD",LX,y+16);
   d.setFont("helvetica","normal");d.setFontSize(8);d.setTextColor(...GREY);
-  d.text([`Tech # ${r.tech||"-"}`,myMake(),`Printed ${new Date().toLocaleDateString()}`].filter(Boolean).join("    "),LX,y+28);
+  d.text([`Tech # ${r.tech||"-"}`,myMake(),prefs.dealer,`Printed ${new Date().toLocaleDateString()}`].filter(Boolean).join("    "),LX,y+28);
   lab("R.O. NO.",W-M,y+5,"right");d.setFont("helvetica","bold");d.setFontSize(20);d.setTextColor(...INK);d.text(String(r.ro||""),W-M,y+24,{align:"right"});
   y+=40;
 
