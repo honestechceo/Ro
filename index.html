@@ -2103,16 +2103,21 @@ setTimeout(()=>{renderRunChip();const r=running();if(r&&NATIVE)liveStart(r.ro,r.
 function isBattItem(k,n){return k==="battery"||/batter/i.test(String(n||""))}
 function parseBattery(text){const t=String(text||"").toUpperCase().replace(/[|]/g," ").replace(/\s+/g," "),o={};
   const v=t.match(/(\d{1,2}[.,]\d{1,2})\s*V(?:OLTS?|DC)?\b/);if(v)o.v=v[1].replace(",",".");
-  const num="(\\d{2,4})";
+  const num="(\\d{3,4})(?![.,]?\\d)(?!\\s*°)";
   const meas=t.match(new RegExp("(?:MEASURED|MEASURE|TESTED|RESULT|ACTUAL|MEAS)[^0-9]{0,18}"+num)),rated=t.match(new RegExp("(?:RATED|RATING|SPEC|SPECIFIED|STD)[^0-9]{0,18}"+num));
   const ccas=[...t.matchAll(/(\d{2,4})\s*(?:A\s*)?(?:CCA|EN|SAE|DIN|JIS|IEC)\b/g)].map(m=>m[1]);
-  if(meas)o.meas=meas[1];else if(ccas.length)o.meas=ccas[0];
-  if(rated)o.rated=rated[1];else if(ccas.length>1&&ccas[1]!==o.meas)o.rated=ccas[1];
+  // labels in one column and values in another: values come in the same order as the labels
+  const iR=t.search(/\bRATED\b/),iM=t.search(/\bMEASURED\b/),rFirst=iR>=0&&iM>=0&&iR<iM;
+  if(meas)o.meas=meas[1];else if(ccas.length)o.meas=ccas.length>1&&rFirst?ccas[1]:ccas[0];
+  if(rated)o.rated=rated[1];else if(ccas.length>1){const r=rFirst?ccas[0]:ccas[1];if(r!==o.meas)o.rated=r}
   const soh=t.match(/(?:SOH|STATE OF HEALTH|HEALTH)[^0-9%]{0,10}(\d{1,3})\s*%/);if(soh)o.soh=soh[1];
   const soc=t.match(/(?:SOC|STATE OF CHARGE)[^0-9%]{0,10}(\d{1,3})\s*%/);if(soc)o.soc=soc[1];
-  if(/REPLACE|BAD CELL|BAD BATTERY|SHORTED|\bFAIL/.test(t)){o.s="fail";o.verdict=/BAD CELL/.test(t)?"Bad cell, replace":"Replace"}
-  else if(/GOOD[-\s]*RECHARGE|CHARGE\s*(?:&|AND)\s*RE-?TEST|RECHARGE|CHARGE BATTERY|LOW CHARGE/.test(t)){o.s="attn";o.verdict=/GOOD[-\s]*RECHARGE/.test(t)?"Good, recharge":"Charge and retest"}
-  else if(/GOOD BATTERY|BATTERY GOOD|\bGOOD\b|\bPASS(?:ED)?\b|\bOK\b/.test(t)){o.s="pass";o.verdict="Good battery"}
+  // the health bar is labeled "Replace ... Good"; that legend isn't the result
+  const r=t.replace(/REPLACE[^A-Z]{0,12}(?:[A-Z]{1,3}[^A-Z]{1,12})?GOOD\b/g," ");
+  if(/GOOD[-\s&]*RECHARGE|CHARGE\s*(?:&|AND)\s*RE-?TEST|RECHARGE (?:AND|&) RETEST|LOW CHARGE|CHARGE BATTERY/.test(r)){o.s="attn";o.verdict=/GOOD[-\s&]*RECHARGE/.test(r)?"Good, recharge":"Charge and retest"}
+  else if(/BAD CELL|BAD BATTERY|REPLACE BATTERY|SHORTED|\bFAIL|\bREPLACE\b/.test(r)){o.s="fail";o.verdict=/BAD CELL/.test(r)?"Bad cell, replace":"Replace"}
+  else if(/RECHARGE/.test(r)){o.s="attn";o.verdict="Charge and retest"}
+  else if(/GOOD BATTERY|BATTERY GOOD|GOOD[-\s]*PASS|\bGOOD\b|\bPASS(?:ED)?\b|\bOK\b/.test(r)){o.s="pass";o.verdict="Good battery"}
   return o}
 function battNote(o){return[o.v?o.v+" V":"",o.meas?(o.rated?`${o.meas}/${o.rated} CCA`:`${o.meas} CCA`):"",o.soh?`SOH ${o.soh}%`:"",o.soc?`SOC ${o.soc}%`:"",o.verdict||""].filter(Boolean).join(" · ")}
 let battKey=null;
@@ -4856,8 +4861,7 @@ function parseROText(text,bar,vinFromText,advisors){
   for(const raw of T.split(/\n/)){const m=raw.match(/^[^A-Za-z0-9]*(?:[0-9jJlI|]{1,2}[\s|\]\[]+)?([CWIcwi])[a-z]?[\s|]+([0-9][0-9A-Za-z]{2,11}|[A-Z]{1,3}[0-9][0-9A-Z]{1,9})\s+(.+)$/);
     if(!m)continue;const words=[];for(const w of m[3].split(/\s+/)){if(!/^[A-Z0-9&\/\-.,#]+$/.test(w)||/^[^A-Z]*$/.test(w)&&words.length>2)break;words.push(w)}
     const desc=words.join(" ").replace(/[.,]+$/,"");if(desc.length<3)continue;
-    if(/LOANER|COURTESY|DISCLAIMER|FLOOR MAT|CONVENIENCE|SPECIALIST|SUBLET|CAR WASH ONLY/.test(desc))continue;
-    const op=m[2].toUpperCase();if(!out.jobs.some(j=>j.op===op))out.jobs.push({type:m[1].toUpperCase(),op,desc})}
+    const op=m[2].toUpperCase();if(junkJob(op,desc))continue;if(!out.jobs.some(j=>j.op===op))out.jobs.push({type:m[1].toUpperCase(),op,desc})}
   // vehicle box: "48,195 | 180676 DAWN JOHANSON" = mileage, advisor #, advisor name
   for(const l of U.split(/\n/)){const m=l.match(/(?:(\d{1,3},\d{3}|\d{1,6})\W{1,4})?(\d{6})\W{1,3}([A-Z]{2,}(?:\s[A-Z]{2,}){0,2})\s*$/);
     if(m&&!/\d{2}\/\d{2}\/\d{2}/.test(l)){if(m[1])out.mileage=m[1].replace(/,/g,"");out.advisorNo=m[2];out.advisor=m[3].replace(/\b(\w)(\w*)/g,(a,b,c)=>b+c.toLowerCase());break}}
@@ -4867,6 +4871,17 @@ function parseROText(text,bar,vinFromText,advisors){
   // advisor: one of your saved advisor numbers printed on the page
   for(const a of advisors||[]){if(a.no&&(out.advisorNo?String(a.no)===out.advisorNo:new RegExp("(?<![0-9])"+String(a.no).replace(/\D/g,"")+"(?![0-9])").test(U))){out.advisor=a.name;out.advisorNo=a.no;break}}
   return out}
+/* lines on the RO that aren't work: disclaimers, loaner/waiter notes, legal text, sublet and car wash */
+const JUNK_JOB=/LOANER|COURTESY|RENTAL|SHUTTLE|WAITER|WAITING|DROP ?OFF|RIDE ?SHARE|UBER|LYFT|DISCLAIM|DISCLOS|FLOOR ?MAT|CONVENIENCE|SPECIALIST|SUBLET|CAR ?WASH|AUTHORI[ZS]|HEREBY|RESPONSIB|LIABLE|LIABILIT|STORAGE|ESTIMATE|SIGNATURE|SIGN HERE|INITIAL HERE|PLEASE|NOTICE|\bNOTE\b|TERMS|CONDITIONS|MERCHANTAB|IMPLIED|EXPRESS(LY)? WARRANT|\bLIEN\b|\bACCEPT|\bAGREE|VALUABLES|PERSONAL (ITEMS|PROPERTY|BELONGINGS)|PAYMENT|DEPOSIT|CASH|CREDIT CARD|THANK|SURVEY|APPRECIATE|CUSTOMER (DECLINE|SIGN|AGREE|ACKNOWLEDGE)|DECLINED|ACKNOWLEDG|ABANDON|PER DAY|CALIFORNIA|BUREAU OF|BAR LIC|STATE LAW|SERVICE HISTORY|PROMISE ?TIME|EMAIL|TEXT ME|CALL (ME|CUST)|COUPON|DISCOUNT|SHOP SUPPL|HAZ(ARDOUS)? ?(MAT|WASTE)|ENVIRONMENTAL|DISPOSAL FEE|TAX/;
+function junkJob(op,desc){const d=String(desc||"").toUpperCase(),o=String(op||"").toUpperCase();
+  if(JUNK_JOB.test(d))return true;
+  if(/DISC|NOTE|MSG|MEMO|INFO|LOAN|WAIT|WASH|SUBL|TAX|FEE/.test(o.replace(/^\d+/,"")))return true;
+  // legal text reads as a sentence; real job lines are short
+  // (a customer concern like "CUSTOMER STATES ..." can run long and is real work)
+  const n=d.split(/\s+/).filter(Boolean).length,concern=/^(CUSTOMER|CUST|C\/?S|CS|CLIENT|PERFORM|CHECK|INSPECT|DIAG)/.test(d);
+  if(!concern&&(n>12||d.length>80)||n>22)return true;
+  if((d.match(/\b(YOU|YOUR|WE|OUR|US|SHALL|HEREIN|THEREOF|WHETHER)\b/g)||[]).length>=1&&n>4)return true;
+  return false}
 /* word positions (sparse read): tag printed twice, color under COLOR, op codes cleaner than the line read */
 function parseROWords(words,out){
   const W=(words||[]).map(w=>({t:String(w.t||""),u:String(w.t||"").toUpperCase().replace(/[^A-Z0-9,\/.#-]/g,""),x:w.x,y:w.y,w:w.w,h:w.h})).filter(w=>w.u);
@@ -4950,7 +4965,7 @@ function applyRO(x){const filled=[];
   set("miles",String(x.mileage||"").replace(/[^0-9]/g,""),"mileage");set("color",x.color,"color");set("stock",x.stock,"stock #");set("tag",x.tag,"tag");
   if(!$("advisor").value.trim()&&(x.advisorName||x.advisor||x.advisorNo)){$("advisor").value=x.advisorName||x.advisor||"";$("advisorNo").value=String(x.advisorNo||"").replace(/\D/g,"");filled.push("advisor");renderAdvChips()}
   const have=new Set(readJobs().map(j=>String(j.op).toUpperCase()).filter(Boolean));let nj=0;
-  for(const j of (x.jobs||[])){const op=String(j.op||"").toUpperCase().trim(),desc=String(j.desc||"").trim();if(!op&&!desc)continue;if(op&&have.has(op))continue;
+  for(const j of (x.jobs||[])){const op=String(j.op||"").toUpperCase().trim(),desc=String(j.desc||"").trim();if(!op&&!desc)continue;if(op&&have.has(op))continue;if(junkJob(op,desc))continue;
     const blank=[...$("jobs").children].find(d=>!d.dataset.from&&!["op","desc","hrs"].some(k=>$(`j${d.dataset.n}-${k}`).value.trim()));if(blank)blank.remove();
     addJob({type:/^[CWI]$/.test(String(j.type||"").toUpperCase())?String(j.type).toUpperCase():"C",op,desc:desc.charAt(0)+desc.slice(1).toLowerCase(),hrs:""});have.add(op);nj++}
   if(nj)filled.push(`${nj} job line${nj>1?"s":""}`);
@@ -5115,12 +5130,31 @@ function parseSheetWords(words,canvas){
   if(!pass||!fail)return null;
   [pass,fail].forEach(w=>used.add(w));
   const L={battery:one(/^BATTERY$/),suspension:one(/^SUSPENSION$/),exhaust:one(/^EXHAUST$/),ballJoints:one(/^BALL$/),driveBelts:one(/^DRIVE$/),lights:one(/^LIGHTS$/),leaks:one(/^LEAKS$/)};
-  const brakes=find(/^BRAKES$/,w=>w.cx<fail.cx);L.frontBrakes=brakes[0]||null;L.rearBrakes=brakes[1]||null;
+  // front/rear brakes: go by the FRONT or REAR word on the label, not just top-to-bottom order
+  const mmAll=find(/^(MM|NM|MN|RNM)$/),hdrTM=W.filter(w=>/^(MIDDLE|EDGES)$/.test(w.u));
+  const belowTires=w=>{const h=hdrTM.slice().sort((a,b)=>Math.abs(a.cx-w.cx)-Math.abs(b.cx-w.cx))[0];return!!h&&w.cy>h.y};
+  {const brk=find(/^(FRONT|REAR)?BRAKES?$/,w=>w.cx<fail.cx&&!belowTires(w));
+    const side=b=>{if(/^FRONT/.test(b.u))return"F";if(/^REAR/.test(b.u))return"R";
+      const s=W.filter(o=>/^(FRONT|REAR)$/.test(o.u)&&o.cx<b.cx&&Math.abs(o.cy-b.cy)<b.h*.7&&b.x-(o.x+o.w)<b.h*3).sort((a,c)=>c.cx-a.cx)[0];return s?s.u[0]:""};
+    let fb=null,rb=null;brk.forEach(b=>{const t=side(b);if(t==="F"&&!fb)fb=b;else if(t==="R"&&!rb)rb=b});
+    const left=brk.filter(b=>b!==fb&&b!==rb);
+    if(!fb&&left.length&&(!rb||left[0].cy<rb.cy))fb=left.shift();
+    if(!rb&&left.length&&(!fb||left[0].cy>fb.cy))rb=left.find(b=>!fb||b.cy>fb.cy)||null;
+    // a label the reader missed: use its FRONT/REAR word, or failing that its "mm" mark
+    const ref=fb||rb||L.leaks;
+    const stand=(word,above,below)=>{const ok=w=>(above==null||w.cy<above)&&(below==null||w.cy>below)&&!belowTires(w);
+      const fw=W.find(o=>o.u===word&&o.cx<pass.x&&ok(o)&&(!ref||Math.abs(o.cx-ref.cx)<ref.h*8));if(fw)return fw;
+      const m=mmAll.filter(ok).sort((a,c)=>a.cy-c.cy)[word==="FRONT"?0:mmAll.filter(ok).length-1];
+      return m&&ref?{t:word+" BRAKES",u:"BRAKES",x:ref.x,y:m.y,w:ref.w,h:m.h,cx:ref.cx,cy:m.cy,synth:1}:null};
+    if(!fb&&rb)fb=stand("FRONT",rb.cy-rb.h*.8,L.leaks?L.leaks.cy+L.leaks.h*.8:null);
+    if(!rb&&fb)rb=stand("REAR",null,fb.cy+fb.h*.8);
+    if(!fb&&!rb&&mmAll.length){fb=stand("FRONT",null,L.leaks?L.leaks.cy+L.leaks.h*.8:null);if(fb)rb=stand("REAR",null,fb.cy+fb.h*.8)}
+    L.frontBrakes=fb;L.rearBrakes=rb}
   const reset=one(/^RESET$/)||one(/^MAINTENANCE$/);
-  const whole=w=>{if(!w)return null;const line=W.filter(o=>Math.abs(o.cy-w.cy)<w.h*.6&&o.x+o.w<pass.x+pass.w*.2&&Math.abs(o.cx-w.cx)<220);
-    line.forEach(o=>used.add(o));const x0=Math.min(...line.map(o=>o.x)),x1=Math.max(...line.map(o=>o.x+o.w));return Object.assign({},w,{x:x0,w:x1-x0,cx:(x0+x1)/2})};
+  const whole=w=>{if(!w)return null;if(w.synth)return w;const line=W.filter(o=>Math.abs(o.cy-w.cy)<w.h*.6&&o.x+o.w<pass.x+pass.w*.2&&Math.abs(o.cx-w.cx)<220);
+    if(!line.includes(w))line.push(w);line.forEach(o=>used.add(o));const x0=Math.min(...line.map(o=>o.x)),x1=Math.max(...line.map(o=>o.x+o.w));return Object.assign({},w,{x:x0,w:x1-x0,cx:(x0+x1)/2})};
   Object.keys(L).forEach(k=>L[k]=whole(L[k]));
-  const labs=Object.values(L).filter(Boolean);
+  const labs=Object.values(L).filter(w=>w&&!w.synth);
   // page tilt: labels sit in one column, so their drift across rows gives the slope
   let slope=0;if(labs.length>=3){const n=labs.length,my=labs.reduce((a,w)=>a+w.cy,0)/n,mx=labs.reduce((a,w)=>a+w.cx,0)/n;
     const sxy=labs.reduce((a,w)=>a+(w.cy-my)*(w.cx-mx),0),syy=labs.reduce((a,w)=>a+(w.cy-my)**2,0);slope=syy?sxy/syy:0;if(Math.abs(slope)>.25)slope=0}
@@ -5128,10 +5162,10 @@ function parseSheetWords(words,canvas){
   const passL=pass.x-pass.w*.35,passR=fail.x-4,failL=fail.x-2,failR=fail.x+fail.w*1.45;
   const rows=ITEMS.map(([k])=>[k,L[k]]).filter(([,w])=>w).sort((a,b)=>a[1].cy-b[1].cy);
   const items={},hand=w=>!used.has(w);
-  const mmW=find(/^MM$/);mmW.forEach(w=>used.add(w));
+  const mmW=mmAll.filter(w=>!belowTires(w));mmAll.forEach(w=>used.add(w));const mmTaken=new Set();
   const tireTop=Math.min(1e9,...W.filter(w=>/^(MIDDLE|EDGES)$/.test(w.u)).map(w=>w.y-w.h*1.6));
   rows.forEach(([k,lab],i)=>{const prev=rows[i-1],next=rows[i+1];
-    const top=prev?(prev[1].cy+lab.cy)/2:lab.cy-lab.h*1.6,bot=next?(lab.cy+next[1].cy)/2:Math.min(lab.cy+lab.h*1.6,tireTop);
+    const top=prev?(prev[1].cy+lab.cy)/2:lab.cy-lab.h*1.6,bot=next?(lab.cy+next[1].cy)/2:Math.max(lab.cy+lab.h*.8,Math.min(lab.cy+lab.h*1.6,tireTop));
     const pad=(bot-top)*.18,y0=top+pad,y1=bot-pad;
     const pi=inkIn(canvas,colX(passL,lab.cy)+6,y0,colX(passR,lab.cy)-6,y1),fi=inkIn(canvas,colX(failL,lab.cy)+6,y0,colX(failR,lab.cy)-6,y1);
     const toks=W.filter(w=>hand(w)&&w.cy>top&&w.cy<bot);
@@ -5139,15 +5173,18 @@ function parseSheetWords(words,canvas){
     let s="";if(markF||fi>.02&&fi>pi*1.6)s="fail";else if(markP||pi>.02&&pi>fi*1.6)s="pass";
     const rest=toks.filter(w=>w.cx>colX(failR,w.cy)).sort((a,b)=>a.x-b.x);
     const it={s,note:""};
-    if(k==="frontBrakes"||k==="rearBrakes"){const mm=mmW.filter(m=>Math.abs(m.cy-lab.cy)<(bot-top)).sort((a,b)=>Math.abs(a.cy-lab.cy)-Math.abs(b.cy-lab.cy))[0];
-      const before=rest.filter(w=>!mm||w.cx<mm.cx),after=rest.filter(w=>mm&&w.cx>mm.cx);
+    if(k==="frontBrakes"||k==="rearBrakes"){const band=Math.max(lab.h*1.3,(bot-top)*.6);
+      const mm=mmW.filter(m=>!mmTaken.has(m)&&Math.abs(m.cy-lab.cy)<band).sort((a,b)=>Math.abs(a.cy-lab.cy)-Math.abs(b.cy-lab.cy))[0];if(mm)mmTaken.add(mm);
+      // never reach into the tire boxes, and skip tread-style "7/32" marks
+      const inRow=w=>!belowTires(w)&&!/\/\s*3\d$/.test(String(w.t))&&(String(w.t).match(/\d/g)||[]).length<=4;
+      const before=rest.filter(w=>(!mm||w.cx<mm.cx)&&inRow(w)),after=rest.filter(w=>mm&&w.cx>mm.cx);
       // the pad number sits just left of "mm"; it is often written large and pokes into the row above
       const numy=w=>/^[0-9OoQDIl|!.+\/\\-]{1,7}$/.test(String(w.t).trim())&&/[0-9OoIl]/.test(String(w.t));
-      const near=mm?W.filter(w=>hand(w)&&w!==mm&&numy(w)&&w.cx<mm.cx&&w.cx>colX(failR,w.cy)-10&&Math.abs(w.cy-mm.cy)<(bot-top)*.75&&w.x+w.w<mm.x+mm.w*.6):before.filter(numy);
+      const near=mm?W.filter(w=>hand(w)&&w!==mm&&numy(w)&&inRow(w)&&w.cx<mm.cx&&w.cx>colX(failR,w.cy)-10&&Math.abs(w.cy-mm.cy)<Math.max(band,(bot-top)*.75)&&w.x+w.w<mm.x+mm.w*.6):before.filter(numy).sort((a,b)=>Math.abs(a.cy-lab.cy)-Math.abs(b.cy-lab.cy)).slice(0,2);
       let pick=near.slice();if(mm&&pick.length){const row=pick.filter(w=>Math.abs(w.cy-mm.cy)<Math.max(w.h,mm.h)*.8).sort((a,b)=>b.x-a.x);
         const chain=[];let edge=mm.x;for(const w of row){if(edge-(w.x+w.w)<Math.max(w.h,mm.h)*1.3){chain.push(w);edge=w.x}else break}
         pick=(chain.length?chain:[pick.sort((a,b)=>Math.abs(a.cy-mm.cy)-Math.abs(b.cy-mm.cy))[0]]).sort((a,b)=>a.x-b.x)}
-      const pr=padLR(pick.flatMap(sheetChars).sort((a,b)=>a.cx-b.cx));it.mm=pr.L;it.mmL=pr.L;it.mmR=pr.R;pick.forEach(w=>used.add(w));it.note=after.filter(w=>!pick.includes(w)).map(w=>w.t).join(" ")}
+      const pr=padLR(pick.flatMap(sheetChars).sort((a,b)=>a.cx-b.cx));["L","R"].forEach(k=>{if(+pr[k]>15)pr[k]=""});it.mm=pr.L;it.mmL=pr.L;it.mmR=pr.R;pick.forEach(w=>used.add(w));it.note=after.filter(w=>!pick.includes(w)&&!/^(LEFT|RIGHT|FRONT|REAR|SPARE)$/.test(w.u)).map(w=>w.t).join(" ")}
     else it.note=rest.map(w=>w.t).join(" ");
     it.note=it.note.replace(/^[-–—\s]+/,"").trim();items[k]=it;rest.forEach(w=>used.add(w))});
   // maintenance light mark
