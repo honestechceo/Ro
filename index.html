@@ -647,6 +647,7 @@ html.big .seg label{padding-left:10px;padding-right:10px}
 .cam-top{position:absolute;left:0;right:0;top:0;display:grid;grid-template-columns:64px 1fr 64px;align-items:center;text-align:center;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) 14px 10px;font:700 1.1rem var(--f-display);letter-spacing:.08em;text-transform:uppercase}
 .cam-btn{min-width:48px;height:48px;border-radius:999px;border:0;background:rgba(255,255,255,.18);color:#fff;font-size:1.4rem;font-weight:600;padding:0 14px}
 #cam-torch{font-size:.9rem;justify-self:end}#cam-torch.on{background:#fff;color:#000}
+.libpick{flex:1 1 100%;font-size:.9rem;color:var(--muted)}.linkbtn{background:none;border:0;padding:6px 2px;color:var(--accent);font:inherit;font-weight:600;text-decoration:underline;text-underline-offset:3px;cursor:pointer;min-height:36px}
 .cam-bot{position:absolute;left:0;right:0;bottom:0;display:grid;gap:12px;justify-items:center;padding:16px 16px calc(20px + env(safe-area-inset-bottom,0px));text-align:center}
 .cam-status{font-weight:600;font-size:1rem;text-shadow:0 1px 3px #000;max-width:420px}
 .cam-bot .btn{background:rgba(255,255,255,.92);color:#0B1118;border:0}
@@ -1252,7 +1253,7 @@ details.sec>summary>h2 small{margin-left:auto;font:500 .75rem var(--f-body);lett
       <h2><span id="form-title">New repair order</span><small id="form-sub"></small></h2>
       <div class="body">
         <div class="grid">
-          <div class="scanro"><button type="button" class="btn scan" id="ro-scan">Scan RO page</button><button type="button" class="btn scan" id="sheet-scan">Scan repair sheet</button><input type="file" id="sheet-file" accept="image/*" capture="environment" hidden><p class="scanwarn"><b>Scans aren't perfect.</b> Handwriting and faded print can be misread. Check every filled-in box against the paper before you save.</p><span class="hint">RO page: RO #, VIN and vehicle. Repair sheet: your handwritten inspection, tire and brake readings, and recommendations. Tip: on iPhone, tap any box twice and choose Scan Text to read one handwritten number.</span><input type="file" id="ro-file" accept="image/*" capture="environment" hidden></div>
+          <div class="scanro"><button type="button" class="btn scan" id="ro-scan">Scan RO page</button><button type="button" class="btn scan" id="sheet-scan">Scan repair sheet</button><span class="libpick">From Photos: <button type="button" class="linkbtn" data-lib="ro-file">RO page</button> · <button type="button" class="linkbtn" data-lib="sheet-file">Repair sheet</button></span><input type="file" id="sheet-file" accept="image/*" capture="environment" hidden><p class="scanwarn"><b>Scans aren't perfect.</b> Handwriting and faded print can be misread. Check every filled-in box against the paper before you save.</p><span class="hint">RO page: RO #, VIN and vehicle. Repair sheet: your handwritten inspection, tire and brake readings, and recommendations. Tip: on iPhone, tap any box twice and choose Scan Text to read one handwritten number.</span><input type="file" id="ro-file" accept="image/*" capture="environment" hidden></div>
           <div class="f"><label for="ro">RO #</label><input id="ro" class="mono" inputmode="numeric" required></div>
           <div class="f" data-fld="tag"><label for="tag">Tag #</label><input id="tag" class="mono"></div>
           <div class="f"><label for="date">Date</label><input id="date" type="date" required></div>
@@ -1388,7 +1389,7 @@ details.sec>summary>h2 small{margin-left:auto;font:500 .75rem var(--f-body);lett
       <div class="body">
         <div class="attgrid" id="ro-files"></div>
         <div class="tools jobtools"><button type="button" class="btn" id="files-cam">📷 Take photo</button><button type="button" class="btn" id="files-add">+ Add photo or file</button></div>
-        <input type="file" id="files-cam-in" accept="image/*" capture="environment" hidden><input type="file" id="files-add-in" accept="image/*,application/pdf" multiple hidden>
+        <input type="file" id="lib-in" accept="image/*" hidden><input type="file" id="files-cam-in" accept="image/*" capture="environment" hidden><input type="file" id="files-add-in" accept="image/*,application/pdf" multiple hidden>
         <button type="button" class="btn primary wide" id="files-save">Save all to Files</button>
         <span class="hint">Saves this RO's PDF and photos together. On iPhone pick <b>Save to Files</b>, then your <b>RO Log</b> folder (make it once with the folder button; the iPhone remembers it).</span>
         <label class="keep" for="auto-attach"><input type="checkbox" id="auto-attach"> Keep scanned RO and repair-sheet photos here (off: scans are read, then the photo is thrown away)</label>
@@ -1577,7 +1578,7 @@ details.sec>summary>h2 small{margin-left:auto;font:500 .75rem var(--f-body);lett
   <div class="cam-shade"></div>
   <div class="cam-guide" id="cam-guide"><i></i><i></i><i></i><i></i></div>
   <div class="cam-top"><button type="button" class="cam-btn" id="cam-x" aria-label="Close scanner">×</button><b>Scan VIN</b><button type="button" class="cam-btn" id="cam-torch" hidden>Light</button></div>
-  <div class="cam-bot"><div class="cam-status" id="cam-status" role="status"></div><button type="button" class="btn" id="cam-photo">Take photo instead</button></div>
+  <div class="cam-bot"><div class="cam-status" id="cam-status" role="status"></div><div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><button type="button" class="btn" id="cam-photo">Take photo instead</button><button type="button" class="btn" id="cam-lib">Choose from Photos</button></div></div>
 </div>
 <div class="sheet acts" id="acts" hidden>
   <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="acts-title">
@@ -1808,7 +1809,7 @@ let curItems=[];
 function rowHTML([k,n,b,c]){return`<div class="irow" id="row-${k}">
   <span class="name"><span class="dot"></span>${esc(n)}${c?" <small>Added</small>":""}</span>
   <span class="seg"><input type="radio" class="p" name="i-${k}" id="i-${k}-pass" value="pass"><label for="i-${k}-pass">Pass</label><input type="radio" class="a" name="i-${k}" id="i-${k}-attn" value="attn"><label for="i-${k}-attn">Attn</label><input type="radio" class="x" name="i-${k}" id="i-${k}-fail" value="fail"><label for="i-${k}-fail">Fail</label></span>
-  <span class="extra">${b?`<span class="mm"><label for="i-${k}-mmL">L</label><input id="i-${k}-mmL" type="number" step="0.5" min="0" inputmode="decimal" placeholder="–" aria-label="${esc(n)} left pad in mm"><label for="i-${k}-mmR">R</label><input id="i-${k}-mmR" type="number" step="0.5" min="0" inputmode="decimal" placeholder="–" aria-label="${esc(n)} right pad in mm"><span>mm</span></span>`:""}<input id="i-${k}-note" placeholder="${b?"Notes":"What's wrong"}" ${b?"":"hidden"}>${c?`<span class="ctl"><button type="button" class="chip${isPinned(k)?" on":""}" data-pin="${k}" aria-pressed="${isPinned(k)}">${isPinned(k)?"✓ Every RO":"This RO only"}</button><button type="button" class="chip del" data-del="${k}" aria-label="Remove ${esc(n)} from this RO">×</button></span>`:""}</span>${isBattItem(k,n)?`<span class="battx"><button type="button" class="btn battbtn" data-batt="${k}">📷 Battery test printout</button><span class="bthumbs" id="bth-${k}"></span></span>`:""}</div>`}
+  <span class="extra">${b?`<span class="mm"><label for="i-${k}-mmL">L</label><input id="i-${k}-mmL" type="number" step="0.5" min="0" inputmode="decimal" placeholder="–" aria-label="${esc(n)} left pad in mm"><label for="i-${k}-mmR">R</label><input id="i-${k}-mmR" type="number" step="0.5" min="0" inputmode="decimal" placeholder="–" aria-label="${esc(n)} right pad in mm"><span>mm</span></span>`:""}<input id="i-${k}-note" placeholder="${b?"Notes":"What's wrong"}" ${b?"":"hidden"}>${c?`<span class="ctl"><button type="button" class="chip${isPinned(k)?" on":""}" data-pin="${k}" aria-pressed="${isPinned(k)}">${isPinned(k)?"✓ Every RO":"This RO only"}</button><button type="button" class="chip del" data-del="${k}" aria-label="Remove ${esc(n)} from this RO">×</button></span>`:""}</span>${isBattItem(k,n)?`<span class="battx"><button type="button" class="btn battbtn" data-batt="${k}">📷 Battery test printout</button><button type="button" class="linkbtn" data-battlib="${k}">From Photos</button><span class="bthumbs" id="bth-${k}"></span></span>`:""}</div>`}
 function buildInsp(list){curItems=list;$("insp").innerHTML=list.map(rowHTML).join("")}
 function addItem(){
   const n=$("new-item").value.trim().replace(/\s+/g," ");if(!n){$("new-item").focus();return}
@@ -2198,7 +2199,8 @@ function battNote(o){return[o.v?o.v+" V":"",o.meas?(o.rated?`${o.meas}/${o.rated
 let battKey=null;
 async function renderBattThumbs(){const L=(await attList(formId())).filter(a=>a.kind==="Battery test");
   document.querySelectorAll(".bthumbs").forEach(box=>{box.innerHTML=L.map(a=>{const u=URL.createObjectURL(a.blob);attURLs.push(u);return`<button type="button" class="bthumb" data-bview="${esc(a.id)}"><img alt="Battery test" src="${u}"></button>`}).join("")})}
-$("insp").addEventListener("click",e=>{const b=e.target.closest("[data-batt]");if(b){battKey=b.dataset.batt;$("batt-in").click();return}
+$("insp").addEventListener("click",e=>{const bl=e.target.closest("[data-battlib]");if(bl){battKey=bl.dataset.battlib;pickFromLibrary("batt-in");return}
+  const b=e.target.closest("[data-batt]");if(b){battKey=b.dataset.batt;$("batt-in").click();return}
   const v=e.target.closest("[data-bview]");if(v){const tile=document.querySelector(`#ro-files [data-att="${v.dataset.bview}"]`);if(tile)tile.click()}});
 $("batt-in").addEventListener("change",async e=>{const f=e.target.files&&e.target.files[0];e.target.value="";if(!f||!battKey)return;const k=battKey;
   if(!editingId&&!formNewId)formNewId="r"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
@@ -5170,6 +5172,15 @@ function applyRO(x){const filled=[];
   if(nj)filled.push(`${nj} job line${nj>1?"s":""}`);
   syncHours();refreshInsp();updateBar();saveDraft();return{filled,vin:vinValid(vin)?vin:""}}
 $("ro-scan").onclick=()=>$("ro-file").click();
+/* pick a saved photo instead of the camera: the photo is handed to the same reader as a fresh camera shot */
+let libFor="";
+function pickFromLibrary(id){libFor=id;$("lib-in").value="";$("lib-in").click()}
+$("lib-in").addEventListener("change",e=>{const f=e.target.files&&e.target.files[0],to=$(libFor);if(!f||!to)return;
+  try{const dt=new DataTransfer();dt.items.add(f);to.files=dt.files;to.dispatchEvent(new Event("change"))}catch(err){toast("Couldn't open that photo")}});
+document.addEventListener("click",e=>{const b=e.target.closest("[data-lib]");if(!b)return;
+  if(b.dataset.lib==="sheet-file"&&!inClaude&&!canRead()){$("sheet-scan").click();return}
+  pickFromLibrary(b.dataset.lib)});
+$("cam-lib").onclick=()=>{closeCam();pickFromLibrary("vin-file")};
 $("ro-file").addEventListener("change",async e=>{
   const f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;autoAttach(f,"RO page");
   const b=$("ro-scan");b.disabled=true;b.textContent="Reading RO…";

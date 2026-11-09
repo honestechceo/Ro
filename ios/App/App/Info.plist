@@ -9,7 +9,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>RO Log uses the camera to scan RO pages, repair sheets and VINs, and to take photos for a repair order.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>RO Log lets you add photos from your library to a repair order.</string>
+	<string>RO Log lets you pick a saved photo of an RO page, repair sheet, VIN or battery printout to read, or add photos from your library to a repair order.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>RO Log saves repair order photos to your library when you choose Save.</string>
 	<key>UIStatusBarStyle</key>

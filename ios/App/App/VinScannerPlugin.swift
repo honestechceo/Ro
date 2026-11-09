@@ -268,7 +268,20 @@ final class VinCameraViewController: UIViewController, UIImagePickerControllerDe
         photo.layer.cornerRadius = 12
         photo.contentEdgeInsets = UIEdgeInsets(top: 14, left: 30, bottom: 14, right: 30)
         photo.addTarget(self, action: #selector(photoTapped), for: .touchUpInside)
-        for v in [title, close, light, hint, photo] as [UIView] { v.translatesAutoresizingMaskIntoConstraints = false; view.addSubview(v) }
+        let lib = UIButton(type: .system)
+        lib.setTitle("Choose from Photos", for: .normal)
+        lib.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
+        lib.setTitleColor(.black, for: .normal)
+        lib.backgroundColor = .white
+        lib.layer.cornerRadius = 12
+        lib.contentEdgeInsets = UIEdgeInsets(top: 14, left: 20, bottom: 14, right: 20)
+        lib.addTarget(self, action: #selector(libraryTapped), for: .touchUpInside)
+        photo.contentEdgeInsets = UIEdgeInsets(top: 14, left: 20, bottom: 14, right: 20)
+        let buttons = UIStackView(arrangedSubviews: [photo, lib])
+        buttons.axis = .horizontal
+        buttons.spacing = 12
+        buttons.distribution = .fillEqually
+        for v in [title, close, light, hint, buttons] as [UIView] { v.translatesAutoresizingMaskIntoConstraints = false; view.addSubview(v) }
         let g = view.safeAreaLayoutGuide
         NSLayoutConstraint.activate([
             close.topAnchor.constraint(equalTo: g.topAnchor, constant: 8),
@@ -279,9 +292,10 @@ final class VinCameraViewController: UIViewController, UIImagePickerControllerDe
             light.widthAnchor.constraint(equalToConstant: 64), light.heightAnchor.constraint(equalToConstant: 48),
             title.centerYAnchor.constraint(equalTo: close.centerYAnchor),
             title.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            photo.bottomAnchor.constraint(equalTo: g.bottomAnchor, constant: -16),
-            photo.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            hint.bottomAnchor.constraint(equalTo: photo.topAnchor, constant: -14),
+            buttons.bottomAnchor.constraint(equalTo: g.bottomAnchor, constant: -16),
+            buttons.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            buttons.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            hint.bottomAnchor.constraint(equalTo: buttons.topAnchor, constant: -14),
             hint.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
             hint.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24)
         ])
@@ -439,6 +453,16 @@ final class VinCameraViewController: UIViewController, UIImagePickerControllerDe
         queue.async { [session] in session.stopRunning() }
         let p = UIImagePickerController()
         p.sourceType = .camera
+        p.delegate = self
+        present(p, animated: true)
+    }
+
+    // "Choose from Photos": a picture already saved on the phone, read the same way
+    @objc private func libraryTapped() {
+        setTorch(false)
+        queue.async { [session] in session.stopRunning() }
+        let p = UIImagePickerController()
+        p.sourceType = .photoLibrary
         p.delegate = self
         present(p, animated: true)
     }
