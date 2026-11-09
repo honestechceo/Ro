@@ -5107,7 +5107,10 @@ function sheetChars(w){const fix=c=>DIGFIX[c]||c;
   if(S.length&&!degen)return S.map(c=>({c:fix(String(c.t)),x:c.x,y:c.y,w:c.w,h:c.h,cx:c.x+c.w/2,cy:c.y+c.h/2}));
   const ch=[...String(w.t)],n=ch.length||1;return ch.map((c,i)=>({c:fix(c),x:w.x+w.w*i/n,y:w.y,w:w.w/n,h:w.h,cx:w.x+w.w*(i+.5)/n,cy:w.y+w.h/2}))}
 /* pad numbers next to "mm": one number for both sides, or Left/Right like 5/5 */
-function padLR(chars){const t=chars.map(c=>c.c).join("").replace(/\\/g,"/").replace(/[^0-9.\/]/g,"");
+/* a handwritten 6 with a closed loop often reads as 0 or o; a 0 beside a real reading (6/0) is that 6 */
+function fixZero(a,b){const z=v=>String(v)==="0",big=v=>+v>=2;if(z(a)&&big(b))a=b;if(z(b)&&big(a))b=a;return[a,b]}
+function padLR(chars){const r=padLR0(chars);[r.L,r.R]=fixZero(r.L,r.R);return r}
+function padLR0(chars){const t=chars.map(c=>c.c).join("").replace(/\\/g,"/").replace(/[^0-9.\/]/g,"");
   const ok=v=>{v=String(v||"");if(+v>20)v=v.slice(0,2);if(+v>20)v=v.slice(0,1);return v};
   if(t.includes("/")){const [a,b]=t.split("/").filter(x=>/\d/.test(x));return{L:ok(a),R:ok(b||a)}}
   const d=t.replace(/\./g,"");
@@ -5224,7 +5227,8 @@ function parseSheetWords(words,canvas){
       let ed=depthVals(mine.filter(c=>at(c)>=b.split).sort((a,b2)=>(a.cy-b2.cy)||(a.cx-b2.cx)));
       if(ed.length>=3)ed=[ed[0],ed[ed.length-1]];
       const ok=v=>v&&+v.v<=20?v.v:"";
-      tires[b.k]={mid:ok(mid[0]),edge1:ok(ed[0]),edge2:ok(ed[1])||ok(ed[0])}})}
+      let [e1,e2]=fixZero(ok(ed[0]),ok(ed[1])||ok(ed[0]));if(String(e1)==="0"&&+ok(mid[0])>=2&&String(e2)==="0"&&ed.length<2)e1=e2="";
+      tires[b.k]={mid:ok(mid[0]),edge1:e1,edge2:e2}})}
   // recommendations: handwritten lines under Technician Recommendations
   const recs=[];if(techH){const top=techH.y+techH.h*.6,qx=qtH?qtH.cx:canvas.width*.5;
     const toks=W.filter(w=>hand(w)&&w.cy>top&&!/^[-–—_.]+$/.test(w.u));
