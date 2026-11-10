@@ -5324,6 +5324,8 @@ $("sheet-file").addEventListener("change",async e=>{
   try{const x=inClaude?await readSheetWithClaude(f):await readSheetWithGoogle(f);
     if(x.err==="denied"){toast("Allow Claude to read photos to scan repair sheets");return}
     if(x.err){toast(x.msg||"Couldn't read that sheet. Take a straight photo of the whole page in good light.");return}
+    if(x.asRO){const r=applyRO(x.asRO);if(r.vin&&!$("engine").value.trim()){await runDecode(r.vin);r.filled.push("engine")}
+      toast(r.filled.length?`No inspection grid on that page, so it was read like an RO. Filled in: ${r.filled.join(", ")}. Scans can misread, so check each one.`:"No inspection grid on that page, and those details are already filled in");return}
     const filled=applySheet(x);
     toast(filled.length?`Filled in: ${filled.join(", ")}. Scans can misread, so check each one against the sheet.`:"Nothing new to fill in from that sheet");
   }catch(err){toast("Couldn't open that photo. Try again.")}
@@ -5357,7 +5359,10 @@ async function readSheetWithGoogle(file){
   let j;try{j=await readImage(b64)}catch(e){return{err:"failed",msg:e&&e.msg?"Handwriting reader: "+e.msg:"Couldn't reach the handwriting reader. Check your connection."}}
   lastScan={at:Date.now(),w:c.width,h:c.height,words:j.words||[],text:j.text||""};
   let x=parseSheetWords(j.words||[],c);if(x){const L=roLabelFields(j.words||[],"");["tag","ro","tech","vin"].forEach(k=>{if(L[k]&&!x[k])x[k]=L[k]});if(L.mileage&&!x.miles)x.miles=L.mileage}
-  if(!x)return{err:"none",msg:"Couldn't find the repair sheet's labels in that photo. Take a straight photo of the whole page."};
+  // no repair sheet grid: it may be an RO, estimate or another dealer's form, so read its labeled boxes instead
+  if(!x){const r=parseROText(j.text||"","",vinFromText,advisors());parseROWords(j.words||[],r);mergeLabelFields(r,roLabelFields(j.words||[],j.text||""));
+    if(r.ro||r.vin||r.tag||r.stock||r.mileage||r.make)return{asRO:r};
+    return{err:"none",msg:"Couldn't find the repair sheet's labels in that photo. Take a straight photo of the whole page."}}
   const odd=t=>t.mid&&[t.edge1,t.edge2].some(e=>e&&+e>+t.mid);
   const miss=k=>{const t=(x.tires||{})[k]||{};return!t.mid||!t.edge1||odd(t)};
   // handwriting in the small tire boxes reads better up close, so always take a second, zoomed look at that row
