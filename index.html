@@ -1236,6 +1236,7 @@ details.sec>summary>h2 small{margin-left:auto;font:500 .75rem var(--f-body);lett
     <div class="sec" id="about-sec">
       <h2>About &amp; legal</h2>
       <div class="body legal">
+        <p class="hint" id="app-ver" hidden></p>
         <p><b>Estimates only.</b> Pay, overtime, bonus and efficiency are estimates from what you enter. Your employer's payroll and pay stubs are the official record.</p>
         <p><b>Scans aren't perfect.</b> Scanned RO pages, repair sheets, battery printouts and VINs can be misread, especially handwriting. You're responsible for checking every filled-in field against the original before saving or relying on it.</p>
         <p><b>Follow your dealership's rules</b> about what you record, photograph and share. RO Log doesn't ask for customer names or addresses, and RO page photos aren't kept unless you turn that on.</p>
@@ -2071,7 +2072,8 @@ function deepOpen(u){const m=String(u||"").match(/^rolog:\/\/([\w-]+)/i);if(!m)r
     if($("view-form").hidden||editingId)openForm();
     if(a==="vin")setTimeout(()=>$("vin-scan").click(),450);
     if(a==="scan")setTimeout(()=>{const b=$("ro-scan");b.scrollIntoView({block:"center",behavior:"smooth"});b.classList.remove("pulse");void b.offsetWidth;b.classList.add("pulse");toast("Tap Scan RO page to take the photo")},350)}}
-if(NATIVE){const AP=capPlugin("App");if(AP){try{AP.addListener("appUrlOpen",e=>deepOpen(e&&e.url))}catch(e){}
+if(NATIVE){const AP=capPlugin("App");if(AP&&AP.getInfo)AP.getInfo().then(i=>{if(i&&i.version){$("app-ver").textContent=`RO Log ${i.version} (build ${i.build})`;$("app-ver").hidden=false}}).catch(()=>{});
+  if(AP){try{AP.addListener("appUrlOpen",e=>deepOpen(e&&e.url))}catch(e){}
   setTimeout(()=>{AP.getLaunchUrl().then(r=>{if(r&&r.url)deepOpen(r.url)}).catch(()=>{})},700)}}
 /* the last scan's words, kept only in memory for "share last scan" (never saved: RO pages carry customer details) */
 let lastScan=null;try{localStorage.removeItem("ro-lastscan")}catch(e){}
