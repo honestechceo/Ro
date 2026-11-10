@@ -1321,6 +1321,7 @@ details.sec>summary>h2 small{margin-left:auto;font:500 .75rem var(--f-body);lett
           <div class="f" data-fld="color"><label for="color">Color</label><input id="color"></div>
           <div class="f" data-fld="stock"><label for="stock">Stock #</label><input id="stock" class="mono"></div>
           <div class="f" data-fld="vtype"><label for="vtype">Vehicle</label><select id="vtype"><option value="">—</option><option>Customer</option><option>New / PDI</option><option>PDI recheck</option><option>Pre-owned</option><option>Certified pre-owned</option><option>Dealer stock</option></select></div>
+          <div class="f" data-fld="fuel"><label for="fuel">Gas added (gal)</label><input id="fuel" class="num" type="number" inputmode="decimal" step="0.1" min="0" max="40" placeholder="0.0"><span class="hint" id="fuel-hint" hidden>Fill-up? Enter gallons.</span></div>
 
         </div>
         <div class="grid">
@@ -2219,7 +2220,7 @@ $("batt-in").addEventListener("change",async e=>{const f=e.target.files&&e.targe
   finally{if(btn){btn.disabled=false;btn.textContent="📷 Battery test printout"}}});
 /* ---------- customize the RO form: sections, fields, your own fields, inspection list ---------- */
 const FORM_SECS=[["main","RO basics"],["jobs","Job lines"],["parts","Parts"],["vehicle","Advisor & vehicle"],["insp","Multipoint inspection"],["tires","Tire tread"],["recs","Recommended repairs"],["wphotos","Warranty photos"],["files","Files & photos"],["custom","Your fields"],["pay","Pay tracking"]];
-const FORM_FLDS=[["status","RO status"],["timer","Job timer"],["tag","Tag #"],["vin","VIN #"],["miles","Miles"],["tech","Tech #"],["work","Work performed"],["advisor","Advisor"],["ymm","Year / make / model"],["engine","Engine / drive"],["color","Color"],["stock","Stock #"],["vtype","Vehicle (customer, PDI, pre-owned)"],["timein","Time received"],["promised","Promised"],["maint","Reset maintenance light"]];
+const FORM_FLDS=[["status","RO status"],["timer","Job timer"],["tag","Tag #"],["vin","VIN #"],["miles","Miles"],["tech","Tech #"],["work","Work performed"],["advisor","Advisor"],["ymm","Year / make / model"],["engine","Engine / drive"],["color","Color"],["stock","Stock #"],["vtype","Vehicle (customer, PDI, pre-owned)"],["fuel","Gas added (gallons)"],["timein","Time received"],["promised","Promised"],["maint","Reset maintenance light"]];
 function formCfg(){const f=prefs.form||{},ids=FORM_SECS.map(s=>s[0]);let order=(f.order||[]).filter(k=>ids.includes(k));
   ids.forEach(k=>{if(!order.includes(k))order.push(k)});order=["main",...order.filter(k=>k!=="main")];return{order,hide:f.hide||{},hideFld:f.hideFld||{}}}
 function applyForm(){const c=formCfg(),F=$("view-form"),tail=$("del").closest(".tools");
@@ -2378,7 +2379,7 @@ function openForm(r){
     if(b){const L=v.mmL!=null?v.mmL:v.mm,R=v.mmR!=null?v.mmR:v.mm;$(`i-${k}-mmL`).value=L==null?"":L;$(`i-${k}-mmR`).value=R==null?"":R}});
   const t=r.tires||{};TIRES.forEach(([k])=>{const v=t[k]||{},e=x=>x==null?"":x;$(`t-${k}-in`).value=e(v.in!=null?v.in:v.edge);$(`t-${k}-mid`).value=e(v.mid);$(`t-${k}-out`).value=e(v.out!=null?v.out:v.edge)});
   (r.recs||[]).forEach(addRec);
-  ["ymm","engine","color","stock","vtype","advisor","advisorNo","timein","promised"].forEach(k=>$(k).value=r[k]||"");
+  ["ymm","engine","color","stock","vtype","fuel","advisor","advisorNo","timein","promised"].forEach(k=>$(k).value=r[k]||"");fuelHint();
   (r.jobs&&r.jobs.length?r.jobs:[null]).forEach(addJob);
   renderAdvChips();renderFavChips();
   $("paid").checked=!!r.paid;["pending","paid","rejected"].forEach(k=>$("cl-"+k).checked=r.claim===k);
@@ -2406,7 +2407,7 @@ function collect(){
     if(b){o.mmL=$(`i-${k}-mmL`).value;o.mmR=$(`i-${k}-mmR`).value;const nums=[o.mmL,o.mmR].filter(x=>x!=="").map(Number);o.mm=nums.length?String(Math.min(...nums)):""}if(c||k.startsWith("c_")||n!==ITEMNAME[k])o.name=n;rec.inspection[k]=o});
   TIRES.forEach(([k])=>rec.tires[k]={in:$(`t-${k}-in`).value,mid:$(`t-${k}-mid`).value,out:$(`t-${k}-out`).value});
   rec.jobs=readJobs();
-  ["ymm","engine","color","stock","vtype","advisor","advisorNo","timein","promised"].forEach(k=>rec[k]=$(k).value.trim());
+  ["ymm","engine","color","stock","vtype","fuel","advisor","advisorNo","timein","promised"].forEach(k=>rec[k]=$(k).value.trim());
   if(rec.stock)rec.stock=rec.stock.toUpperCase();
   {const keep={},ids=new Set(customFields().map(f=>f.id));Object.entries((prev&&prev.custom)||{}).forEach(([k,v])=>{if(!ids.has(k))keep[k]=v});
    const cv=Object.assign(keep,readCustom());if(Object.keys(cv).length)rec.custom=cv;
@@ -3063,7 +3064,8 @@ function repRange(){const m=repMode();
   const s=weekStart(repOff),e=new Date(s);e.setDate(e.getDate()+6);return{s,e,a:iso(s),z:iso(e)}}
 function repData(){const R0=repRange(),rs=records.filter(r=>r.date>=R0.a&&r.date<=R0.z).sort((x,y)=>(x.date||"").localeCompare(y.date||"")||String(x.ro).localeCompare(String(y.ro)));
   const t={C:0,W:0,I:0},ro=rs.filter(isRO);let dg=0,bon=0;rs.forEach(r=>{const h=splitHours(r);t.C+=h.C;t.W+=h.W;t.I+=h.I;dg+=diagHours(r);bon+=bonusFor(r).b});
-  const E=earnFor(rs,R0.a,R0.z),tot=t.C+t.W+t.I;return Object.assign({},R0,{rs,ro,t,tot,dg,bon,E})}
+  const gas=rs.reduce((a,r)=>a+(parseFloat(r.fuel)||0),0),gasN=rs.filter(r=>parseFloat(r.fuel)>0).length;
+  const E=earnFor(rs,R0.a,R0.z),tot=t.C+t.W+t.I;return Object.assign({},R0,{rs,ro,t,tot,dg,bon,E,gas,gasN})}
 function repBuckets(D){const days=Math.round((D.e-D.s)/864e5)+1,byWeek=days>16,out=[];
   if(!byWeek){for(let i=0;i<days;i++){const d=new Date(D.s);d.setDate(d.getDate()+i);const k=iso(d),rs=D.rs.filter(r=>r.date===k),h={C:0,W:0,I:0};rs.forEach(r=>{const x=splitHours(r);h.C+=x.C;h.W+=x.W;h.I+=x.I});
     out.push({l:days>8?String(d.getDate()):DOW[d.getDay()],h})}}
@@ -3082,6 +3084,7 @@ function renderReport(){if(!$("rep-card"))return;const m=repMode(),D=repData(),r
     (D.E.cb?line("Chargebacks","−"+h1(D.E.cb)+" hrs","cbl"):"")+
     (rate?line(`Est. pay at ${money(rate)}/hr`,money(pay)):"")+
     (D.bon?line("Warranty bonus hours","+"+h1(D.bon)+" hrs","bonus"):"")+
+    (D.gas?line(`Gas added · ${D.gasN} vehicle${D.gasN===1?"":"s"}`,(Math.round(D.gas*10)/10)+" gal"):"")+
     (()=>{const T=D.rs.filter(r=>r.workMs>=60000);if(!T.length)return"";const act=T.reduce((a,r)=>a+r.workMs/36e5,0),fl=T.reduce((a,r)=>a+(+r.hours||0),0);
       return line(`Timed ROs · ${T.length} · ${h1(act)} hrs actual vs ${h1(fl)} flagged`,act?Math.round(fl/act*100)+"%":"—")})()}
 document.querySelectorAll('input[name="rm"]').forEach(x=>x.addEventListener("change",()=>{repOff=0;renderReport()}));
@@ -3102,7 +3105,7 @@ function reportPDF(D){const {jsPDF}=window.jspdf,d=new jsPDF({unit:"pt",format:"
   if(!D.rs.length){d.setTextColor(120);d.text("No hours logged in this range.",M+3,y);y+=15}
   y+=6;d.setDrawColor(30);d.setLineWidth(1);d.line(M,y,W-M,y);y+=18;
   const pay=rate?(D.E.tot-D.E.ot)*rate+D.E.ot*rate*otMult()-D.E.cb*rate:0;
-  const sum=[["Repair orders",String(D.ro.length)],["Customer pay",h1(D.t.C)+" hrs"],["Warranty",h1(D.t.W)+" hrs"],["Internal",h1(D.t.I)+" hrs"],...(D.dg?[["Diagnosis",h1(D.dg)+" hrs"],["Repair",h1(D.tot-D.dg)+" hrs"]]:[]),...(D.E.cb?[["Chargebacks","−"+h1(D.E.cb)+" hrs"]]:[]),["Total flagged hours",h1(D.tot)+" hrs"],...(rate?[[`Estimated pay at ${money(rate)}/hr`,money(pay)]]:[])];
+  const sum=[["Repair orders",String(D.ro.length)],...(D.gas?[["Gas added",`${Math.round(D.gas*10)/10} gal · ${D.gasN} vehicle${D.gasN===1?"":"s"}`]]:[]),["Customer pay",h1(D.t.C)+" hrs"],["Warranty",h1(D.t.W)+" hrs"],["Internal",h1(D.t.I)+" hrs"],...(D.dg?[["Diagnosis",h1(D.dg)+" hrs"],["Repair",h1(D.tot-D.dg)+" hrs"]]:[]),...(D.E.cb?[["Chargebacks","−"+h1(D.E.cb)+" hrs"]]:[]),["Total flagged hours",h1(D.tot)+" hrs"],...(rate?[[`Estimated pay at ${money(rate)}/hr`,money(pay)]]:[])];
   sum.forEach(([k,v],i)=>{if(y>750){d.addPage();y=M+10}const last=i>=sum.length-(rate?2:1);d.setFont("helvetica",last?"bold":"normal");d.setFontSize(last?12:10);d.setTextColor(30);d.text(k,M+3,y);d.text(v,W-M-3,y,{align:"right"});y+=last?18:15});
   const pg=d.getNumberOfPages();for(let i=1;i<=pg;i++){d.setPage(i);d.setFont("helvetica","normal");d.setFontSize(8);d.setTextColor(120);
     d.text("Personal record kept with RO Log. Pay figures are estimates; your employer's payroll is the official record.",M,770);d.text(`Page ${i} of ${pg}`,W-M,770,{align:"right"})}
@@ -3113,7 +3116,7 @@ $("rep-pdf").onclick=async()=>{const b=$("rep-pdf");b.disabled=true;
     if(downloads)await downloads.save({filename:name,data:doc.output("arraybuffer")});}
   catch(e){toast("Couldn't make the report")}finally{b.disabled=false}};
 $("rep-csv").onclick=async()=>{const D=repData(),q=v=>`"${String(v==null?"":v).replace(/"/g,'""')}"`;
-  const rows=[["Date","RO #","Tag","Customer","Warranty","Internal","Diagnosis","Total","Paid","Closed"].map(q).join(",")].concat(D.rs.map(r=>{const h=splitHours(r);return[r.date,isRO(r)?r.ro:"Hours",r.tag,h1(h.C),h1(h.W),h1(h.I),h1(diagHours(r)),h1(+r.hours||0),r.paid?"Yes":"",r.closed?"Yes":""].map(q).join(",")}));
+  const rows=[["Date","RO #","Tag","Vehicle","Customer","Warranty","Internal","Diagnosis","Total","Gas added (gal)","Paid","Closed"].map(q).join(",")].concat(D.rs.map(r=>{const h=splitHours(r);return[r.date,isRO(r)?r.ro:"Hours",r.tag,r.vtype||"",h1(h.C),h1(h.W),h1(h.I),h1(diagHours(r)),h1(+r.hours||0),r.fuel||"",r.paid?"Yes":"",r.closed?"Yes":""].map(q).join(",")}));
   if(downloads)await downloads.save({filename:`Hours ${D.a} to ${D.z}.csv`,data:rows.join("\n")})};
 function renderCalc(){
   const w=$("calc-w").checked,hrs=+$("calc-hrs").value||0,rate=+prefs.payRate||0,shop=+prefs.shopRate||0;
@@ -4683,6 +4686,12 @@ function updateBadge(){if(!("setAppBadge" in navigator))return;try{
   const ws=iso(weekStart(0)),d=new Date();d.setDate(d.getDate()-35);const from=iso(d);
   const n=records.filter(r=>isRO(r)&&!r.paid&&r.date<ws&&r.date>=from).length;
   if(n)navigator.setAppBadge(n).catch(()=>{});else navigator.clearAppBadge().catch(()=>{})}catch(e){}}
+/* gas added: PDIs, rechecks, pre-owned / certified cars and recalls usually need a fill-up */
+function fuelNeeded(){const v=$("vtype")&&$("vtype").value;if(/PDI|pre-owned|Dealer stock/i.test(v||""))return true;
+  return[...document.querySelectorAll("#jobs input, #jobs textarea, #work")].some(e=>/RECALL|CAMPAIGN|\bSSC\b|\bPDI\b|PRE-?DELIVERY/i.test(e.value||""))}
+function fuelHint(){const h=$("fuel-hint");if(!h)return;h.hidden=!(fuelNeeded()&&!$("fuel").value)}
+["vtype","fuel"].forEach(id=>$(id).addEventListener("input",fuelHint));$("vtype").addEventListener("change",fuelHint);
+document.addEventListener("change",e=>{if(e.target.closest&&e.target.closest("#jobs"))fuelHint()});
 $("scanjobs-on").addEventListener("change",()=>savePrefs({scanJobs:$("scanjobs-on").checked},true));
 $("badge-on").addEventListener("change",async()=>{await savePrefs({badge:$("badge-on").checked},true);updateBadge()});
 /* section header icons */
@@ -4851,7 +4860,7 @@ function csvToRecords(text){
     const rec={id:"c"+safeId(ro)+"-"+date,ro,tag:g("Tag").toUpperCase(),date,hours:+g("Flagged hrs")||0,
       vin:g("VIN").toUpperCase(),miles:g("Miles")?(+g("Miles").replace(/,/g,"")||""):"",tech:g("Tech"),work:g("Work performed"),
       maintReset:/^y/i.test(g("Maint reset")),inspection:{},tires:{},recs:[],jobs:[],
-      ymm:g("Year/Make/Model"),engine:g("Engine/drive"),advisor:g("Advisor"),advisorNo:g("Advisor #"),color:g("Color"),stock:g("Stock"),
+      ymm:g("Year/Make/Model"),engine:g("Engine/drive"),advisor:g("Advisor"),advisorNo:g("Advisor #"),color:g("Color"),stock:g("Stock"),vtype:g("Vehicle"),fuel:g("Gas added (gal)"),
       timein:g("Time in"),promised:g("Promised"),createdAt:now,updatedAt:now+rowN,_csv:true};
     ITEMS.forEach(([k,n,b])=>{const v=g(n);const o={s:/^pass/i.test(v)?"pass":/^fail/i.test(v)?"fail":/^attn|^attention/i.test(v)?"attn":"",note:(v.match(/^(?:fail|attn|attention):\s*([\s\S]*)$/i)||[])[1]||""};
       if(b){const m=g(n+" mm");o.mmL=g(n+" L mm")||m;o.mmR=g(n+" R mm")||m;const nums=[o.mmL,o.mmR].filter(x=>x!=="").map(Number);o.mm=nums.length?String(Math.min(...nums)):""}rec.inspection[k]=o});
@@ -5682,7 +5691,7 @@ $("export").onclick=async()=>{
   records.forEach(r=>recordItems(r).filter(i=>!ITEMNAME[i[0]]).forEach(([k,n])=>{if(!seenC.has(n.toLowerCase())){seenC.add(n.toLowerCase());cust.push([k,n])}}));
   const cfs=[];const seenF=new Set();customFields().forEach(f=>{seenF.add(f.id);cfs.push([f.id,f.n])});
   records.forEach(r=>Object.keys(r.custom||{}).forEach(k=>{if(!seenF.has(k)){seenF.add(k);cfs.push([k,((r.customNames||{})[k])||k])}}));
-  const cols=["Date","RO","Tag","VIN","Miles","Tech","Flagged hrs","Work performed","Maint reset",...ITEMS.map(i=>i[1]),...cust.map(c=>c[1]),"Front brakes L mm","Front brakes R mm","Rear brakes L mm","Rear brakes R mm",...TIRES.flatMap(([,n])=>[n+" inside",n+" middle",n+" outside"]),"Recommendations","Job lines","Year/Make/Model","Engine/drive","Advisor","Advisor #","Color","Stock","Time in","Promised",...cfs.map(c=>c[1]),"Customer pay hrs","Warranty hrs","Internal hrs","Warranty multiplier","Warranty bonus hrs","Approved repairs $","Declined repairs $","Entry","RO Log data"];
+  const cols=["Date","RO","Tag","VIN","Miles","Tech","Flagged hrs","Work performed","Maint reset",...ITEMS.map(i=>i[1]),...cust.map(c=>c[1]),"Front brakes L mm","Front brakes R mm","Rear brakes L mm","Rear brakes R mm",...TIRES.flatMap(([,n])=>[n+" inside",n+" middle",n+" outside"]),"Recommendations","Job lines","Year/Make/Model","Engine/drive","Advisor","Advisor #","Color","Stock","Vehicle","Gas added (gal)","Time in","Promised",...cfs.map(c=>c[1]),"Customer pay hrs","Warranty hrs","Internal hrs","Warranty multiplier","Warranty bonus hrs","Approved repairs $","Declined repairs $","Entry","RO Log data"];
   const q=v=>`"${String(v==null?"":v).replace(/"/g,'""')}"`;
   const rows=records.slice().sort((a,b)=>(a.date||"").localeCompare(b.date||"")).map(r=>{const i=r.inspection||{},t=r.tires||{};
     return[r.date,r.ro,r.tag,r.vin,r.miles,r.tech,h1(r.hours),r.work,r.maintReset?"Yes":"",
@@ -5691,7 +5700,7 @@ $("export").onclick=async()=>{
       ...TIRES.flatMap(([k])=>{const v=t[k]||{};return[v.in!=null?v.in:v.edge,v.mid,v.out!=null?v.out:v.edge]}),
       (r.recs||[]).map(x=>[x.qt&&x.qt+"x",x.desc,x.part,x.price&&"$"+x.price,x.hrs&&x.hrs+"h",x.status&&"["+x.status+"]"].filter(Boolean).join(" ")).join(" | "),
       (r.jobs||[]).map(j=>[j.type,j.op,j.desc,j.hrs&&j.hrs+"h",j.type==="W"&&!jobGetsMult(j)?"(no mult)":""].filter(Boolean).join(" ")).join(" | "),
-      r.ymm,r.engine,r.advisor,r.advisorNo,r.color,r.stock,r.timein,r.promised,...cfs.map(([k])=>{const v=(r.custom||{})[k];return v===true?"Yes":v===false?"":v}),...(()=>{const h=splitHours(r),b=bonusFor(r);return[h1(h.C),h1(h.W),h1(h.I),b.m>1&&b.w?b.m:"",b.b?h1(b.b):""]})(),...(()=>{const T=recTotals(r.recs);return[T.approved.n?T.approved.$.toFixed(2):"",T.declined.n?T.declined.$.toFixed(2):""]})(),r.kind==="hours"?(r.span==="week"?"Week total (no RO)":"Hours only (no RO)"):"RO",JSON.stringify(r)].map(q).join(",")});
+      r.ymm,r.engine,r.advisor,r.advisorNo,r.color,r.stock,r.vtype,r.fuel,r.timein,r.promised,...cfs.map(([k])=>{const v=(r.custom||{})[k];return v===true?"Yes":v===false?"":v}),...(()=>{const h=splitHours(r),b=bonusFor(r);return[h1(h.C),h1(h.W),h1(h.I),b.m>1&&b.w?b.m:"",b.b?h1(b.b):""]})(),...(()=>{const T=recTotals(r.recs);return[T.approved.n?T.approved.$.toFixed(2):"",T.declined.n?T.declined.$.toFixed(2):""]})(),r.kind==="hours"?(r.span==="week"?"Week total (no RO)":"Hours only (no RO)"):"RO",JSON.stringify(r)].map(q).join(",")});
   try{await downloads.save({filename:`ro-log-${today()}.csv`,data:[cols.map(q).join(","),...rows].join("\n")});}catch(e){}
 };
 
