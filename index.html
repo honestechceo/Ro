@@ -166,7 +166,8 @@ main{padding-block:16px calc(120px + env(safe-area-inset-bottom,0px))}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
 .f{display:grid;gap:4px;min-width:0}
 .f label,.flabel{font:600 .78rem var(--f-display);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-.f input,.f textarea{width:100%;min-width:0;height:44px;border:1px solid var(--line);border-radius:8px;background:var(--sunk);padding:0 12px}
+.f input,.f textarea,.f select{width:100%;min-width:0;height:44px;border:1px solid var(--line);border-radius:8px;background:var(--sunk);padding:0 12px}
+.f select{color:var(--ink);font:inherit}
 .f textarea{height:auto;min-height:72px;padding:10px 12px;resize:vertical}
 .f input.mono{font-family:var(--f-mono);text-transform:uppercase}
 .f.hours input{font:700 1.4rem var(--f-display);font-variant-numeric:tabular-nums;color:var(--accent)}
@@ -1318,6 +1319,7 @@ details.sec>summary>h2 small{margin-left:auto;font:500 .75rem var(--f-body);lett
         <div class="grid">
           <div class="f" data-fld="color"><label for="color">Color</label><input id="color"></div>
           <div class="f" data-fld="stock"><label for="stock">Stock #</label><input id="stock" class="mono"></div>
+          <div class="f" data-fld="vtype"><label for="vtype">Vehicle</label><select id="vtype"><option value="">—</option><option>Customer</option><option>New / PDI</option><option>PDI recheck</option><option>Pre-owned</option><option>Certified pre-owned</option><option>Dealer stock</option></select></div>
 
         </div>
         <div class="grid">
@@ -1741,7 +1743,7 @@ function render(){
 
   const q=$("q").value.trim().toLowerCase(),sf=stFilterVal();renderStFilter();
   if(sf&&!q)$("daypanel").hidden=true;
-  let list=!q&&sf?records.filter(r=>stMatch(r,sf)):q?records.filter(r=>[r.ro,r.tag,r.vin,r.work,r.ymm,r.engine,r.advisor,r.advisorNo,r.note,r.color,r.stock,Object.values(r.custom||{}).join(" "),(r.parts||[]).map(x=>x.pn+" "+x.desc).join(" "),(r.jobs||[]).map(j=>j.op+" "+j.desc).join(" ")].join(" ").toLowerCase().includes(q)):weekMode?inWeek:dRecs;
+  let list=!q&&sf?records.filter(r=>stMatch(r,sf)):q?records.filter(r=>[r.ro,r.tag,r.vin,r.work,r.ymm,r.engine,r.advisor,r.advisorNo,r.note,r.color,r.stock,r.vtype,Object.values(r.custom||{}).join(" "),(r.parts||[]).map(x=>x.pn+" "+x.desc).join(" "),(r.jobs||[]).map(j=>j.op+" "+j.desc).join(" ")].join(" ").toLowerCase().includes(q)):weekMode?inWeek:dRecs;
   list=list.slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.updatedAt||0)-(a.updatedAt||0));
   const L=$("list");
   if(!list.length){
@@ -2215,7 +2217,7 @@ $("batt-in").addEventListener("change",async e=>{const f=e.target.files&&e.targe
   finally{if(btn){btn.disabled=false;btn.textContent="📷 Battery test printout"}}});
 /* ---------- customize the RO form: sections, fields, your own fields, inspection list ---------- */
 const FORM_SECS=[["main","RO basics"],["jobs","Job lines"],["parts","Parts"],["vehicle","Advisor & vehicle"],["insp","Multipoint inspection"],["tires","Tire tread"],["recs","Recommended repairs"],["wphotos","Warranty photos"],["files","Files & photos"],["custom","Your fields"],["pay","Pay tracking"]];
-const FORM_FLDS=[["status","RO status"],["timer","Job timer"],["tag","Tag #"],["vin","VIN #"],["miles","Miles"],["tech","Tech #"],["work","Work performed"],["advisor","Advisor"],["ymm","Year / make / model"],["engine","Engine / drive"],["color","Color"],["stock","Stock #"],["timein","Time received"],["promised","Promised"],["maint","Reset maintenance light"]];
+const FORM_FLDS=[["status","RO status"],["timer","Job timer"],["tag","Tag #"],["vin","VIN #"],["miles","Miles"],["tech","Tech #"],["work","Work performed"],["advisor","Advisor"],["ymm","Year / make / model"],["engine","Engine / drive"],["color","Color"],["stock","Stock #"],["vtype","Vehicle (customer, PDI, pre-owned)"],["timein","Time received"],["promised","Promised"],["maint","Reset maintenance light"]];
 function formCfg(){const f=prefs.form||{},ids=FORM_SECS.map(s=>s[0]);let order=(f.order||[]).filter(k=>ids.includes(k));
   ids.forEach(k=>{if(!order.includes(k))order.push(k)});order=["main",...order.filter(k=>k!=="main")];return{order,hide:f.hide||{},hideFld:f.hideFld||{}}}
 function applyForm(){const c=formCfg(),F=$("view-form"),tail=$("del").closest(".tools");
@@ -2374,7 +2376,7 @@ function openForm(r){
     if(b){const L=v.mmL!=null?v.mmL:v.mm,R=v.mmR!=null?v.mmR:v.mm;$(`i-${k}-mmL`).value=L==null?"":L;$(`i-${k}-mmR`).value=R==null?"":R}});
   const t=r.tires||{};TIRES.forEach(([k])=>{const v=t[k]||{},e=x=>x==null?"":x;$(`t-${k}-in`).value=e(v.in!=null?v.in:v.edge);$(`t-${k}-mid`).value=e(v.mid);$(`t-${k}-out`).value=e(v.out!=null?v.out:v.edge)});
   (r.recs||[]).forEach(addRec);
-  ["ymm","engine","color","stock","advisor","advisorNo","timein","promised"].forEach(k=>$(k).value=r[k]||"");
+  ["ymm","engine","color","stock","vtype","advisor","advisorNo","timein","promised"].forEach(k=>$(k).value=r[k]||"");
   (r.jobs&&r.jobs.length?r.jobs:[null]).forEach(addJob);
   renderAdvChips();renderFavChips();
   $("paid").checked=!!r.paid;["pending","paid","rejected"].forEach(k=>$("cl-"+k).checked=r.claim===k);
@@ -2402,7 +2404,7 @@ function collect(){
     if(b){o.mmL=$(`i-${k}-mmL`).value;o.mmR=$(`i-${k}-mmR`).value;const nums=[o.mmL,o.mmR].filter(x=>x!=="").map(Number);o.mm=nums.length?String(Math.min(...nums)):""}if(c||k.startsWith("c_")||n!==ITEMNAME[k])o.name=n;rec.inspection[k]=o});
   TIRES.forEach(([k])=>rec.tires[k]={in:$(`t-${k}-in`).value,mid:$(`t-${k}-mid`).value,out:$(`t-${k}-out`).value});
   rec.jobs=readJobs();
-  ["ymm","engine","color","stock","advisor","advisorNo","timein","promised"].forEach(k=>rec[k]=$(k).value.trim());
+  ["ymm","engine","color","stock","vtype","advisor","advisorNo","timein","promised"].forEach(k=>rec[k]=$(k).value.trim());
   if(rec.stock)rec.stock=rec.stock.toUpperCase();
   {const keep={},ids=new Set(customFields().map(f=>f.id));Object.entries((prev&&prev.custom)||{}).forEach(([k,v])=>{if(!ids.has(k))keep[k]=v});
    const cv=Object.assign(keep,readCustom());if(Object.keys(cv).length)rec.custom=cv;
@@ -5125,13 +5127,85 @@ function parseROWords(words,out){
   (out.jobs||[]).forEach(j=>{if(/^\d\d/.test(j.op))j.op=j.op.slice(0,2)+j.op.slice(2).replace(/(?<=[A-Z])O(?=[A-Z0-9])|(?<=\d)O/g,"0")});
   return out}
 
+/* ---------- read labeled boxes on any dealer's RO or repair sheet ----------
+   Every DMS prints the same facts under different labels (R.O. NO., REPAIR ORDER #, HAT, STK, ODOMETER, WRITER…).
+   Find each label, then read the value beside it or under it. Only fills what the layout-specific readers missed. */
+const RO_LABELS={
+  ro:[["RO"],["RONO"],["RONUMBER"],["REPAIR","ORDER"],["REPAIRORDER"],["WORK","ORDER"],["INVOICE"],["INV"]],
+  tag:[["TAG"],["TAGNO"],["HAT"],["HATNO"],["HANG","TAG"],["KEY","TAG"],["KEYTAG"]],
+  stock:[["STOCK"],["STOCKNO"],["STK"],["STKNO"]],
+  color:[["COLOR"],["COLOUR"],["EXT","COLOR"],["EXTERIOR","COLOR"],["EXTCOLOR"]],
+  mileage:[["MILEAGE"],["MILEAGEIN"],["MILEAGE","IN"],["ODOMETER"],["ODOM"],["ODO"],["ODO","IN"],["MILES"],["MILES","IN"],["MI","IN"]],
+  advisor:[["SERVICE","ADVISOR"],["ADVISOR"],["ADVISER"],["SERVICE","WRITER"],["WRITER"],["SERVICE","CONSULTANT"],["CONSULTANT"],["SVC","ADVISOR"],["SA"]],
+  tech:[["TECH"],["TECHNO"],["TECH","NO"],["TECHNICIAN","NO"]],
+  vin:[["VIN"],["VINNO"],["VIN","NO"],["SERIAL"]]};
+const RO_LABEL_WORDS=new Set(Object.values(RO_LABELS).flat(2).concat(["NO","NUMBER","NUM","DATE","TIME","PHONE","CUSTOMER","NAME","YEAR","MAKE","MODEL","LICENSE","LIC","PLATE","PROMISED","OPENED","CLOSED","IN","OUT","PAY","TYPE","PAGE","DELIVERY","PO","ENGINE","TRANS","OPTIONS"]));
+const RO_STOPNAMES=/^(NO|NUMBER|DATE|TIME|PHONE|CUSTOMER|NAME|TAG|HAT|STOCK|COLOR|VIN|MILEAGE|MILES|ODOMETER|RO|YEAR|MAKE|MODEL|LICENSE|PROMISED|PAGE|SERVICE|ADVISOR|WRITER|TECH|PAY|TYPE|WAITER|WAITING|CASH|WARRANTY|INTERNAL|TOTAL|AND|THE|OF|ON|AT|PO|IN|OUT)$/;
+const ROF={
+  ro:t=>{const v=t.join("").toUpperCase().replace(/[^A-Z0-9]/g,"").replace(/O/g,"0");return/^[A-Z]{0,2}\d{4,9}[A-Z]?$/.test(v)&&!/^(19|20)\d\d$/.test(v)?v:""},
+  tag:t=>{const v=(t[0]||"").toUpperCase().replace(/[^A-Z0-9-]/g,"");return/^[A-Z]{0,3}-?\d{1,6}[A-Z]?$/.test(v)?v:""},
+  stock:t=>{const v=t.slice(0,2).join("").toUpperCase().replace(/[^A-Z0-9-]/g,"");return v.length>=3&&v.length<=14&&(v.match(/\d/g)||[]).length>=2?v:""},
+  color:t=>{const w=[];for(const x of t){const u=x.toUpperCase().replace(/[^A-Z\/-]/g,"");if(!u||u.length<3&&!/\//.test(u)||RO_STOPNAMES.test(u)||/\d/.test(x))break;w.push(u);if(w.length===3)break}return w.join(" ")},
+  mileage:t=>{const s=t.slice(0,2).join(" ").replace(/[,.\s](?=\d{3}\b)/g,"");const m=s.match(/^\D{0,2}(\d{1,7})(?!\d)/);return m&&+m[1]<2000000?String(+m[1]):""},
+  advisor:t=>{let no="",i=0;const n0=(t[0]||"").replace(/[^0-9]/g,"");if(n0.length>=2&&n0.length<=7&&/^\W*\d+\W*$/.test(t[0])){no=n0;i=1}
+    const nm=[];for(const x of t.slice(i)){const u=x.replace(/[^A-Za-z.'-]/g,"");if(u.length<2||RO_STOPNAMES.test(u.toUpperCase())||/\d/.test(x))break;nm.push(u);if(nm.length===3)break}
+    if(!nm.length&&!no)return"";return{no,name:nm.map(s=>s.charAt(0).toUpperCase()+s.slice(1).toLowerCase()).join(" ")}},
+  tech:t=>{const v=(t[0]||"").replace(/[^0-9]/g,"");return v.length>=1&&v.length<=6?v:""},
+  vin:t=>{const v=t.join("").toUpperCase().replace(/[^A-Z0-9]/g,"").replace(/[IOQ]/g,c=>c==="I"?"1":"0");return v.length===17?v:""}};
+function roLabelFields(words,text){const out={};
+  const W=(words||[]).map(w=>({t:String(w.t||"").trim(),k:String(w.t||"").toUpperCase().replace(/[^A-Z0-9]/g,""),x:+w.x,y:+w.y,w:+w.w,h:+w.h})).filter(w=>w.t&&isFinite(w.x));
+  W.forEach(w=>{w.cx=w.x+w.w/2;w.cy=w.y+w.h/2});
+  const hs=W.map(w=>w.h).sort((a,b)=>a-b),medH=hs[Math.floor(hs.length/2)]||20;
+  const sameLine=(a,b)=>Math.abs(a.cy-b.cy)<Math.max(a.h,b.h)*.55;
+  const next=w=>W.filter(o=>o!==w&&sameLine(o,w)&&o.x>=w.x+w.w-2&&o.x-(w.x+w.w)<Math.max(w.h,medH)*1.6).sort((a,b)=>a.x-b.x)[0];
+  const isLabelWord=w=>RO_LABEL_WORDS.has(w.k);
+  // value to the right on the same line, else on the line just under the label
+  const valueAt=(lab,end)=>{const h=Math.max(lab.h,medH);
+    const right=W.filter(o=>o.k!==""&&sameLine(o,end)&&o.x>end.x+end.w-2&&o.x-(end.x+end.w)<h*9).sort((a,b)=>a.x-b.x);
+    const run=[];for(const o of right){if(isLabelWord(o)&&run.length)break;if(isLabelWord(o))continue;if(run.length&&o.x-(run[run.length-1].x+run[run.length-1].w)>h*2.2)break;run.push(o)}
+    const x0=lab.x-h*1.2,x1=Math.max(end.x+end.w,lab.x+h*9);
+    const under=W.filter(o=>o.k!==""&&!isLabelWord(o)&&o.cy>lab.cy+h*.55&&o.cy<lab.cy+h*3.2&&o.cx>x0&&o.cx<x1).sort((a,b)=>a.cy-b.cy||a.x-b.x);
+    const line=under.length?under.filter(o=>sameLine(o,under[0])).sort((a,b)=>a.x-b.x):[];
+    return[run.map(o=>o.t),line.map(o=>o.t)]};
+  const prevOf=lab=>W.filter(o=>sameLine(o,lab)&&o.x<lab.x&&lab.x-(o.x+o.w)<lab.h*1.6).sort((a,b)=>b.x-a.x)[0];
+  for(const[f,pats]of Object.entries(RO_LABELS)){
+    // try the most specific label first (MILEAGE before MILES), then each place it's printed
+    for(const p of pats){if(f in out)break;
+    for(const lab of W){if(lab.k!==p[0])continue;let hit=lab;{let ok=true;for(const tok of p.slice(1)){const n=next(hit);if(!n||n.k!==tok){ok=false;break}hit=n}if(!ok)continue}
+      const pv=prevOf(lab);if(pv&&/^(EXPIRATION|EXP|WARRANTY|CONTRACT|LICENSE|LIC|PLATE|LICENCE|DELIVERY|INSERVICE|LAST)$/.test(pv.k))continue;
+      // "RO" alone is too common; it needs NO/#/NUMBER/: after it
+      let end=hit;for(let i=0;i<2;i++){const n=next(end);if(n&&(n.k===""||/^(NO|NUMBER|NUM)$/.test(n.k)))end=n;else break}
+      const marked=end!==hit||/[#:]$/.test(hit.t)||/NO$/.test(hit.k)&&hit.k!=="RO";
+      if((f==="ro"&&lab.k==="RO"||f==="advisor"&&lab.k==="SA"||f==="mileage"&&lab.k==="MI")&&!marked)continue;
+      for(const toks of valueAt(lab,end)){if(!toks.length)continue;const v=ROF[f](toks);if(v&&!(f in out)){out[f]=v}if(f in out)break}
+      if(f in out)break}}}
+  // text-only fallback: "LABEL: value" on one line
+  const U=String(text||"").toUpperCase();
+  const tx=(f,re)=>{if(f in out)return;const m=U.match(re);if(m){const v=ROF[f](m[1].trim().split(/\s+/));if(v)out[f]=v}};
+  tx("ro",/(?:\bR\.?\s?O\.?\s*(?:NO\.?|NUMBER|#)|REPAIR\s+ORDER\s*(?:NO\.?|NUMBER|#)?|WORK\s+ORDER\s*(?:NO\.?|#)?)\s*[:#.]?\s*([A-Z]{0,2}\d{4,9}[A-Z]?)\b/);
+  tx("tag",/(?<!LIC(?:ENSE)?\.?\s{0,2})\b(?:TAG|HAT|HANG\s+TAG|KEY\s+TAG)\s*(?:NO\.?|NUMBER|#)?\s*[:#.]?\s*([A-Z]{0,3}-?\d{1,6}[A-Z]?)\b/);
+  tx("stock",/\b(?:STOCK|STK)\s*(?:NO\.?|NUMBER|#)?\s*[:#.]?\s*([A-Z0-9-]{3,14})\b/);
+  tx("mileage",/\b(?:MILEAGE(?:\s+IN)?|ODOMETER|ODO(?:\s+IN)?|MILES\s+IN)\s*[:#.]?\s*([\d,]{1,9})/);
+  tx("color",/\b(?:EXT(?:ERIOR)?\.?\s+)?COLOU?R\s*[:#.]\s*([A-Z\/ -]{3,30})/);
+  tx("advisor",/\b(?:SERVICE\s+)?(?:ADVISOR|ADVISER|WRITER|CONSULTANT)\s*(?:NAME)?\s*[:#.]\s*((?:\d{2,7}\s+)?[A-Z][A-Z.'-]+(?:\s+[A-Z][A-Z.'-]+){0,2})/);
+  // what kind of job this is: new car PDI, a PDI recheck, a used / certified car, or a customer's car
+  const vt=/RE-?\s?CHECK\s*(?:OF\s+)?(?:THE\s+)?PDI|PDI\s*RE-?\s?CHECK|RE-?\s?PDI\b/.test(U)?"PDI recheck":
+    /\bPDI\b|PRE-?\s?DELIVERY/.test(U)?"New / PDI":
+    /CERTIFIED\s+PRE-?\s?OWNED|\bCPO\b|L\/CERTIFIED|\bTCUV\b/.test(U)?"Certified pre-owned":
+    /PRE-?\s?OWNED|USED\s+(?:CAR|VEH|VEHICLE)|\bRECON(?:DITION(?:ING)?)?\b|\bUCI\b|USED CAR (?:DEPT|DEPARTMENT)/.test(U)?"Pre-owned":"";
+  if(vt)out.vtype=vt;else if(out.stock)out.vtype="Dealer stock";
+  return out}
+function mergeLabelFields(x,L){if(!L)return x;
+  ["ro","tag","stock","color","mileage","vin","tech","vtype"].forEach(k=>{if(L[k]&&!x[k])x[k]=L[k]});
+  if(L.advisor&&!x.advisor&&!x.advisorName){if(L.advisor.name)x.advisor=L.advisor.name;if(L.advisor.no&&!x.advisorNo)x.advisorNo=L.advisor.no}
+  return x}
 async function readROWithClaude(file){
   let sample=null;try{sample=window.claude&&await window.claude.use("sample")}catch(e){}
   if(!sample)return null;const caps=await sample.limits().catch(()=>null);if(!caps||!caps.images)return null;
   const blob=await new Promise(r=>shrink(file,1800).then(c=>c.toBlob(r,"image/jpeg",.85)));
   try{const o=await sample.json(`This is a photo of an automotive dealership repair order (RO) page. Read only these fields and reply as JSON:
-{"ro":"the repair order number: labeled R.O. NO., usually printed large at the top right and again at the bottom after TECH COPY; it is also the last 6 digits of the code under the barcode. Not the customer, stock, advisor or tag number","vin":"17-character VIN","year":"model year","make":"","model":"model and trim as printed","mileage":"","color":"","stock":"stock number","tag":"tag number","advisorName":"","advisorNo":"","jobs":[{"type":"C, W or I (customer pay, warranty, internal; use C if not shown)","op":"operation/op code","desc":"operation description"}]}
-For tag use the TAG NO. box (or the large number on the hanging tag). For jobs, list the numbered job lines (like "1 C 33LEZ0W2050 50,000 MILE SERVICE") but skip loaner/courtesy car, disclaimer, floor mat and sublet/specialist lines, and ignore the SERVICE HISTORY section. Use "" for anything not printed or not readable. Never include the customer's name, address, phone or email.`,{images:blob,modelTier:"default"});
+{"ro":"the repair order number: labeled R.O. NO., usually printed large at the top right and again at the bottom after TECH COPY; it is also the last 6 digits of the code under the barcode. Not the customer, stock, advisor or tag number","vin":"17-character VIN","year":"model year","make":"","model":"model and trim as printed","mileage":"","color":"","stock":"stock number (STOCK, STK), if printed","vtype":"one of: New / PDI, PDI recheck, Pre-owned, Certified pre-owned, Customer, or \"\" if unclear","tag":"tag or hat number (TAG, HAT, KEY TAG; not the license plate)","advisorName":"","advisorNo":"","jobs":[{"type":"C, W or I (customer pay, warranty, internal; use C if not shown)","op":"operation/op code","desc":"operation description"}]}
+Labels differ between dealers: the RO number may be labeled R.O. NO., REPAIR ORDER #, RO # or WORK ORDER; mileage may be MILEAGE IN, ODOMETER or MILES; the advisor may be SERVICE ADVISOR, WRITER or CONSULTANT. For tag use the TAG or HAT box (or the large number on the hanging tag). For jobs, list the numbered job lines (like "1 C 33LEZ0W2050 50,000 MILE SERVICE") but skip loaner/courtesy car, disclaimer, floor mat and sublet/specialist lines, and ignore the SERVICE HISTORY section. Use "" for anything not printed or not readable. Never include the customer's name, address, phone or email.`,{images:blob,modelTier:"default"});
     return o&&typeof o==="object"?o:null}catch(e){return e&&e.code==="not_granted"?{denied:true}:null}}
 async function readROWithOCR(file,progress){
   if(!await loadScript("https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js","Tesseract"))return null;
@@ -5144,14 +5218,14 @@ async function readROWithOCR(file,progress){
       const score=(x.ro?1:0)+(x.vin?2:0)+(x.make?1:0)+x.jobs.length;if(!best||score>best.score){best={...x,score};bestC=c}if(x.vin&&x.ro)break}catch(e){}}
   if(best&&bestC){progress&&progress(plans.length+1,plans.length+1);
     try{await ocrWorker.setParameters({tessedit_pageseg_mode:"11"});const{data}=await ocrWorker.recognize(bestC,{},{text:true,blocks:true});
-      parseROWords(ocrWords(data),best)}catch(e){}
+      const ow=ocrWords(data);parseROWords(ow,best);mergeLabelFields(best,roLabelFields(ow,data&&data.text))}catch(e){}
     try{await ocrWorker.setParameters({tessedit_pageseg_mode:"6"})}catch(e){}}
   return best}
 async function readROWithGoogle(file){
   try{const c=await shrink(file,2400),j=await readImage(c.toDataURL("image/jpeg",.9).split(",")[1]);
     lastScan={kind:"ro",at:Date.now(),w:c.width,h:c.height,words:j.words||[],text:j.text||""};
-    const x=parseROText(j.text||"","",vinFromText,advisors());parseROWords(j.words||[],x);
-    return x.ro||x.vin||x.make||(x.jobs||[]).length?x:null}catch(e){return null}}
+    const x=parseROText(j.text||"","",vinFromText,advisors());parseROWords(j.words||[],x);mergeLabelFields(x,roLabelFields(j.words||[],j.text||""));
+    return x.ro||x.vin||x.make||x.tag||x.stock||(x.jobs||[]).length?x:null}catch(e){return null}}
 function ocrWords(data){const out=[];const push=w=>{const b=w.bbox||{};if(w.text&&w.text.trim())out.push({t:w.text.trim(),x:b.x0,y:b.y0,w:b.x1-b.x0,h:b.y1-b.y0})};
   if(data&&Array.isArray(data.words)&&data.words.length)data.words.forEach(push);
   else((data&&data.blocks)||[]).forEach(bl=>(bl.paragraphs||[]).forEach(p=>(p.lines||[]).forEach(l=>(l.words||[]).forEach(push))));
@@ -5164,6 +5238,7 @@ function applyRO(x){const filled=[];
   const yr=x.year?String(x.year).slice(-2):vinValid(vin)&&vinYear(vin)?String(vinYear(vin)).slice(2):"";
   if(x.make||x.model)set("ymm",[yr,titleMake(x.make),String(x.model||"").trim()].filter(Boolean).join(" "),"vehicle");
   set("miles",String(x.mileage||"").replace(/[^0-9]/g,""),"mileage");set("color",x.color,"color");set("stock",x.stock,"stock #");set("tag",x.tag,"tag");
+  if(x.vtype&&$("vtype")&&!$("vtype").value){const o=[...$("vtype").options].find(o=>o.value===x.vtype);if(o){$("vtype").value=x.vtype;filled.push(x.vtype==="Dealer stock"?"dealer stock":x.vtype)}}
   if(!$("advisor").value.trim()&&(x.advisorName||x.advisor||x.advisorNo)){$("advisor").value=x.advisorName||x.advisor||"";$("advisorNo").value=String(x.advisorNo||"").replace(/\D/g,"");filled.push("advisor");renderAdvChips()}
   const have=new Set(readJobs().map(j=>String(j.op).toUpperCase()).filter(Boolean));let nj=0;
   for(const j of (prefs.scanJobs===true?x.jobs||[]:[])){const op=String(j.op||"").toUpperCase().trim(),desc=String(j.desc||"").trim();if(!op&&!desc)continue;if(op&&have.has(op))continue;if(junkJob(op,desc))continue;
@@ -5191,7 +5266,7 @@ $("ro-file").addEventListener("change",async e=>{
     if(!x&&!inClaude&&canRead())x=await readROWithGoogle(f);
     if(!x&&!inClaude)x=await readROWithOCR(f,(i,n)=>{b.textContent=`Reading RO ${i}/${n}…`});
     x=x||{jobs:[]};if(code)x.ro=code;
-    if(!x.ro&&!x.vin&&!(x.jobs||[]).length&&!x.make){toast("Couldn't read this RO. Take a straight, close photo of the top half of the first page.");return}
+    if(!x.ro&&!x.vin&&!(x.jobs||[]).length&&!x.make&&!x.tag&&!x.stock){toast("Couldn't read this RO. Take a straight, close photo of the top half of the first page.");return}
     const r=applyRO(x);
     if(!r.filled.length){toast("Those details are already filled in");return}
     if(r.vin&&!$("engine").value.trim()){await runDecode(r.vin);r.filled.push("engine")}
@@ -5275,7 +5350,8 @@ async function readSheetWithGoogle(file){
   const c=await shrink(file,2000),b64=c.toDataURL("image/jpeg",.9).split(",")[1];
   let j;try{j=await readImage(b64)}catch(e){return{err:"failed",msg:e&&e.msg?"Handwriting reader: "+e.msg:"Couldn't reach the handwriting reader. Check your connection."}}
   lastScan={at:Date.now(),w:c.width,h:c.height,words:j.words||[],text:j.text||""};
-  let x=parseSheetWords(j.words||[],c);if(!x)return{err:"none",msg:"Couldn't find the repair sheet's labels in that photo. Take a straight photo of the whole page."};
+  let x=parseSheetWords(j.words||[],c);if(x){const L=roLabelFields(j.words||[],"");["tag","ro","tech","vin"].forEach(k=>{if(L[k]&&!x[k])x[k]=L[k]});if(L.mileage&&!x.miles)x.miles=L.mileage}
+  if(!x)return{err:"none",msg:"Couldn't find the repair sheet's labels in that photo. Take a straight photo of the whole page."};
   const odd=t=>t.mid&&[t.edge1,t.edge2].some(e=>e&&+e>+t.mid);
   const miss=k=>{const t=(x.tires||{})[k]||{};return!t.mid||!t.edge1||odd(t)};
   // handwriting in the small tire boxes reads better up close, so always take a second, zoomed look at that row
