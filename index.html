@@ -5057,6 +5057,9 @@ function parseROText(text,bar,vinFromText,advisors){
   const mm=U.match(new RegExp("(?:^|[^A-Z])("+MAKERE+")\\s*/\\s*([A-Z0-9][A-Z0-9 .\\-]{1,30}?)(?=\\s*/|\\s*\\||\\s{2,}|\\s[^A-Z0-9 ]|$)","m"));
   if(mm){out.make=mm[1].replace(/^CHEVY$/,"CHEVROLET");out.model=mm[2].replace(/€/g,"E").trim();
     const body=U.slice(mm.index+mm[0].length).match(/^\s*\/\s*([A-Z]{3,12})(?![A-Z0-9])/);if(body&&!/^(PREM|PR)$/.test(body[1]))out.model+=" "+body[1]}
+  // other layouts: "2018 Honda HR-V LX" (year, make, model on one line)
+  if(!out.make){const g=U.match(new RegExp("(?:^|[^0-9])((?:19|20)\\d\\d)\\s+("+MAKERE+")\\s+([A-Z0-9][A-Z0-9\\-]{0,11}(?![A-Z0-9])(?:\\s+(?!\\d\\.\\dL)[A-Z0-9][A-Z0-9\\-]{0,11}(?![A-Z0-9\\-])){0,2})","m"));
+    if(g){out.year=g[1];out.make=g[2].replace(/^CHEVY$/,"CHEVROLET");out.model=g[3].trim()}}
   // RO date: first m/d/yy on the page
   const dm=U.match(/(?<![0-9])(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?![0-9])/);
   if(dm){let y=+dm[3];if(y<100)y+=2000;const mo=+dm[1],da=+dm[2];if(mo>=1&&mo<=12&&da>=1&&da<=31)out.date=`${y}-${String(mo).padStart(2,"0")}-${String(da).padStart(2,"0")}`}
@@ -5142,7 +5145,8 @@ const RO_LABELS={
 const RO_LABEL_WORDS=new Set(Object.values(RO_LABELS).flat(2).concat(["NO","NUMBER","NUM","DATE","TIME","PHONE","CUSTOMER","NAME","YEAR","MAKE","MODEL","LICENSE","LIC","PLATE","PROMISED","OPENED","CLOSED","IN","OUT","PAY","TYPE","PAGE","DELIVERY","PO","ENGINE","TRANS","OPTIONS"]));
 const RO_STOPNAMES=/^(NO|NUMBER|DATE|TIME|PHONE|CUSTOMER|NAME|TAG|HAT|STOCK|COLOR|VIN|MILEAGE|MILES|ODOMETER|RO|YEAR|MAKE|MODEL|LICENSE|PROMISED|PAGE|SERVICE|ADVISOR|WRITER|TECH|PAY|TYPE|WAITER|WAITING|CASH|WARRANTY|INTERNAL|TOTAL|AND|THE|OF|ON|AT|PO|IN|OUT)$/;
 const ROF={
-  ro:t=>{const v=t.join("").toUpperCase().replace(/[^A-Z0-9]/g,"").replace(/O/g,"0");return/^[A-Z]{0,2}\d{4,9}[A-Z]?$/.test(v)&&!/^(19|20)\d\d$/.test(v)?v:""},
+  ro:t=>{for(const v0 of [t[0],t.slice(0,2).join("")]){const v=String(v0||"").toUpperCase().replace(/[^A-Z0-9]/g,"").replace(/^R0?O?(?=\d)|^RO(?=\d)/,"").replace(/O/g,"0");
+    if(/^[A-Z]{0,2}\d{3,9}[A-Z]?$/.test(v)&&!/^(19|20)\d\d$/.test(v))return v}return""},
   tag:t=>{const v=(t[0]||"").toUpperCase().replace(/[^A-Z0-9-]/g,"");return/^[A-Z]{0,3}-?\d{1,6}[A-Z]?$/.test(v)?v:""},
   stock:t=>{const v=t.slice(0,2).join("").toUpperCase().replace(/[^A-Z0-9-]/g,"");return v.length>=3&&v.length<=14&&(v.match(/\d/g)||[]).length>=2?v:""},
   color:t=>{const w=[];for(const x of t){const u=x.toUpperCase().replace(/[^A-Z\/-]/g,"");if(!u||u.length<3&&!/\//.test(u)||RO_STOPNAMES.test(u)||/\d/.test(x))break;w.push(u);if(w.length===3)break}return w.join(" ")},
@@ -5179,8 +5183,10 @@ function roLabelFields(words,text){const out={};
       if((f==="ro"&&lab.k==="RO"||f==="advisor"&&lab.k==="SA"||f==="mileage"&&lab.k==="MI")&&!marked)continue;
       for(const toks of valueAt(lab,end)){if(!toks.length)continue;const v=ROF[f](toks);if(v&&!(f in out)){out[f]=v}if(f in out)break}
       if(f in out)break}}}
+  if(!("ro" in out)){const lone=W.filter(w=>/^R\.?O\.?[-#:]\d{3,9}$/i.test(w.t)).sort((a,b)=>b.h-a.h)[0];if(lone)out.ro=lone.t.replace(/\D/g,"")}
   // text-only fallback: "LABEL: value" on one line
   const U=String(text||"").toUpperCase();
+  if(!("ro" in out)){const m=U.match(/(?:^|[^A-Z0-9])R\.?O\.?\s?[-#:]\s?(\d{3,9})(?!\d)/);if(m)out.ro=m[1]}
   const tx=(f,re)=>{if(f in out)return;const m=U.match(re);if(m){const v=ROF[f](m[1].trim().split(/\s+/));if(v)out[f]=v}};
   tx("ro",/(?:\bR\.?\s?O\.?\s*(?:NO\.?|NUMBER|#)|REPAIR\s+ORDER\s*(?:NO\.?|NUMBER|#)?|WORK\s+ORDER\s*(?:NO\.?|#)?)\s*[:#.]?\s*([A-Z]{0,2}\d{4,9}[A-Z]?)\b/);
   tx("tag",/(?<!LIC(?:ENSE)?\.?\s{0,2})\b(?:TAG|HAT|HANG\s+TAG|KEY\s+TAG)\s*(?:NO\.?|NUMBER|#)?\s*[:#.]?\s*([A-Z]{0,3}-?\d{1,6}[A-Z]?)\b/);
