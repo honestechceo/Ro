@@ -196,6 +196,16 @@ main{padding-block:16px calc(120px + env(safe-area-inset-bottom,0px))}
 .seg input:focus-visible+label{outline:2px solid var(--accent);outline-offset:-2px}
 .seg input.p:checked+label{background:var(--pass);color:var(--surface)}
 .seg input.x:checked+label{background:var(--fail);color:var(--surface)}
+.seg input.n:checked+label{background:var(--muted);color:var(--surface)}
+.seg.four label{padding:8px 11px}
+@media (max-width:520px){.irow{grid-template-columns:1fr}.irow .seg.four{width:100%}.irow .seg.four label{flex:1 1 0;text-align:center;padding:9px 4px}}
+.irow .cca span{display:inline-flex;align-items:center;gap:8px}
+.irow.is-na .name{opacity:.6}
+.tire .psi{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:.8rem;color:var(--muted)}.tire .psi input{width:72px}
+.irow .cca{grid-column:1/-1;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
+.irow .cca input{width:76px;height:40px;border:1px solid var(--line);border-radius:8px;background:var(--sunk);padding:0 10px;color:var(--ink);font:inherit;font-size:1rem}
+.mpilib{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.mpilib button{min-height:36px;padding:5px 11px;border-radius:999px;border:1px dashed var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:.86rem;cursor:pointer}
+.mpilib button:hover{border-color:var(--accent)}.mpilib .more{border-style:solid;color:var(--accent)}
 .irow .extra{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
 .irow .extra input{flex:1 1 200px;min-width:0;height:40px;border:1px solid var(--line);border-radius:8px;background:var(--sunk);padding:0 12px}
 .irow .extra input.reason{border-color:var(--fail)}
@@ -1104,7 +1114,8 @@ details.sec>summary>h2 small{margin-left:auto;font:500 .75rem var(--f-body);lett
         <div class="f"><label for="insp-preset">Start from a preset</label><select id="insp-preset"><option value="">Choose a preset…</option><option value="sheet">Lexus / Toyota repair sheet</option><option value="standard">Standard multipoint (any brand)</option><option value="quick">Quick check</option></select></div>
         <div class="cfglist" id="cfg-insp"></div>
         <div class="addrow"><input id="ii-name" placeholder="Add item, e.g. Wiper blades" autocomplete="off" aria-label="New inspection item"><label class="ck"><input type="checkbox" id="ii-mm">mm</label><button type="button" class="btn" id="ii-add">+ Add</button></div>
-        <span class="hint">Check “mm” for items you measure left and right, like brake pads. Changes apply to new ROs; saved ROs keep what they had.</span>
+        <div class="mpilib" id="mpi-lib-set" aria-label="Common multipoint items"></div>
+        <span class="hint">Tap an item above to add it. Check “mm” for items you measure left and right, like brake pads. Changes apply to new ROs; saved ROs keep what they had.</span>
         <div class="tools"><button type="button" class="btn" id="cfg-reset">Reset sections &amp; fields</button></div>
         <div class="flabel">Warranty photo checklist <small>Asked for on ROs with a warranty (W) job</small></div>
         <div class="cfglist" id="cfg-wp"></div>
@@ -1338,6 +1349,7 @@ details.sec>summary>h2 small{margin-left:auto;font:500 .75rem var(--f-body);lett
       <div class="additem">
         <div class="addrow"><input id="new-item" placeholder="Add item, e.g. Wiper blades" autocomplete="off" aria-label="New inspection item"><button type="button" class="btn" id="add-item">+ Add</button></div>
         <label class="keep" for="new-item-keep"><input type="checkbox" id="new-item-keep" checked> Add to every new RO</label>
+        <div class="mpilib" id="mpi-lib-ro" aria-label="Common multipoint items"></div>
       </div>
       <label class="toggle" for="maint" data-fld="maint">Reset maintenance light<input type="checkbox" id="maint"></label>
     </div>
@@ -1804,7 +1816,7 @@ const slug=n=>"c_"+String(n).toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^
 function customPrefs(){return(prefs.customItems||[]).filter(c=>c&&c.k&&c.n)}
 function isPinned(k){return inspList().some(c=>c.k===k)}
 function itemsFor(r){return r?recordItems(r):baseList()}
-const hasInsp=v=>v&&(v.s||v.note||(v.mm!=null&&v.mm!=="")||(v.mmL!=null&&v.mmL!=="")||(v.mmR!=null&&v.mmR!==""));
+const hasInsp=v=>v&&(v.s||v.note||v.cca||(v.mm!=null&&v.mm!=="")||(v.mmL!=null&&v.mmL!=="")||(v.mmR!=null&&v.mmR!==""));
 function recordItems(r){const ins=(r&&r.inspection)||{},list=baseList().map(i=>ins[i[0]]&&ins[i[0]].name?[i[0],ins[i[0]].name,i[2],false]:i),have=new Set(list.map(i=>i[0]));
   Object.keys(ins).forEach(k=>{if(have.has(k))return;const v=ins[k];if(!hasInsp(v)&&!k.startsWith("c_"))return;
     const isB=/^(front|rear)Brakes$/.test(k)||v.mmL!=null||v.mmR!=null;list.push([k,v.name||ITEMNAME[k]||k.slice(2).replace(/_/g," "),isB,true]);have.add(k)});
@@ -1812,9 +1824,9 @@ function recordItems(r){const ins=(r&&r.inspection)||{},list=baseList().map(i=>i
 let curItems=[];
 function rowHTML([k,n,b,c]){return`<div class="irow" id="row-${k}">
   <span class="name"><span class="dot"></span>${esc(n)}${c?" <small>Added</small>":""}</span>
-  <span class="seg"><input type="radio" class="p" name="i-${k}" id="i-${k}-pass" value="pass"><label for="i-${k}-pass">Pass</label><input type="radio" class="a" name="i-${k}" id="i-${k}-attn" value="attn"><label for="i-${k}-attn">Attn</label><input type="radio" class="x" name="i-${k}" id="i-${k}-fail" value="fail"><label for="i-${k}-fail">Fail</label></span>
-  <span class="extra">${b?`<span class="mm"><label for="i-${k}-mmL">L</label><input id="i-${k}-mmL" type="number" step="0.5" min="0" inputmode="decimal" placeholder="–" aria-label="${esc(n)} left pad in mm"><label for="i-${k}-mmR">R</label><input id="i-${k}-mmR" type="number" step="0.5" min="0" inputmode="decimal" placeholder="–" aria-label="${esc(n)} right pad in mm"><span>mm</span></span>`:""}<input id="i-${k}-note" placeholder="${b?"Notes":"What's wrong"}" ${b?"":"hidden"}>${c?`<span class="ctl"><button type="button" class="chip${isPinned(k)?" on":""}" data-pin="${k}" aria-pressed="${isPinned(k)}">${isPinned(k)?"✓ Every RO":"This RO only"}</button><button type="button" class="chip del" data-del="${k}" aria-label="Remove ${esc(n)} from this RO">×</button></span>`:""}</span>${isBattItem(k,n)?`<span class="battx"><button type="button" class="btn battbtn" data-batt="${k}">📷 Battery test printout</button><button type="button" class="linkbtn" data-battlib="${k}">From Photos</button><span class="bthumbs" id="bth-${k}"></span></span>`:""}</div>`}
-function buildInsp(list){curItems=list;$("insp").innerHTML=list.map(rowHTML).join("")}
+  <span class="seg four"><input type="radio" class="p" name="i-${k}" id="i-${k}-pass" value="pass"><label for="i-${k}-pass">${isBattItem(k,n)?"Good":"Pass"}</label><input type="radio" class="a" name="i-${k}" id="i-${k}-attn" value="attn"><label for="i-${k}-attn">${isBattItem(k,n)?"Fair":"Attn"}</label><input type="radio" class="x" name="i-${k}" id="i-${k}-fail" value="fail"><label for="i-${k}-fail">${isBattItem(k,n)?"Bad":"Fail"}</label><input type="radio" class="n" name="i-${k}" id="i-${k}-na" value="na"><label for="i-${k}-na" title="Not applicable or not inspected">N/A</label></span>
+  <span class="extra">${b?`<span class="mm"><label for="i-${k}-mmL">L</label><input id="i-${k}-mmL" type="number" step="0.5" min="0" inputmode="decimal" placeholder="–" aria-label="${esc(n)} left pad in mm"><label for="i-${k}-mmR">R</label><input id="i-${k}-mmR" type="number" step="0.5" min="0" inputmode="decimal" placeholder="–" aria-label="${esc(n)} right pad in mm"><span>mm</span></span>`:""}<input id="i-${k}-note" placeholder="${b?"Notes":"What's wrong"}" ${b?"":"hidden"}>${c?`<span class="ctl"><button type="button" class="chip${isPinned(k)?" on":""}" data-pin="${k}" aria-pressed="${isPinned(k)}">${isPinned(k)?"✓ Every RO":"This RO only"}</button><button type="button" class="chip del" data-del="${k}" aria-label="Remove ${esc(n)} from this RO">×</button></span>`:""}</span>${isBattItem(k,n)?`<span class="cca"><span><label for="i-${k}-cca">Actual CCA</label><input id="i-${k}-cca" type="number" min="0" max="2000" inputmode="numeric" placeholder="–"></span><span><label for="i-${k}-rcca">Factory CCA</label><input id="i-${k}-rcca" type="number" min="0" max="2000" inputmode="numeric" placeholder="–"></span></span>`:""}${isBattItem(k,n)?`<span class="battx"><button type="button" class="btn battbtn" data-batt="${k}">📷 Battery test printout</button><button type="button" class="linkbtn" data-battlib="${k}">From Photos</button><span class="bthumbs" id="bth-${k}"></span></span>`:""}</div>`}
+function buildInsp(list){curItems=list;$("insp").innerHTML=list.map(rowHTML).join("");if(typeof renderLib==="function")renderLib()}
 function addItem(){
   const n=$("new-item").value.trim().replace(/\s+/g," ");if(!n){$("new-item").focus();return}
   const k=slug(n);if(k==="c_"){toast("Use letters or numbers in the name");return}
@@ -1824,6 +1836,17 @@ function addItem(){
   $("insp").insertAdjacentHTML("beforeend",rowHTML(it));$("new-item").value="";refreshInsp();
   toast($("new-item-keep").checked?`${n} added to every new RO`:`${n} added to this RO`)}
 $("add-item").onclick=addItem;
+/* the dealer report card's items, ready to add with one tap (only the ones not already on the list show) */
+const MPI_LIB=["Fill windshield washer fluid","Driver floor mat","Rear hatch","Wipers & washers","Exterior lamps / bulbs","Warning lights","Dash / interior lights / horn","Body / trim","Engine air filter","Cabin air filter","Belts & hoses","Battery terminals & cables","Brake fluid","Engine coolant","Power steering fluid","Transmission fluid","Differential / transfer case","Brake system components","Steering system","Cooling system","CV boots / axles","Shocks & struts","Wheel bearings","Tire pressure / TPMS","Engine oil level","Parking brake","Horn","Windshield / glass","Seat belts","Keys / fobs","Recalls / campaigns"];
+let libOpen={ro:false,set:false};
+function renderLib(){const have=w=>new Set(w.map(n=>String(n).toLowerCase()));
+  [["ro","mpi-lib-ro",()=>have(curItems.map(i=>i[1]))],["set","mpi-lib-set",()=>have(inspList().map(i=>i.n))]].forEach(([w,id,h])=>{const el=$(id);if(!el)return;const H=h();
+    const left=MPI_LIB.filter(n=>!H.has(n.toLowerCase())&&!H.has(slug(n)));const show=libOpen[w]?left:left.slice(0,6);
+    el.innerHTML=show.map(n=>`<button type="button" data-lib-add="${esc(n)}">+ ${esc(n)}</button>`).join("")+(left.length>6?`<button type="button" class="more" data-lib-more="${w}">${libOpen[w]?"Show fewer":`More (${left.length-6})`}</button>`:"")})}
+$("mpi-lib-ro").addEventListener("click",e=>{const m=e.target.closest("[data-lib-more]");if(m){libOpen.ro=!libOpen.ro;renderLib();return}
+  const b=e.target.closest("[data-lib-add]");if(!b)return;$("new-item").value=b.dataset.libAdd;addItem();renderLib()});
+$("mpi-lib-set").addEventListener("click",e=>{const m=e.target.closest("[data-lib-more]");if(m){libOpen.set=!libOpen.set;renderLib();return}
+  const b=e.target.closest("[data-lib-add]");if(!b)return;$("ii-name").value=b.dataset.libAdd;$("ii-mm").checked=false;$("ii-add").click()});
 $("new-item").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addItem()}});
 $("insp").addEventListener("click",e=>{
   const pin=e.target.closest("[data-pin]"),del=e.target.closest("[data-del]");
@@ -1831,27 +1854,28 @@ $("insp").addEventListener("click",e=>{
     setInsp(on?[...inspList(),{k,n:it[1],b:!!it[2]}]:inspList().filter(c=>c.k!==k));
     pin.classList.toggle("on",on);pin.setAttribute("aria-pressed",on);pin.textContent=on?"✓ Every RO":"This RO only";
     toast(on?`${it[1]} will be on every new RO`:`${it[1]} removed from new ROs`)}
-  if(del){const k=del.dataset.del;curItems=curItems.filter(i=>i[0]!==k);$("row-"+k).remove();refreshInsp();
+  if(del){const k=del.dataset.del;curItems=curItems.filter(i=>i[0]!==k);$("row-"+k).remove();refreshInsp();renderLib();
     if(isPinned(k))toast("Removed from this RO. Tap “Every RO” first to stop adding it to new ROs.")}
 });
 $("tires").innerHTML=TIRES.map(([k,n])=>`<div class="tire${k==="spare"?" spare":""}"><h4>${n}</h4><div class="trio">
   <div><label for="t-${k}-in">Inside</label><input id="t-${k}-in" type="number" min="0" max="20" inputmode="numeric" placeholder="–"></div>
   <div><label for="t-${k}-mid">Middle</label><input id="t-${k}-mid" type="number" min="0" max="20" inputmode="numeric" placeholder="–"></div>
-  <div><label for="t-${k}-out">Outside</label><input id="t-${k}-out" type="number" min="0" max="20" inputmode="numeric" placeholder="–"></div></div></div>`).join("");
+  <div><label for="t-${k}-out">Outside</label><input id="t-${k}-out" type="number" min="0" max="20" inputmode="numeric" placeholder="–"></div></div>
+  <div class="psi"><label for="t-${k}-psi">PSI</label><input id="t-${k}-psi" type="number" min="0" max="99" inputmode="numeric" placeholder="–"></div></div>`).join("");
 
 function lvl(el,v,good,soon){el.classList.remove("lvl-pass","lvl-warn","lvl-fail");if(v===""||v==null)return;v=+v;el.classList.add(v>=good?"lvl-pass":v>=soon?"lvl-warn":"lvl-fail")}
 function refreshInsp(){
-  let p=0,f=0,a=0;
+  let p=0,f=0,a=0,nn=0;
   curItems.forEach(([k,,b])=>{
-    const row=$("row-"+k), pass=$(`i-${k}-pass`).checked, attn=$(`i-${k}-attn`).checked, fail=$(`i-${k}-fail`).checked, note=$(`i-${k}-note`);
-    row.classList.toggle("is-pass",pass);row.classList.toggle("is-attn",attn);row.classList.toggle("is-fail",fail);
+    const row=$("row-"+k), pass=$(`i-${k}-pass`).checked, attn=$(`i-${k}-attn`).checked, fail=$(`i-${k}-fail`).checked, na=!!($(`i-${k}-na`)&&$(`i-${k}-na`).checked), note=$(`i-${k}-note`);
+    row.classList.toggle("is-pass",pass);row.classList.toggle("is-attn",attn);row.classList.toggle("is-fail",fail);row.classList.toggle("is-na",na);if(na)nn++;
     const bad=fail||attn;note.classList.toggle("reason",fail);note.classList.toggle("reason-a",attn);
     if(!b){note.hidden=!bad&&!note.value.trim()}else{note.placeholder=fail?"Reason failed":attn?"What needs attention":"Notes"}
     if(!b)note.placeholder=fail?"Reason failed":"What needs attention";
     if(b){lvl($(`i-${k}-mmL`),$(`i-${k}-mmL`).value,5,3);lvl($(`i-${k}-mmR`),$(`i-${k}-mmR`).value,5,3)}
     if(pass)p++;if(fail)f++;if(attn)a++;
   });
-  $("insp-sum").textContent=`${p} pass · ${a} attention · ${f} fail · ${curItems.length-p-f-a} open`;
+  $("insp-sum").textContent=`${p} pass · ${a} attention · ${f} fail${nn?` · ${nn} N/A`:""} · ${curItems.length-p-f-a-nn} open`;
   TIRES.forEach(([k])=>["in","mid","out"].forEach(s=>{const e=$(`t-${k}-${s}`);lvl(e,e.value,6,3)}));
 }
 /* tap a checked Pass/Fail again to clear it */
@@ -2215,6 +2239,7 @@ $("batt-in").addEventListener("change",async e=>{const f=e.target.files&&e.targe
     const note=$(`i-${k}-note`),txt=battNote(o);
     if(txt){note.value=note.value.trim()&&!note.value.includes(txt)?note.value.trim()+" · "+txt:txt}
     if(o.s&&!document.querySelector(`input[name="i-${k}"]:checked`)){$(`i-${k}-${o.s}`).checked=true}
+    if($(`i-${k}-cca`)){if(o.meas&&!$(`i-${k}-cca`).value)$(`i-${k}-cca`).value=o.meas;if(o.rated&&!$(`i-${k}-rcca`).value)$(`i-${k}-rcca`).value=o.rated}
     refreshInsp();if(txt)note.hidden=false;saveDraft();nativeHaptic("success");
     toast(txt?`Battery: ${txt}. Check it against the printout.`:"Battery test photo saved with this RO")}
   finally{if(btn){btn.disabled=false;btn.textContent="📷 Battery test printout"}}});
@@ -2249,7 +2274,7 @@ function renderFormCfg(){if(!$("cfg-secs"))return;const c=formCfg(),names=Object
   $("cfg-flds").innerHTML=FORM_FLDS.map(([k,n])=>`<label class="cfgchip"><input type="checkbox" data-fldon="${k}"${c.hideFld[k]?"":" checked"}><span>${esc(n)}</span></label>`).join("");
   const T={text:"Text",number:"Number",date:"Date",check:"Yes / no"},cf=customFields();
   $("cfg-custom").innerHTML=cf.length?cf.map((f,i)=>`<div class="cfgrow"><span class="cfgname"><span>${esc(f.n)}</span><small class="hint">${T[f.t]||"Text"}</small></span><button type="button" class="mv" data-cfmv="${i}" data-d="-1"${i?"":" disabled"}>↑</button><button type="button" class="mv" data-cfmv="${i}" data-d="1"${i===cf.length-1?" disabled":""}>↓</button><button type="button" class="x" data-cfdel="${i}" aria-label="Remove ${esc(f.n)}">×</button></div>`).join(""):`<span class="hint">None yet. Add things like Loaner #, Key tag, Bay or Parts ordered.</span>`;
-  const L=inspList();
+  const L=inspList();setTimeout(()=>{if(typeof renderLib==="function")renderLib()});
   $("cfg-insp").innerHTML=L.map((it,i)=>`<div class="cfgrow"><input class="iiname" data-iin="${i}" value="${esc(it.n)}" aria-label="Item name"><label class="ck"><input type="checkbox" data-iimm="${i}"${it.b?" checked":""}>mm</label><button type="button" class="mv" data-iimv="${i}" data-d="-1"${i?"":" disabled"}>↑</button><button type="button" class="mv" data-iimv="${i}" data-d="1"${i===L.length-1?" disabled":""}>↓</button><button type="button" class="x" data-iidel="${i}" aria-label="Remove ${esc(it.n)}">×</button></div>`).join("")}
 $("cfg-secs").addEventListener("change",e=>{const k=e.target.dataset.secon;if(!k)return;const h=Object.assign({},formCfg().hide);if(e.target.checked)delete h[k];else h[k]=true;saveForm({hide:h})});
 $("cfg-secs").addEventListener("click",e=>{const b=e.target.closest("[data-secmv]");if(!b)return;const o=formCfg().order.slice(),i=o.indexOf(b.dataset.secmv),j=i+ +b.dataset.d;if(j<1||j>=o.length)return;[o[i],o[j]]=[o[j],o[i]];saveForm({order:o})});
@@ -2375,9 +2400,9 @@ function openForm(r){
   $("maint").checked=!!r.maintReset;
   const ins=r.inspection||{};
   buildInsp(itemsFor(r.id?r:null));
-  curItems.forEach(([k,,b])=>{const v=ins[k]||{};if(v.s)$(`i-${k}-${v.s}`).checked=true;$(`i-${k}-note`).value=v.note||"";
+  curItems.forEach(([k,,b])=>{const v=ins[k]||{};if(v.s&&$(`i-${k}-${v.s}`))$(`i-${k}-${v.s}`).checked=true;$(`i-${k}-note`).value=v.note||"";if($(`i-${k}-cca`)){$(`i-${k}-cca`).value=v.cca||"";$(`i-${k}-rcca`).value=v.rcca||""}
     if(b){const L=v.mmL!=null?v.mmL:v.mm,R=v.mmR!=null?v.mmR:v.mm;$(`i-${k}-mmL`).value=L==null?"":L;$(`i-${k}-mmR`).value=R==null?"":R}});
-  const t=r.tires||{};TIRES.forEach(([k])=>{const v=t[k]||{},e=x=>x==null?"":x;$(`t-${k}-in`).value=e(v.in!=null?v.in:v.edge);$(`t-${k}-mid`).value=e(v.mid);$(`t-${k}-out`).value=e(v.out!=null?v.out:v.edge)});
+  const t=r.tires||{};TIRES.forEach(([k])=>{const v=t[k]||{},e=x=>x==null?"":x;$(`t-${k}-in`).value=e(v.in!=null?v.in:v.edge);$(`t-${k}-mid`).value=e(v.mid);$(`t-${k}-out`).value=e(v.out!=null?v.out:v.edge);$(`t-${k}-psi`).value=e(v.psi)});
   (r.recs||[]).forEach(addRec);
   ["ymm","engine","color","stock","vtype","fuel","advisor","advisorNo","timein","promised"].forEach(k=>$(k).value=r[k]||"");fuelHint();
   (r.jobs&&r.jobs.length?r.jobs:[null]).forEach(addJob);
@@ -2403,9 +2428,10 @@ function collect(){
     vin:$("vin").value.trim().toUpperCase(),miles:$("miles").value?+$("miles").value:"",tech:$("tech").value.trim(),
     work:$("work").value.trim(),maintReset:$("maint").checked,inspection:{},tires:{},recs:readRecs(),
     createdAt:prev&&prev.createdAt||Date.now(),updatedAt:Date.now()};
-  curItems.forEach(([k,n,b,c])=>{const s=$(`i-${k}-pass`).checked?"pass":$(`i-${k}-attn`).checked?"attn":$(`i-${k}-fail`).checked?"fail":"";const o={s,note:$(`i-${k}-note`).value.trim()};
+  curItems.forEach(([k,n,b,c])=>{const s=$(`i-${k}-pass`).checked?"pass":$(`i-${k}-attn`).checked?"attn":$(`i-${k}-fail`).checked?"fail":$(`i-${k}-na`)&&$(`i-${k}-na`).checked?"na":"";const o={s,note:$(`i-${k}-note`).value.trim()};
+    if($(`i-${k}-cca`)){o.cca=$(`i-${k}-cca`).value;o.rcca=$(`i-${k}-rcca`).value}
     if(b){o.mmL=$(`i-${k}-mmL`).value;o.mmR=$(`i-${k}-mmR`).value;const nums=[o.mmL,o.mmR].filter(x=>x!=="").map(Number);o.mm=nums.length?String(Math.min(...nums)):""}if(c||k.startsWith("c_")||n!==ITEMNAME[k])o.name=n;rec.inspection[k]=o});
-  TIRES.forEach(([k])=>rec.tires[k]={in:$(`t-${k}-in`).value,mid:$(`t-${k}-mid`).value,out:$(`t-${k}-out`).value});
+  TIRES.forEach(([k])=>rec.tires[k]={in:$(`t-${k}-in`).value,mid:$(`t-${k}-mid`).value,out:$(`t-${k}-out`).value,psi:$(`t-${k}-psi`).value});
   rec.jobs=readJobs();
   ["ymm","engine","color","stock","vtype","fuel","advisor","advisorNo","timein","promised"].forEach(k=>rec[k]=$(k).value.trim());
   if(rec.stock)rec.stock=rec.stock.toUpperCase();
@@ -4592,7 +4618,7 @@ let histT;$("vin").addEventListener("input",()=>{clearTimeout(histT);histT=setTi
   if(v.length<6||(v.length>8&&v.length<17)||(v.length===17&&!vinValid(v)))return;const r=fillFromHistory(v);
   if(r){updateBar();saveDraft();toast(`Same car as RO ${r.ro}. Vehicle filled in.`)}},600)});
 /* inspection: everything passed in one tap */
-$("all-pass").onclick=()=>{let n=0;curItems.forEach(([k])=>{if(!["pass","attn","fail"].some(z=>$(`i-${k}-${z}`).checked)){$(`i-${k}-pass`).checked=true;n++}});
+$("all-pass").onclick=()=>{let n=0;curItems.forEach(([k])=>{if(!["pass","attn","fail","na"].some(z=>$(`i-${k}-${z}`)&&$(`i-${k}-${z}`).checked)){$(`i-${k}-pass`).checked=true;n++}});
   refreshInsp();saveDraft();toast(n?`Marked ${n} item${n>1?"s":""} Pass. Tap any to change it.`:"Every item already has a result")};
 
 /* ---------- app feel: header, large titles, sheet form, swipe actions, long press, badge, polish ---------- */
@@ -5629,7 +5655,8 @@ function makePDF(r){
   recordItems(r).forEach(([k,n,b])=>{const v=ins[k]||{};
     const L=v.mmL!=null?v.mmL:v.mm,R=v.mmR!=null?v.mmR:v.mm;
     const meas=b&&((L!==""&&L!=null)||(R!==""&&R!=null))?`L ${L===""||L==null?"-":L} mm  R ${R===""||R==null?"-":R} mm`:"";
-    const extra=[meas,v.note].filter(Boolean).join("   ");
+    const cca=v.cca||v.rcca?`CCA ${v.cca||"-"}${v.rcca?" / "+v.rcca+" rated":""}`:"";
+    const extra=[v.s==="na"?"N/A":"",meas,cca,v.note].filter(Boolean).join("   ");
     const el=fit(extra,CW-226,8.5);const h=Math.max(15,5+el.length*10);ensure(h);
     if(v.s==="fail"){d.setFillColor(...TINT);d.rect(M+184,y,CW-184,h,"F")}
     if(v.s==="attn"){d.setFillColor(250,240,212);d.rect(M+152,y,CW-152,h,"F")}
@@ -5655,8 +5682,9 @@ function makePDF(r){
       const f=tf(vv[s]);if(f){d.setFillColor(...f);d.rect(sx+2,y+25,sw-4,18,"F")}
       val(vv[s]===""||vv[s]==null?"-":vv[s],sx+sw/2,y+38,10,"center");
       if(j){d.setDrawColor(190);d.line(sx,y+14,sx,y+48)}});
-    d.setDrawColor(30);d.setLineWidth(.5);if(i)d.line(tx,y,tx,y+48)});
-  y+=48;box(y0);y+=12;
+    if(v.psi){d.setFont("helvetica","normal");d.setFontSize(7.5);d.setTextColor(...INK);d.text(`${v.psi} PSI`,tx+tw/2,y+56,{align:"center"})}
+    d.setDrawColor(30);d.setLineWidth(.5);if(i)d.line(tx,y,tx,y+(TIRES.some(([q])=>(tc[q]||{}).psi)?60:48))});
+  y+=TIRES.some(([q])=>(tc[q]||{}).psi)?60:48;box(y0);y+=12;
 
   /* recommendations */
   bar([["RECOMMENDED REPAIRS",5],["STATUS",196],["QT",262,"center"],["PART #",282],["STK",392,"center"],["PDC",422,"center"],["$",482,"right"],["HRS LABOR",CW-6,"right"]]);
@@ -5706,13 +5734,13 @@ $("export").onclick=async()=>{
   records.forEach(r=>recordItems(r).filter(i=>!ITEMNAME[i[0]]).forEach(([k,n])=>{if(!seenC.has(n.toLowerCase())){seenC.add(n.toLowerCase());cust.push([k,n])}}));
   const cfs=[];const seenF=new Set();customFields().forEach(f=>{seenF.add(f.id);cfs.push([f.id,f.n])});
   records.forEach(r=>Object.keys(r.custom||{}).forEach(k=>{if(!seenF.has(k)){seenF.add(k);cfs.push([k,((r.customNames||{})[k])||k])}}));
-  const cols=["Date","RO","Tag","VIN","Miles","Tech","Flagged hrs","Work performed","Maint reset",...ITEMS.map(i=>i[1]),...cust.map(c=>c[1]),"Front brakes L mm","Front brakes R mm","Rear brakes L mm","Rear brakes R mm",...TIRES.flatMap(([,n])=>[n+" inside",n+" middle",n+" outside"]),"Recommendations","Job lines","Year/Make/Model","Engine/drive","Advisor","Advisor #","Color","Stock","Vehicle","Gas added (gal)","Time in","Promised",...cfs.map(c=>c[1]),"Customer pay hrs","Warranty hrs","Internal hrs","Warranty multiplier","Warranty bonus hrs","Approved repairs $","Declined repairs $","Entry","RO Log data"];
+  const cols=["Date","RO","Tag","VIN","Miles","Tech","Flagged hrs","Work performed","Maint reset",...ITEMS.map(i=>i[1]),...cust.map(c=>c[1]),"Front brakes L mm","Front brakes R mm","Rear brakes L mm","Rear brakes R mm",...TIRES.flatMap(([,n])=>[n+" inside",n+" middle",n+" outside",n+" PSI"]),"Recommendations","Job lines","Year/Make/Model","Engine/drive","Advisor","Advisor #","Color","Stock","Vehicle","Gas added (gal)","Time in","Promised",...cfs.map(c=>c[1]),"Customer pay hrs","Warranty hrs","Internal hrs","Warranty multiplier","Warranty bonus hrs","Approved repairs $","Declined repairs $","Entry","RO Log data"];
   const q=v=>`"${String(v==null?"":v).replace(/"/g,'""')}"`;
   const rows=records.slice().sort((a,b)=>(a.date||"").localeCompare(b.date||"")).map(r=>{const i=r.inspection||{},t=r.tires||{};
     return[r.date,r.ro,r.tag,r.vin,r.miles,r.tech,h1(r.hours),r.work,r.maintReset?"Yes":"",
-      ...[...ITEMS,...cust].map(([k])=>{const v=i[k]||{};return v.s==="fail"?"FAIL"+(v.note?": "+v.note:""):v.s==="attn"?"ATTN"+(v.note?": "+v.note:""):v.s==="pass"?"Pass":""}),
+      ...[...ITEMS,...cust].map(([k])=>{const v=i[k]||{};return v.s==="fail"?"FAIL"+(v.note?": "+v.note:""):v.s==="attn"?"ATTN"+(v.note?": "+v.note:""):v.s==="pass"?"Pass":v.s==="na"?"N/A":""}),
       ...["frontBrakes","rearBrakes"].flatMap(k=>{const v=i[k]||{};return[v.mmL!=null?v.mmL:v.mm,v.mmR!=null?v.mmR:v.mm]}),
-      ...TIRES.flatMap(([k])=>{const v=t[k]||{};return[v.in!=null?v.in:v.edge,v.mid,v.out!=null?v.out:v.edge]}),
+      ...TIRES.flatMap(([k])=>{const v=t[k]||{};return[v.in!=null?v.in:v.edge,v.mid,v.out!=null?v.out:v.edge,v.psi]}),
       (r.recs||[]).map(x=>[x.qt&&x.qt+"x",x.desc,x.part,x.price&&"$"+x.price,x.hrs&&x.hrs+"h",x.status&&"["+x.status+"]"].filter(Boolean).join(" ")).join(" | "),
       (r.jobs||[]).map(j=>[j.type,j.op,j.desc,j.hrs&&j.hrs+"h",j.type==="W"&&!jobGetsMult(j)?"(no mult)":""].filter(Boolean).join(" ")).join(" | "),
       r.ymm,r.engine,r.advisor,r.advisorNo,r.color,r.stock,r.vtype,r.fuel,r.timein,r.promised,...cfs.map(([k])=>{const v=(r.custom||{})[k];return v===true?"Yes":v===false?"":v}),...(()=>{const h=splitHours(r),b=bonusFor(r);return[h1(h.C),h1(h.W),h1(h.I),b.m>1&&b.w?b.m:"",b.b?h1(b.b):""]})(),...(()=>{const T=recTotals(r.recs);return[T.approved.n?T.approved.$.toFixed(2):"",T.declined.n?T.declined.$.toFixed(2):""]})(),r.kind==="hours"?(r.span==="week"?"Week total (no RO)":"Hours only (no RO)"):"RO",JSON.stringify(r)].map(q).join(",")});
