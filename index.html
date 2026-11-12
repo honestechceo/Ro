@@ -204,6 +204,14 @@ main{padding-block:16px calc(120px + env(safe-area-inset-bottom,0px))}
 .tire .psi{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:.8rem;color:var(--muted)}.tire .psi input{width:72px}
 .irow .cca{grid-column:1/-1;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.85rem;color:var(--muted)}
 .irow .cca input{width:76px;height:40px;border:1px solid var(--line);border-radius:8px;background:var(--sunk);padding:0 10px;color:var(--ink);font:inherit;font-size:1rem}
+.updbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:12px 14px;border-radius:14px;border:1px solid color-mix(in srgb,var(--accent) 45%,transparent);background:color-mix(in srgb,var(--accent) 10%,var(--surface))}
+.updbar p{margin:0;flex:1 1 180px;font-size:.92rem;line-height:1.4}.updbar ul{margin:4px 0 0;padding-left:18px;color:var(--muted);font-size:.86rem}
+.updbar .btn{min-height:40px}
+.hbtiers{display:flex;flex-direction:column;gap:8px;margin:8px 0}
+.hbt{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;color:var(--muted);font-size:.92rem}
+.hbt input{width:68px;min-width:0;height:44px;border:1px solid var(--line);border-radius:10px;background:var(--sunk);padding:0 10px;color:var(--ink);font:inherit;font-size:1rem}
+.hbt .x{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:1.1rem;cursor:pointer}
+.hbprev{margin:10px 0 4px;padding:10px 12px;border-radius:10px;background:var(--sunk);font-size:.9rem;line-height:1.5}.hbprev:empty{display:none}
 .mpilib{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.mpilib button{min-height:36px;padding:5px 11px;border-radius:999px;border:1px dashed var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:.86rem;cursor:pointer}
 .mpilib button:hover{border-color:var(--accent)}.mpilib .more{border-style:solid;color:var(--accent)}
 .irow .extra{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
@@ -955,6 +963,7 @@ details.sec>summary>h2 small{margin-left:auto;font:500 .75rem var(--f-body);lett
       <div class="daystrip" id="daystrip" role="tablist" aria-label="Days of this pay week"></div>
     </div>
 
+    <div class="updbar" id="upd" hidden></div>
     <div class="tools"><input class="search" id="q" type="search" placeholder="Search all ROs: RO #, tag, VIN, work" autocomplete="off"></div>
     <div class="stfilter" id="st-filter" hidden role="radiogroup" aria-label="Show ROs">
       <input type="radio" name="sf" id="sf-all" value="" checked><label for="sf-all">All</label>
@@ -1078,6 +1087,22 @@ details.sec>summary>h2 small{margin-left:auto;font:500 .75rem var(--f-body);lett
         <button type="button" class="btn" id="add-mult">+ Add multiplier range</button>
         <div class="f"><label for="set-noops">Warranty op codes with no multiplier</label><input id="set-noops" class="mono" placeholder="31LEZ"><span class="hint">Separate with commas. Jobs described as PDI or pre-delivery are also excluded. You can change any job with its checkbox.</span></div>
         <span class="hint">Bonus hours = warranty hours × (multiplier − 1). Leave the end date empty if it's still running.</span>
+        <div class="flabel">Hours bonus scale <small>extra $ per hour when you hit an hours level</small></div>
+        <label class="toggle" for="hb-on">Use an hours bonus scale<input type="checkbox" id="hb-on"></label>
+        <div id="hb-box" hidden>
+          <div class="grid">
+            <div class="f"><label for="hb-basis">Hours counted per</label><select id="hb-basis"><option value="week">Week</option><option value="period">Pay period</option></select></div>
+            <div class="f"><label for="hb-paid">Bonus paid on</label><select id="hb-paid"><option value="all">All hours</option><option value="over">Hours over the level</option></select></div>
+          </div>
+          <div class="hbtiers" id="hb-tiers"></div>
+          <button type="button" class="btn" id="hb-add">+ Add level</button>
+          <div class="grid">
+            <div class="f"><label for="hb-every">After the last level, every</label><input id="hb-every" type="number" step="1" min="0" inputmode="numeric" placeholder="10 hrs"></div>
+            <div class="f"><label for="hb-addr">adds ($/hr)</label><input id="hb-addr" type="number" step="0.05" min="0" inputmode="decimal" placeholder="1.00"></div>
+          </div>
+          <div class="hbprev" id="hb-prev"></div>
+          <span class="hint">Uses flagged hours after chargebacks and is added to your estimated pay. Leave “every” empty if the scale stops at the last level.</span>
+        </div>
         <button type="button" class="btn primary" id="save-prefs">Save settings</button>
       </div>
     </div>
@@ -1734,7 +1759,7 @@ function render(){
   const wkRO=inWeek.filter(isRO),wkROh=wkRO.reduce((a,r)=>a+(+r.hours||0),0);
   animNum($("s-ros"),wkRO.length,0);
   const rateH=+prefs.payRate||0;
-  if(rateH){const E=earnFor(inWeek,wsI,weI);$("s-avg").textContent=money((E.tot-E.ot)*rateH+E.ot*rateH*otMult()-E.cb*rateH).replace(/\.\d\d$/,"");$("s-avg-l").textContent=weekOffset===0?"Est. pay this week":"Est. pay that week"}
+  if(rateH||hbCfg()){const E=earnFor(inWeek,wsI,weI);$("s-avg").textContent=money(E.pay).replace(/\.\d\d$/,"");$("s-avg-l").textContent=weekOffset===0?"Est. pay this week":"Est. pay that week"}
   else{animNum($("s-avg"),wkRO.length?Math.round(wkROh/wkRO.length*10)/10:0,1);$("s-avg-l").textContent="Avg hrs / RO"}
   const ref=weekOffset===0?new Date():ws, mk=iso(ref).slice(0,7);
   if(ppKind()!=="weekly"){const P=periodRange(0,iso(ref));animNum($("s-month"),Math.round(records.filter(r=>r.date>=P.a&&r.date<=P.z).reduce((a,r)=>a+(+r.hours||0),0)*10)/10,1);
@@ -2070,10 +2095,10 @@ function pushWidget(){if(!NATIVE)return;clearTimeout(widgetT);widgetT=setTimeout
     const rs=records.filter(r=>r.date>=a&&r.date<=z),hrs=rs.reduce((t,r)=>t+(+r.hours||0),0),rate=+prefs.payRate||0;
     const days=[...Array(7)].map((_,i)=>{const d=new Date(ws);d.setDate(d.getDate()+i);const k=iso(d);return Math.round(rs.filter(r=>r.date===k).reduce((t,r)=>t+(+r.hours||0),0)*10)/10});
     const labels=[...Array(7)].map((_,i)=>{const d=new Date(ws);d.setDate(d.getDate()+i);return DOW[d.getDay()].slice(0,1)});
-    let pay="";if(rate){const E=earnFor(rs,a,z);pay=money((E.tot-E.ot)*rate+E.ot*rate*otMult()-E.cb*rate).replace(/\.\d\d$/,"")}
+    let pay="";if(rate||hbCfg()){const E=earnFor(rs,a,z);pay=money(E.pay).replace(/\.\d\d$/,"")}
     const P=periodRange(0),pe=new Date(P.e);pe.setDate(pe.getDate()+1);
     const prs=records.filter(r=>r.date>=P.a&&r.date<=P.z),phrs=prs.reduce((t,r)=>t+(+r.hours||0),0);
-    let ppay="";if(rate){const E2=earnFor(prs,P.a,P.z);ppay=money((E2.tot-E2.ot)*rate+E2.ot*rate*otMult()-E2.cb*rate).replace(/\.\d\d$/,"")}
+    let ppay="";if(rate||hbCfg()){const E2=earnFor(prs,P.a,P.z);ppay=money(E2.pay).replace(/\.\d\d$/,"")}
     const tk=today(),trs=records.filter(r=>r.date===tk);
     const recent=records.filter(isRO).slice().sort((x,y)=>(y.date||"").localeCompare(x.date||"")||(y.updatedAt||0)-(x.updatedAt||0)).slice(0,4)
       .map(r=>{const sp=splitHours(r),t=sp.W>=sp.C&&sp.W>=sp.I&&sp.W>0?"W":sp.I>sp.C?"I":"C";return{ro:String(r.ro||""),d:fmt(parse(r.date),{month:"short",day:"numeric"}),h:Math.round((+r.hours||0)*10)/10,t}});
@@ -3060,7 +3085,10 @@ function renderPay(){
     (ot?line(`${otDayNames} overtime (${fmtMult(om)})`,h1(ot)+" hrs","ot")+line("Paid hours with overtime",h1(tot+ot*(om-1))+" hrs"):"")+
     (cbW?line(`Chargebacks this ${periodWord()}`,"−"+h1(cbW)+" hrs","cbl"):"")+
     (CK.ck?line(`Efficiency · ${h1(CK.ck)} hrs on the clock`,pct(CK.eff)):"")+
-    (rate?line(`Est. pay at ${money(rate)}/hr`+(ot?` · OT ${money(rate*om)}/hr`:""),money((tot-ot)*rate+ot*rate*om-cbW*rate)):"")+
+    (()=>{const hb=hourBonus(wk),HS=hbStatus(a<=today()&&today()<=z?today():z);if(!hbCfg())return"";
+      const lvl=HS&&HS.rate?`${money(HS.rate)}/hr at ${h1(HS.H)} hrs`:`no bonus yet`,nx=HS&&HS.next?` · ${h1(HS.next.at-HS.H)} hrs to ${money(HS.next.rate)}/hr`:"";
+      return line(`Hours bonus · ${lvl}${HS&&HS.c.basis!=="period"&&ppKind()!=="weekly"?" this week":""}`,money(hb),"bonus")+(nx&&payOffset===0?`<div class="pl note">${nx.slice(3)}</div>`:"")})()+
+    (rate||hbCfg()?line(rate?`Est. pay at ${money(rate)}/hr`+(ot?` · OT ${money(rate*om)}/hr`:"")+(hbCfg()?" + hours bonus":""):"Est. hours bonus",money((rate?(tot-ot)*rate+ot*rate*om-cbW*rate:0)+hourBonus(wk))):"")+
     (bon?line("Warranty bonus earned (paid next month)","+"+h1(bon)+" hrs","bonus"):"")+
     (!rate?`<div class="pl note">Add your flat rate in Pay settings to see dollars.</div>`:"");
   /* bonus month */
@@ -3103,12 +3131,13 @@ function renderReport(){if(!$("rep-card"))return;const m=repMode(),D=repData(),r
   $("rep-range").textContent=fmt(D.s,{month:"short",day:"numeric"})+" – "+fmt(D.e,{month:"short",day:"numeric",year:"numeric"});
   const B=repBuckets(D),mx=Math.max(1,...B.map(b=>b.h.C+b.h.W+b.h.I));
   $("rep-chart").innerHTML=`<div class="rcbars">${B.map(b=>{const T=b.h.C+b.h.W+b.h.I;return`<div class="rcb"><span class="rcv">${T?h1(T):""}</span><span class="rcs" style="height:${(T/mx*100).toFixed(1)}%">${["I","W","C"].map(k=>b.h[k]?`<i class="k-${k.toLowerCase()}" style="flex:${b.h[k]}"></i>`:"").join("")}</span><small>${esc(b.l)}</small></div>`}).join("")}</div>`;
-  const pay=rate?(D.E.tot-D.E.ot)*rate+D.E.ot*rate*otMult()-D.E.cb*rate:0;
+  const pay=D.E.pay;
   $("rep-lines").innerHTML=line("Customer pay",h1(D.t.C)+" hrs","","k-c")+line("Warranty",h1(D.t.W)+" hrs","","k-w")+line("Internal",h1(D.t.I)+" hrs","","k-i")+
     (D.dg?line("Diagnosis",h1(D.dg)+" hrs")+line("Repair",h1(D.tot-D.dg)+" hrs"):"")+
     line(`Flagged · ${D.ro.length} RO${D.ro.length===1?"":"s"}`,h1(D.tot)+" hrs","total")+
     (D.E.cb?line("Chargebacks","−"+h1(D.E.cb)+" hrs","cbl"):"")+
-    (rate?line(`Est. pay at ${money(rate)}/hr`,money(pay)):"")+
+    (D.E.hb?line("Hours bonus",money(D.E.hb),"bonus"):"")+
+    (rate||D.E.hb?line(rate?`Est. pay at ${money(rate)}/hr`+(D.E.hb?" + hours bonus":""):"Est. hours bonus",money(pay)):"")+
     (D.bon?line("Warranty bonus hours","+"+h1(D.bon)+" hrs","bonus"):"")+
     (D.gas?line(`Gas added · ${D.gasN} vehicle${D.gasN===1?"":"s"}`,(Math.round(D.gas*10)/10)+" gal"):"")+
     (()=>{const T=D.rs.filter(r=>r.workMs>=60000);if(!T.length)return"";const act=T.reduce((a,r)=>a+r.workMs/36e5,0),fl=T.reduce((a,r)=>a+(+r.hours||0),0);
@@ -3130,8 +3159,8 @@ function reportPDF(D){const {jsPDF}=window.jspdf,d=new jsPDF({unit:"pt",format:"
     cols.forEach(([,x],k)=>d.text(String(v[k]).slice(0,k===1?14:18),x+3,y));y+=15});
   if(!D.rs.length){d.setTextColor(120);d.text("No hours logged in this range.",M+3,y);y+=15}
   y+=6;d.setDrawColor(30);d.setLineWidth(1);d.line(M,y,W-M,y);y+=18;
-  const pay=rate?(D.E.tot-D.E.ot)*rate+D.E.ot*rate*otMult()-D.E.cb*rate:0;
-  const sum=[["Repair orders",String(D.ro.length)],...(D.gas?[["Gas added",`${Math.round(D.gas*10)/10} gal · ${D.gasN} vehicle${D.gasN===1?"":"s"}`]]:[]),["Customer pay",h1(D.t.C)+" hrs"],["Warranty",h1(D.t.W)+" hrs"],["Internal",h1(D.t.I)+" hrs"],...(D.dg?[["Diagnosis",h1(D.dg)+" hrs"],["Repair",h1(D.tot-D.dg)+" hrs"]]:[]),...(D.E.cb?[["Chargebacks","−"+h1(D.E.cb)+" hrs"]]:[]),["Total flagged hours",h1(D.tot)+" hrs"],...(rate?[[`Estimated pay at ${money(rate)}/hr`,money(pay)]]:[])];
+  const pay=D.E.pay;
+  const sum=[["Repair orders",String(D.ro.length)],...(D.gas?[["Gas added",`${Math.round(D.gas*10)/10} gal · ${D.gasN} vehicle${D.gasN===1?"":"s"}`]]:[]),["Customer pay",h1(D.t.C)+" hrs"],["Warranty",h1(D.t.W)+" hrs"],["Internal",h1(D.t.I)+" hrs"],...(D.dg?[["Diagnosis",h1(D.dg)+" hrs"],["Repair",h1(D.tot-D.dg)+" hrs"]]:[]),...(D.E.cb?[["Chargebacks","−"+h1(D.E.cb)+" hrs"]]:[]),["Total flagged hours",h1(D.tot)+" hrs"],...(D.E.hb?[["Hours bonus",money(D.E.hb)]]:[]),...(rate||D.E.hb?[[rate?`Estimated pay at ${money(rate)}/hr`+(D.E.hb?" + hours bonus":""):"Estimated hours bonus",money(pay)]]:[])];
   sum.forEach(([k,v],i)=>{if(y>750){d.addPage();y=M+10}const last=i>=sum.length-(rate?2:1);d.setFont("helvetica",last?"bold":"normal");d.setFontSize(last?12:10);d.setTextColor(30);d.text(k,M+3,y);d.text(v,W-M-3,y,{align:"right"});y+=last?18:15});
   const pg=d.getNumberOfPages();for(let i=1;i<=pg;i++){d.setPage(i);d.setFont("helvetica","normal");d.setFontSize(8);d.setTextColor(120);
     d.text("Personal record kept with RO Log. Pay figures are estimates; your employer's payroll is the official record.",M,770);d.text(`Page ${i} of ${pg}`,W-M,770,{align:"right"})}
@@ -3185,7 +3214,7 @@ function fillPrefsForm(){
   if(document.activeElement&&$("view-pay").contains(document.activeElement)&&document.activeElement.closest(".sec:last-child"))return;
   $("set-otm").value=prefs.otMult||"";const od=otDays();
   $("ot-days").innerHTML=[0,1,2,3,4,5,6].map(i=>{const d=(startDow+i)%7;return`<label class="otd"><input type="checkbox" value="${d}"${od.includes(d)?" checked":""}><span>${DOW[d]}</span></label>`}).join("");
-  $("set-rate").value=prefs.payRate||"";$("set-shop").value=prefs.shopRate||"";$("set-goal").value=prefs.weekGoal||"";$("set-noops").value=noMultOps().join(", ");
+  fillHB();$("set-rate").value=prefs.payRate||"";$("set-shop").value=prefs.shopRate||"";$("set-goal").value=prefs.weekGoal||"";$("set-noops").value=noMultOps().join(", ");
   $("mults").innerHTML="";multN=0;(prefs.mults&&prefs.mults.length?prefs.mults:[{from:today()}]).forEach(addMult)}
 $("add-mult").onclick=()=>{addMult({});$(`m${multN-1}-from`).focus()};
 async function savePrefs(patch,quiet){
@@ -3200,7 +3229,7 @@ $("save-prefs").onclick=async()=>{
   mults.sort((a,b)=>a.from.localeCompare(b.from));
   const v=x=>{const n=parseFloat(x);return n>0?n:""};
   const otm=parseFloat($("set-otm").value);if($("set-otm").value&&!(otm>=1)){toast("Overtime rate must be 1 or more, like 1.5");return}
-  await savePrefs({otDays:[...$("ot-days").querySelectorAll("input:checked")].map(i=>+i.value),otMult:otm>=1?otm:"",weekGoal:v($("set-goal").value),payRate:v($("set-rate").value),shopRate:v($("set-shop").value),mults,noMultOps:$("set-noops").value.toUpperCase().split(/[\s,]+/).filter(Boolean).join(", ")});
+  await savePrefs({hourBonus:readHB(),otDays:[...$("ot-days").querySelectorAll("input:checked")].map(i=>+i.value),otMult:otm>=1?otm:"",weekGoal:v($("set-goal").value),payRate:v($("set-rate").value),shopRate:v($("set-shop").value),mults,noMultOps:$("set-noops").value.toUpperCase().split(/[\s,]+/).filter(Boolean).join(", ")});
   $("calc-mult").value="";fillPrefsForm();renderPay();render();toast("Pay settings saved");
 };
 
@@ -3209,10 +3238,62 @@ $("save-prefs").onclick=async()=>{
 function cbIn(rs,a,z){return records.filter(r=>r.cb&&+r.cb.hrs&&r.cb.date>=a&&r.cb.date<=z).reduce((s,r)=>s+(+r.cb.hrs||0),0)}
 function clockIn(a,z){const c=prefs.clock||{};let ck=0,fl=0;Object.keys(c).forEach(k=>{if(k>=a&&k<=z&&+c[k]>0){ck+=+c[k];fl+=records.filter(r=>r.date===k).reduce((s,r)=>s+(+r.hours||0),0)}});return{ck,fl,eff:ck?fl/ck*100:null}}
 const pct=n=>Math.round(n)+"%";
+/* hours bonus scale: e.g. 45 hrs pays $0.50 on every hour, 50 hrs pays $1.00, then $1 more for each 10 hrs.
+   Set by the tech in Pay settings; figured per week or per pay period on flagged hours after chargebacks. */
+function hbCfg(){const c=prefs.hourBonus||{};const T=(c.tiers||[]).filter(t=>+t.at>0&&+t.rate>0);return c.on&&T.length?Object.assign({},c,{tiers:T.sort((x,y)=>x.at-y.at)}):null}
+function hbRateAt(H,c){let r=0,t=null;for(const x of c.tiers)if(H>=+x.at){r=+x.rate;t=x}
+  const last=c.tiers[c.tiers.length-1];if(t===last&&+c.every>0&&+c.add>0)r+=Math.floor((H-last.at)/c.every)*c.add;return{r:Math.round(r*100)/100,t}}
+function hbFor(H,c){const {r,t}=hbRateAt(H,c);if(!r)return 0;return c.paidOn==="over"?Math.max(0,H-t.at)*r:H*r}
+function hbUnit(k,c){if(c.basis==="period")return periodRange(0,k);const s=weekStartFor(k),e=new Date(s);e.setDate(e.getDate()+6);return{s,e,a:iso(s),z:iso(e)}}
+function hbStatus(k){const c=hbCfg();if(!c)return null;const u=hbUnit(k||today(),c),all=records.filter(r=>r.date>=u.a&&r.date<=u.z);
+  const H=Math.max(0,all.reduce((s,r)=>s+(+r.hours||0),0)-cbIn(all,u.a,u.z)),cur=hbRateAt(H,c);
+  let next=c.tiers.find(t=>+t.at>H);if(!next&&+c.every>0&&+c.add>0){const last=c.tiers[c.tiers.length-1],n=Math.floor((H-last.at)/c.every)+1;next={at:+last.at+n*c.every,rate:hbRateAt(+last.at+n*c.every,c).r}}
+  return{c,u,H,rate:cur.r,amt:hbFor(H,c),next}}
+function hourBonus(rs){const c=hbCfg();if(!c||!rs.length)return 0;const U={};
+  rs.forEach(r=>{const u=hbUnit(r.date,c);(U[u.a]=U[u.a]||{u,h:0}).h+=(+r.hours||0)});let amt=0;
+  for(const k in U){const {u,h}=U[k],all=records.filter(r=>r.date>=u.a&&r.date<=u.z),G=all.reduce((s,r)=>s+(+r.hours||0),0),H=G-cbIn(all,u.a,u.z);
+    // a week or period only partly in this range gets its share of that unit's bonus
+    if(H>0&&G>0)amt+=hbFor(H,c)*Math.min(1,h/G)}
+  return Math.round(amt*100)/100}
+/* updates: tell the tech when a newer version is on the App Store, and what changed after updating */
+const APP_STORE_ID="6831461172";
+const WHATS_NEW={"1.0.2":["Hours bonus scale in Pay settings: set your own levels, added to your estimated pay","A notice here when a new version of RO Log is out"],"1.0.1":["Report-card multipoint: N/A, one-tap items, battery CCA, tire pressure","Gas added for PDIs, rechecks and recalls","Tone generator with engine RPM and road speed modes","Scan a saved photo; better reading of other dealers' ROs"]};
+const verNum=v=>String(v||"0").split(".").map(n=>+n||0),verGT=(a,b)=>{const x=verNum(a),y=verNum(b);for(let i=0;i<3;i++){if((x[i]||0)!==(y[i]||0))return(x[i]||0)>(y[i]||0)}return false};
+function showUpd(html){const u=$("upd");u.innerHTML=html;u.hidden=false}
+async function checkUpdates(){if(!NATIVE)return;const AP=capPlugin("App");if(!AP||!AP.getInfo)return;let mine;try{mine=(await AP.getInfo()).version}catch(e){return}if(!mine)return;
+  // after an update: what's new, once
+  if(prefs.seenVer&&verGT(mine,prefs.seenVer)&&WHATS_NEW[mine]){showUpd(`<p><b>Updated to RO Log ${esc(mine)}</b><ul>${WHATS_NEW[mine].map(x=>`<li>${esc(x)}</li>`).join("")}</ul></p><button type="button" class="btn" data-upd="ok">Got it</button>`)}
+  if(prefs.seenVer!==mine)savePrefs({seenVer:mine},true);
+  // a newer version on the App Store (checked at most once a day; nothing about you is sent)
+  const last=+prefs.updChecked||0;if(Date.now()-last<20*36e5&&!prefs.storeVer)return;
+  let store=prefs.storeVer;
+  if(Date.now()-last>=20*36e5){try{const url=`https://itunes.apple.com/lookup?id=${APP_STORE_ID}&country=us&t=${Date.now()}`;let j;
+      const H=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.CapacitorHttp;
+      if(H&&H.get){const r=await H.get({url});j=typeof r.data==="string"?JSON.parse(r.data):r.data}else{j=await(await fetch(url)).json()}
+      store=j&&j.results&&j.results[0]&&j.results[0].version;savePrefs({updChecked:Date.now(),storeVer:store||""},true)}catch(e){return}}
+  if(store&&verGT(store,mine)&&prefs.skipVer!==store&&$("upd").hidden)showUpd(`<p><b>RO Log ${esc(store)} is available.</b> You have ${esc(mine)}.</p><button type="button" class="btn primary" data-upd="go">Update</button><button type="button" class="btn" data-upd="later" data-ver="${esc(store)}">Later</button>`)}
+$("upd").addEventListener("click",e=>{const b=e.target.closest("[data-upd]");if(!b)return;const k=b.dataset.upd;
+  if(k==="go"){location.href=`itms-apps://apps.apple.com/app/id${APP_STORE_ID}`;return}
+  if(k==="later")savePrefs({skipVer:b.dataset.ver},true);$("upd").hidden=true});
+setTimeout(checkUpdates,4000);
+/* hours bonus settings */
+function hbTierRow(t){return`<div class="hbt"><span>At</span><input type="number" step="0.5" min="0" inputmode="decimal" data-hb="at" value="${t.at??""}" placeholder="45" aria-label="Hours"><span>hrs → $</span><input type="number" step="0.05" min="0" inputmode="decimal" data-hb="rate" value="${t.rate??""}" placeholder="0.50" aria-label="Dollars per hour"><span>/hr</span><button type="button" class="x" data-hbdel aria-label="Remove level">×</button></div>`}
+function readHB(){const tiers=[...$("hb-tiers").querySelectorAll(".hbt")].map(r=>({at:parseFloat(r.querySelector('[data-hb="at"]').value),rate:parseFloat(r.querySelector('[data-hb="rate"]').value)})).filter(t=>t.at>0&&t.rate>0);
+  return{on:$("hb-on").checked,basis:$("hb-basis").value,paidOn:$("hb-paid").value,tiers,every:parseFloat($("hb-every").value)||0,add:parseFloat($("hb-addr").value)||0}}
+function fillHB(){const c=prefs.hourBonus||{};$("hb-on").checked=!!c.on;$("hb-basis").value=c.basis||"week";$("hb-paid").value=c.paidOn||"all";
+  $("hb-tiers").innerHTML=(c.tiers&&c.tiers.length?c.tiers:[{at:45,rate:.5},{at:50,rate:1}]).map(hbTierRow).join("");
+  $("hb-every").value=c.every||(c.tiers?"":10);$("hb-addr").value=c.add||(c.tiers?"":1);$("hb-box").hidden=!c.on;hbPreview()}
+function hbPreview(){const c=readHB();c.tiers.sort((a,b)=>a.at-b.at);if(!c.tiers.length){$("hb-prev").textContent="";return}
+  const pts=[...new Set([...c.tiers.map(t=>t.at),...(c.every>0&&c.add>0?[1,2].map(i=>c.tiers[c.tiers.length-1].at+i*c.every):[])])];
+  $("hb-prev").innerHTML="<b>Example</b><br>"+pts.map(H=>{const {r}=hbRateAt(H,c);return`${h1(H)} hrs → ${money(r)}/hr = <b>${money(hbFor(H,c))}</b>`}).join("<br>")}
+$("hb-on").addEventListener("change",()=>{$("hb-box").hidden=!$("hb-on").checked;hbPreview()});
+$("hb-add").onclick=()=>{const rows=readHB().tiers,last=rows[rows.length-1];$("hb-tiers").insertAdjacentHTML("beforeend",hbTierRow(last?{at:last.at+5,rate:""}:{}));hbPreview()};
+$("hb-tiers").addEventListener("click",e=>{const d=e.target.closest("[data-hbdel]");if(d){d.closest(".hbt").remove();hbPreview()}});
+["hb-tiers","hb-every","hb-addr","hb-basis","hb-paid"].forEach(id=>$(id).addEventListener("input",hbPreview));
 function earnFor(rs,a,z){const rate=+prefs.payRate||0,t={C:0,W:0,I:0};let bon=0;
   rs.forEach(r=>{const h=splitHours(r);t.C+=h.C;t.W+=h.W;t.I+=h.I;bon+=bonusFor(r).b});
-  const tot=t.C+t.W+t.I,ot=otHours(rs),om=otMult(),cb=cbIn(rs,a,z);
-  return{t,tot,ot,om,cb,bon,rate,pay:rate?(tot-ot)*rate+ot*rate*om-cb*rate:0}}
+  const tot=t.C+t.W+t.I,ot=otHours(rs),om=otMult(),cb=cbIn(rs,a,z),hb=hourBonus(rs);
+  return{t,tot,ot,om,cb,bon,rate,hb,pay:(rate?(tot-ot)*rate+ot*rate*om-cb*rate:0)+hb}}
 $("d-clock").addEventListener("change",async()=>{const v=parseFloat($("d-clock").value),c=Object.assign({},prefs.clock||{});
   if(v>0)c[selDay]=Math.round(v*100)/100;else delete c[selDay];await savePrefs({clock:c},true);render()});
 function renderClock(){const c=prefs.clock||{},v=c[selDay];if(document.activeElement!==$("d-clock"))$("d-clock").value=v||"";
